@@ -1,0 +1,339 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\Rpc">
+      <UniqueIdentifier>{570d5030-1994-4cc6-85f9-4f5754fb3e96}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Rpc">
+      <UniqueIdentifier>{d087b535-5da5-4894-81e2-84700805ffa6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Function">
+      <UniqueIdentifier>{055139f8-a9ab-47b1-a409-e27d700cef8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Communication">
+      <UniqueIdentifier>{cde8b557-fd40-4d90-bf8e-c846eae2b06a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Device">
+      <UniqueIdentifier>{3eb96c6a-ccb5-4ef2-a940-ada670c90004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocol">
+      <UniqueIdentifier>{4357f3b6-d324-4e1b-b693-8ebbbfcaf862}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Report">
+      <UniqueIdentifier>{8a0cac39-284b-497c-8c3a-925d5be29bf5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Tracker">
+      <UniqueIdentifier>{2e117b78-80e3-44d1-a134-068c5c3fa786}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Function">
+      <UniqueIdentifier>{4d65a6e2-1ecc-43f4-afe0-4d3a5531f748}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Callback">
+      <UniqueIdentifier>{f7a8eb5d-68d0-43cf-a767-e2a6ce0c7b9a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Callback">
+      <UniqueIdentifier>{50c44df0-4f3c-4de5-a5f7-50faa534c78f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Communication">
+      <UniqueIdentifier>{53d5390f-4f42-443d-9d9f-7012c7c607e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Device">
+      <UniqueIdentifier>{c9c1b79b-4a3a-4a49-83a2-59b339397c08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Protocol">
+      <UniqueIdentifier>{bb863d23-749e-42a5-aa06-1940de7d34d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Report">
+      <UniqueIdentifier>{e6dd237b-d4be-43e7-bb6e-de0e946e3725}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Tracker">
+      <UniqueIdentifier>{64117ff0-0509-4910-a237-ff63bbacadba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protocol\firehose-loader">
+      <UniqueIdentifier>{4e434d82-a52c-4a7d-a8a4-77b8103833e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Protocol\firehose-loader">
+      <UniqueIdentifier>{76fc5924-07a1-43eb-aca3-243ad49c487e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Util">
+      <UniqueIdentifier>{02f3b679-dbeb-424e-b1be-c549fdadffd6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Platform">
+      <UniqueIdentifier>{82cc1821-b015-40d6-9c42-adb4864a6dd5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SoftwareDownload.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Rpc\ImageManagementServiceHandler.cpp">
+      <Filter>Source Files\Rpc</Filter>
+    </ClCompile>
+    <ClCompile Include="Rpc\ImageManagementServiceTypes.cpp">
+      <Filter>Source Files\Rpc</Filter>
+    </ClCompile>
+    <ClCompile Include="Function\ImageTransfer.cpp">
+      <Filter>Source Files\Function</Filter>
+    </ClCompile>
+    <ClCompile Include="Callback\ClientCallbackHandler.cpp">
+      <Filter>Source Files\Callback</Filter>
+    </ClCompile>
+    <ClCompile Include="Communication\Usb.cpp">
+      <Filter>Source Files\Communication</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\Buffer.cpp">
+      <Filter>Source Files\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\Connection.cpp">
+      <Filter>Source Files\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\DataPacket.cpp">
+      <Filter>Source Files\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\Impl.cpp">
+      <Filter>Source Files\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\Logger.cpp">
+      <Filter>Source Files\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\Manager.cpp">
+      <Filter>Source Files\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\Base.cpp">
+      <Filter>Source Files\Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\Firehose.cpp">
+      <Filter>Source Files\Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\FlowControl.cpp">
+      <Filter>Source Files\Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\Sahara.cpp">
+      <Filter>Source Files\Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="Report\DataContainer.cpp">
+      <Filter>Source Files\Report</Filter>
+    </ClCompile>
+    <ClCompile Include="Report\StatusManager.cpp">
+      <Filter>Source Files\Report</Filter>
+    </ClCompile>
+    <ClCompile Include="Report\Thread.cpp">
+      <Filter>Source Files\Report</Filter>
+    </ClCompile>
+    <ClCompile Include="Tracker\FunctionTracker.cpp">
+      <Filter>Source Files\Tracker</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\firehose-loader\FhLoaderSha.cpp">
+      <Filter>Source Files\Protocol\firehose-loader</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\firehose-loader\FirehoseLoader.cpp">
+      <Filter>Source Files\Protocol\firehose-loader</Filter>
+    </ClCompile>
+    <ClCompile Include="Rpc\DeviceManagerHandler.cpp">
+      <Filter>Source Files\Rpc</Filter>
+    </ClCompile>
+    <ClCompile Include="SoftwareDownloadUtility.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Rpc\UtilityServiceHandler.cpp">
+      <Filter>Source Files\Rpc</Filter>
+    </ClCompile>
+    <ClCompile Include="DeviceDiscovery.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="util\Event.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="util\ThisThread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Exports\SoftwareDownload.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Exports\ImageManagementDefinitions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Rpc\ImageManagementServiceHandler.h">
+      <Filter>Header Files\Rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="Function\ImageTransfer.h">
+      <Filter>Header Files\Function</Filter>
+    </ClInclude>
+    <ClInclude Include="Callback\ClientCallbackHandler.h">
+      <Filter>Header Files\Callback</Filter>
+    </ClInclude>
+    <ClInclude Include="Callback\Fwd.h">
+      <Filter>Header Files\Callback</Filter>
+    </ClInclude>
+    <ClInclude Include="Communication\CommonIO.h">
+      <Filter>Header Files\Communication</Filter>
+    </ClInclude>
+    <ClInclude Include="Communication\Fwd.h">
+      <Filter>Header Files\Communication</Filter>
+    </ClInclude>
+    <ClInclude Include="Communication\Usb.h">
+      <Filter>Header Files\Communication</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\Buffer.h">
+      <Filter>Header Files\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\Connection.h">
+      <Filter>Header Files\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\DataPacket.h">
+      <Filter>Header Files\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\ErrorMessage.h">
+      <Filter>Header Files\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\Exception.h">
+      <Filter>Header Files\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\Fwd.h">
+      <Filter>Header Files\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\Impl.h">
+      <Filter>Header Files\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\Logger.h">
+      <Filter>Header Files\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Device\Manager.h">
+      <Filter>Header Files\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\Base.h">
+      <Filter>Header Files\Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\DeviceConfigLibrary.h">
+      <Filter>Header Files\Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\DeviceConfigLibraryConstants.h">
+      <Filter>Header Files\Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\Firehose.h">
+      <Filter>Header Files\Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\FlowControl.h">
+      <Filter>Header Files\Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\Fwd.h">
+      <Filter>Header Files\Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\Sahara.h">
+      <Filter>Header Files\Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="Report\DataContainer.h">
+      <Filter>Header Files\Report</Filter>
+    </ClInclude>
+    <ClInclude Include="Report\Fwd.h">
+      <Filter>Header Files\Report</Filter>
+    </ClInclude>
+    <ClInclude Include="Report\StatusManager.h">
+      <Filter>Header Files\Report</Filter>
+    </ClInclude>
+    <ClInclude Include="Report\Thread.h">
+      <Filter>Header Files\Report</Filter>
+    </ClInclude>
+    <ClInclude Include="Tracker\FunctionTracker.h">
+      <Filter>Header Files\Tracker</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Rpc\Service.h">
+      <Filter>Header Files\Rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="Rpc\DeviceManagerHandler.h">
+      <Filter>Header Files\Rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="Rpc\Fwd.h">
+      <Filter>Header Files\Rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="Exports\SoftwareDownloadUtility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Rpc\UtilityServiceHandler.h">
+      <Filter>Header Files\Rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="exports\Definitions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="exports\DeviceDiscovery.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="protocol\firehose-loader\FhLoaderSha.h">
+      <Filter>Header Files\Protocol\firehose-loader</Filter>
+    </ClInclude>
+    <ClInclude Include="protocol\firehose-loader\FirehoseLoader.h">
+      <Filter>Header Files\Protocol\firehose-loader</Filter>
+    </ClInclude>
+    <ClInclude Include="util\Event.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\ThisThread.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\FunctionHelper.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\StringHelper.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\SystemHelper.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\ThreadHelper.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="function\Fwd.h">
+      <Filter>Header Files\Function</Filter>
+    </ClInclude>
+    <ClInclude Include="util\MemoryHelper.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\AppEvent.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\AppMessage.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\AppUser.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\MathHelper.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="platform\Compiler.h">
+      <Filter>Header Files\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="platform\Target.h">
+      <Filter>Header Files\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="platform\Exception.h">
+      <Filter>Header Files\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="platform\Assertions.h">
+      <Filter>Header Files\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="platform\LangMacros.h">
+      <Filter>Header Files\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="util\TimeHelper.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

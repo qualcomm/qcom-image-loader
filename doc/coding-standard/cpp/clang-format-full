@@ -1,0 +1,210 @@
+---
+# PC-Tools C++ Coding Standard - clang-format configuration
+# Based on: doc/coding-standard/cpp/CodingStandard.txt
+#
+# This file enforces the formatting rules defined in the coding standard:
+# - 3-space indentation (no tabs)
+# - 80 character line limit
+# - Allman brace style (braces on separate lines)
+# - No space before parentheses: if(condition) not if (condition)
+# - Local headers before system headers
+#
+BasedOnStyle: LLVM
+
+# 2.3.1 Whitespace/Tabs
+# "Use white space instead of tabs, 3 spaces per tab"
+IndentWidth: 3
+TabWidth: 3
+UseTab: Never
+ContinuationIndentWidth: 3
+
+# 2.3.2 Line Length
+# "Limit to 120 characters"
+ColumnLimit: 120
+
+# Line Endings
+# Preserve existing line endings in each file (don't change LF/CRLF)
+LineEnding: DeriveLF
+
+# Namespace and access modifiers
+NamespaceIndentation: None
+AccessModifierOffset: -3
+
+# Pointer and reference alignment
+# Examples in standard show: BigLongClassName* pBigLongClassName
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# 2.3.3 Bracing
+# "Put curly braces on a separate line at the same level of indentation"
+# Exception: "Opening brace for a namespace should be on the same line"
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: false  # Exception: namespace on same line
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: false
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+
+# 2.3.3 Short statements
+# "One-line if-statements can be on the same line: if(bSomething) { doSomething(); }"
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: false
+# Force one argument per line when breaking (don't pack all on one line)
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+# "No functions on single line - always use multiple lines"
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortLambdasOnASingleLine: All
+
+# Spacing rules
+# Examples show: if(bSomething) NOT if (bSomething)
+# Examples show: functionName() NOT functionName ()
+SpaceBeforeParens: Never
+SpaceBeforeRangeBasedForLoopColon: false
+SpaceInEmptyParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceBeforeSquareBrackets: false
+SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCpp11BracedList: false
+SpaceInEmptyBlock: false
+
+# Statement-like macros from src/platform
+# These macros take arguments and act like statements (semicolon handling)
+StatementMacros:
+  # Assertions (src/platform/Assertions.h)
+  - TOOLS_ASSERT
+  - TOOLS_ASSERT_MESSAGE
+  - TOOLS_ASSERT_OR_CONTINUE
+  - TOOLS_ASSERT_OR_BREAK
+  - TOOLS_ASSERT_OR_RETURN
+  - TOOLS_ASSERT_OR_THROW
+  - TOOLS_ASSUMING
+  - TOOLS_STATIC_ASSERT
+  # Exceptions (src/platform/Exception.h)
+  - TOOLS_CATCH
+  - TOOLS_IGNORE_EXCEPTIONS
+  - TOOLS_THROW
+  - TOOLS_TRACE
+  # Logging (src/external/kLogger/include/KL/Macros.h)
+  - CLOG_INFO
+  - CLOG_WARNING
+  - CLOG_ERROR
+  - CLOG_DEBUG
+  - FLOG_INFO
+  - FLOG_WARNING
+  - FLOG_ERROR
+  - FLOG_DEBUG
+  - CFLOG_INFO
+  - CFLOG_WARNING
+  - CFLOG_ERROR
+  - CFLOG_DEBUG
+
+# 2.1 #Includes
+# "Always include local headers before system headers"
+# "Alphabetize includes within their respective groups (local, system)"
+# "Exception: in a cpp file, the header matching the cpp file should always be included first"
+SortIncludes: CaseInsensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  # Priority 0 (implicit): Main header for .cpp files comes first
+  # Priority 1: Local/project headers with quotes
+  - Regex:           '^"'
+    Priority:        1
+    SortPriority:    1
+    CaseSensitive:   false
+  # Priority 2: System and third-party headers with angle brackets
+  - Regex:           '^<'
+    Priority:        2
+    SortPriority:    2
+    CaseSensitive:   false
+
+# Line breaking
+# "If a line must be broken, indent subsequent lines one level further"
+# BlockIndent: Parameters are indented as a block, closing paren on its own line
+AlignAfterOpenBracket: BlockIndent
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: None
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: None
+AlignEscapedNewlines: Right
+AlignOperands: Align
+AlignTrailingComments: true
+
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: Yes
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeComma
+BreakInheritanceList: BeforeComma
+BreakStringLiterals: true
+
+# 2.4 Commenting
+# "Always use C++ style comments"
+FixNamespaceComments: true
+ReflowComments: true
+
+# Other formatting
+# Function arguments in calls: one per line when multi-line
+BinPackArguments: false
+# Function parameters in declarations/definitions: one per line when multi-line
+BinPackParameters: false
+CompactNamespaces: false
+# Constructor initializer list should have no indentation
+ConstructorInitializerIndentWidth: 0
+Cpp11BracedListStyle: true
+DerivePointerAlignment: false
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: LogicalBlock
+IndentAccessModifiers: false
+IndentCaseBlocks: false
+IndentCaseLabels: true
+IndentExternBlock: AfterExternBlock
+IndentGotoLabels: true
+IndentPPDirectives: None
+IndentRequiresClause: true
+IndentWrappedFunctionNames: false
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 2
+PackConstructorInitializers: BinPack
+SeparateDefinitionBlocks: Leave
+SpaceAroundPointerQualifiers: Default
+
+# Penalties for line breaking (helps clang-format make better decisions)
+# Strategy: Zero penalty for breaking before first parameter to encourage it
+PenaltyBreakAssignment: 2
+PenaltyBreakBeforeFirstCallParameter: 0  # No penalty - encourage breaking before first parameter
+PenaltyBreakComment: 300
+PenaltyBreakFirstLessLess: 120
+PenaltyBreakOpenParenthesis: 1000  # High penalty - discourage breaking after nested opening parens
+PenaltyBreakString: 1000
+PenaltyBreakTemplateDeclaration: 10
+PenaltyExcessCharacter: 1000  # Lower to allow breaking sooner
+PenaltyIndentedWhitespace: 10  # Add penalty for extra indentation
+PenaltyReturnTypeOnItsOwnLine: 60
+
+# Don't sort using declarations
+SortUsingDeclarations: true
+
+# Standard
+Standard: c++17
+---
