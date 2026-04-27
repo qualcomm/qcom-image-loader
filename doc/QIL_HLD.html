@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QIL – High Level Design Document</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #1a202c;
+    background: #f7f8fc;
+  }
+
+  /* ── Layout ── */
+  #toc-sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
+    background: #1a1a2e; color: #e2e8f0;
+    overflow-y: auto; padding: 24px 0;
+    z-index: 100;
+    font-size: 12.5px;
+  }
+  #toc-sidebar .toc-brand {
+    padding: 0 20px 16px; color: #00c8ff;
+    font-weight: 700; font-size: 13px; letter-spacing: .5px;
+    border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: 12px;
+  }
+  #toc-sidebar a {
+    display: block; padding: 5px 20px; color: #b0bec5;
+    text-decoration: none; border-left: 3px solid transparent;
+    transition: all .15s;
+  }
+  #toc-sidebar a:hover { color: #fff; background: rgba(255,255,255,.05); }
+  #toc-sidebar a.l1 { font-weight: 600; color: #e2e8f0; margin-top: 6px; }
+  #toc-sidebar a.l2 { padding-left: 32px; font-size: 12px; }
+  #toc-sidebar a.active { border-left-color: #00c8ff; color: #fff; }
+
+  #main {
+    margin-left: 260px;
+    padding: 48px 64px 80px;
+    max-width: 1040px;
+  }
+
+  /* ── Cover ── */
+  #cover {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+    color: white; border-radius: 12px; padding: 56px 56px 48px;
+    margin-bottom: 48px;
+  }
+  #cover .doc-label {
+    display: inline-block; background: rgba(0,200,255,.15);
+    border: 1px solid rgba(0,200,255,.3); color: #00c8ff;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; padding: 4px 12px; border-radius: 20px;
+    margin-bottom: 20px;
+  }
+  #cover h1 {
+    font-size: 2.4rem; font-weight: 800; line-height: 1.15; margin-bottom: 8px;
+    background: linear-gradient(90deg, #fff 50%, #00c8ff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  #cover .subtitle { font-size: 1.1rem; color: #90a4ae; margin-bottom: 32px; }
+  #cover .meta-grid {
+    display: grid; grid-template-columns: repeat(4,1fr); gap: 20px;
+    border-top: 1px solid rgba(255,255,255,.1); padding-top: 24px;
+  }
+  #cover .meta-item label { display: block; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 1px; color: #546e7a; margin-bottom: 3px; }
+  #cover .meta-item span { font-size: 13px; color: #e2e8f0; }
+
+  /* ── Section headings ── */
+  h2 {
+    font-size: 1.45rem; font-weight: 700; color: #1a1a2e;
+    margin: 40px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+    display: flex; align-items: center; gap: 10px;
+  }
+  h2 .sec-num {
+    background: #3253dc; color: white; font-size: 11px; font-weight: 700;
+    width: 24px; height: 24px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  h3 {
+    font-size: 1.05rem; font-weight: 700; color: #2d3748;
+    margin: 24px 0 10px;
+    border-left: 3px solid #3253dc; padding-left: 10px;
+  }
+  h4 {
+    font-size: .92rem; font-weight: 700; color: #4a5568;
+    margin: 16px 0 6px;
+  }
+
+  p { margin-bottom: .85rem; color: #2d3748; }
+  ul, ol { margin: 0 0 .85rem 1.5rem; color: #2d3748; }
+  li { margin-bottom: 3px; }
+
+  /* ── Callout boxes ── */
+  .callout {
+    border-radius: 8px; padding: 14px 18px; margin: 16px 0;
+    font-size: 13px;
+  }
+  .callout-info  { background: #ebf4ff; border-left: 4px solid #3253dc; }
+  .callout-note  { background: #fefce8; border-left: 4px solid #eab308; }
+  .callout-warn  { background: #fff7ed; border-left: 4px solid #f97316; }
+
+  /* ── Architecture diagram ── */
+  .arch-stack {
+    display: flex; flex-direction: column; gap: 2px;
+    margin: 16px 0; border-radius: 10px; overflow: hidden;
+    border: 1px solid #e2e8f0;
+  }
+  .arch-row {
+    display: flex; align-items: stretch; min-height: 52px;
+  }
+  .arch-label {
+    width: 220px; flex-shrink: 0; background: #1a1a2e; color: #e2e8f0;
+    font-weight: 700; font-size: 12px; display: flex;
+    align-items: center; padding: 0 16px; letter-spacing: .3px;
+  }
+  .arch-content {
+    flex: 1; padding: 10px 16px; font-size: 12.5px;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  .arch-row.l1 .arch-content { background: #ebf4ff; }
+  .arch-row.l2 .arch-content { background: #e6fffa; }
+  .arch-row.l3 .arch-content { background: #f0fdf4; }
+  .arch-row.l4 .arch-content { background: #fff7ed; }
+  .arch-row.l5 .arch-content { background: #fdf4ff; }
+  .arch-row.l6 .arch-content { background: #fef2f2; }
+  .arch-badge {
+    background: white; border: 1px solid #e2e8f0; border-radius: 6px;
+    padding: 3px 10px; font-size: 11.5px; font-weight: 600; color: #374151;
+  }
+  .arch-arrow {
+    text-align: center; padding: 4px 0; font-size: 18px; color: #94a3b8;
+    background: #f8fafc;
+  }
+
+  /* ── Data flow ── */
+  .flow {
+    display: flex; flex-wrap: wrap; gap: 0; align-items: center;
+    margin: 16px 0;
+  }
+  .flow-step {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 10px 14px; text-align: center; min-width: 110px;
+  }
+  .flow-step .num {
+    width: 22px; height: 22px; border-radius: 50%; background: #3253dc;
+    color: white; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 5px;
+  }
+  .flow-step h4 { font-size: 11.5px; margin: 0 0 3px; color: #1a202c; }
+  .flow-step p  { font-size: 10.5px; margin: 0; color: #6b7280; line-height: 1.3; }
+  .flow-arrow { font-size: 18px; color: #00c8ff; padding: 0 4px; flex-shrink: 0; }
+
+  /* ── Tables ── */
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0;
+    font-size: 13px;
+  }
+  th {
+    background: #1a1a2e; color: white; padding: 9px 12px;
+    text-align: left; font-weight: 600; font-size: 12px;
+  }
+  td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  td code, th code { font-family: 'Consolas', monospace; font-size: 12px; }
+
+  /* ── Code ── */
+  pre {
+    background: #1a1a2e; color: #e2e8f0; border-radius: 8px;
+    padding: 16px 20px; overflow-x: auto; font-size: 12.5px;
+    font-family: 'Consolas', 'Courier New', monospace; margin: 12px 0;
+    line-height: 1.5;
+  }
+  code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12.5px; background: #f1f5f9; padding: 1px 5px;
+    border-radius: 4px; color: #c7254e;
+  }
+  pre code { background: none; padding: 0; color: inherit; }
+
+  /* ── Protocol boxes ── */
+  .proto-grid {
+    display: grid; grid-template-columns: 1fr auto 1fr; gap: 0;
+    align-items: start; margin: 16px 0;
+  }
+  .proto-box {
+    border-radius: 8px; padding: 16px;
+  }
+  .proto-box.sahara  { background: #ebf4ff; border: 1.5px solid #3253dc; }
+  .proto-box.fh      { background: #e6fffa; border: 1.5px solid #00b894; }
+  .proto-box h4      { margin: 0 0 10px; font-size: 13px; }
+  .proto-box.sahara h4 { color: #3253dc; }
+  .proto-box.fh h4   { color: #00b894; }
+  .proto-box ul      { margin-left: 1.2rem; font-size: 12.5px; }
+  .proto-mid {
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 12px; font-size: 24px; color: #00c8ff;
+  }
+
+  /* ── Component cards ── */
+  .component-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 12px 0;
+  }
+  .comp-card {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 14px 16px; border-top: 3px solid #3253dc;
+  }
+  .comp-card.green  { border-top-color: #00b894; }
+  .comp-card.orange { border-top-color: #f97316; }
+  .comp-card.purple { border-top-color: #7c3aed; }
+  .comp-card h4 { font-size: 13px; margin-bottom: 6px; }
+  .comp-card p, .comp-card li { font-size: 12.5px; color: #4a5568; }
+
+  /* ── Validation modes table ── */
+  .mode-row td:first-child { font-family: 'Consolas', monospace; font-weight: 700; color: #3253dc; }
+
+  /* ── Print ── */
+  @media print {
+    #toc-sidebar { display: none; }
+    #main { margin-left: 0; padding: 20px 32px; max-width: none; }
+    body { background: white; }
+    h2 { page-break-before: auto; }
+    pre { white-space: pre-wrap; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    #toc-sidebar { display: none; }
+    #main { margin-left: 0; padding: 24px 20px; }
+    .component-grid, .proto-grid { grid-template-columns: 1fr; }
+    #cover .meta-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR TOC ══ -->
+<nav id="toc-sidebar">
+  <div class="toc-brand">QIL · HLD Document</div>
+  <a class="l1" href="#s1">1. Introduction</a>
+  <a class="l2" href="#s1-1">1.1 Purpose</a>
+  <a class="l2" href="#s1-2">1.2 Scope</a>
+  <a class="l2" href="#s1-3">1.3 Audience</a>
+  <a class="l2" href="#s1-4">1.4 References</a>
+  <a class="l1" href="#s2">2. System Overview</a>
+  <a class="l2" href="#s2-1">2.1 Product Description</a>
+  <a class="l2" href="#s2-2">2.2 Distribution</a>
+  <a class="l2" href="#s2-3">2.3 Supported Platforms</a>
+  <a class="l1" href="#s3">3. Architecture</a>
+  <a class="l2" href="#s3-1">3.1 Layered Architecture</a>
+  <a class="l2" href="#s3-2">3.2 Source Tree</a>
+  <a class="l1" href="#s4">4. Component Design</a>
+  <a class="l2" href="#s4-1">4.1 CLI Layer</a>
+  <a class="l2" href="#s4-2">4.2 Public API</a>
+  <a class="l2" href="#s4-3">4.3 ImageTransfer</a>
+  <a class="l2" href="#s4-4">4.4 Protocol Layer</a>
+  <a class="l2" href="#s4-5">4.5 Communication Layer</a>
+  <a class="l2" href="#s4-6">4.6 Device Management</a>
+  <a class="l1" href="#s5">5. Protocol Design</a>
+  <a class="l2" href="#s5-1">5.1 SAHARA Protocol</a>
+  <a class="l2" href="#s5-2">5.2 Firehose Protocol</a>
+  <a class="l1" href="#s6">6. Data Flow</a>
+  <a class="l2" href="#s6-1">6.1 Firmware Flash Flow</a>
+  <a class="l2" href="#s6-2">6.2 VIP Download Flow</a>
+  <a class="l1" href="#s7">7. Interface Design</a>
+  <a class="l2" href="#s7-1">7.1 CLI Commands</a>
+  <a class="l2" href="#s7-2">7.2 CLI Arguments</a>
+  <a class="l2" href="#s7-3">7.3 SDK Public API</a>
+  <a class="l1" href="#s8">8. Validation Subsystem</a>
+  <a class="l1" href="#s9">9. Platform Abstraction</a>
+  <a class="l1" href="#s10">10. Technology Stack</a>
+  <a class="l1" href="#s11">11. Build System</a>
+  <a class="l1" href="#s12">12. Operational Aspects</a>
+  <a class="l2" href="#s12-1">12.1 Logging</a>
+  <a class="l2" href="#s12-2">12.2 Limitations</a>
+  <a class="l1" href="#s13">13. Security</a>
+  <a class="l1" href="#s14">14. Licensing</a>
+  <a class="l1" href="#s15">15. Glossary</a>
+</nav>
+
+<!-- ══ MAIN CONTENT ══ -->
+<main id="main">
+
+  <!-- COVER -->
+  <div id="cover">
+    <div class="doc-label">High Level Design Document</div>
+    <h1>Qualcomm Image Loader (QIL)</h1>
+    <div class="subtitle">Architecture, Components, Protocols &amp; Data Flow</div>
+    <div class="meta-grid">
+      <div class="meta-item"><label>Document Version</label><span>1.1</span></div>
+      <div class="meta-item"><label>Product Version</label><span>QIL v1.1</span></div>
+      <div class="meta-item"><label>Date</label><span>April 2026</span></div>
+      <div class="meta-item"><label>Status</label><span>Released</span></div>
+      <div class="meta-item"><label>Owner</label><span>Qualcomm Technologies, Inc.</span></div>
+      <div class="meta-item"><label>License</label><span>BSD 3-Clause</span></div>
+      <div class="meta-item"><label>Repository</label><span>github.com/qualcomm/qualcomm-image-loader</span></div>
+      <div class="meta-item"><label>Audience</label><span>Engineering / QA / Architecture</span></div>
+    </div>
+  </div>
+
+  <!-- ══ 1. INTRODUCTION ══ -->
+  <h2 id="s1"><span class="sec-num">1</span> Introduction</h2>
+
+  <h3 id="s1-1">1.1 Purpose</h3>
+  <p>This document describes the high-level design of the <strong>Qualcomm Image Loader (QIL)</strong> tool. It covers the system architecture, major components, protocol stack, data flows, external interfaces, and operational characteristics. It is intended to give architects, engineers, and QA teams a complete structural understanding of QIL without requiring a full review of the source code.</p>
+
+  <h3 id="s1-2">1.2 Scope</h3>
+  <p>This document covers:</p>
+  <ul>
+    <li>The layered software architecture of QIL</li>
+    <li>The design and responsibility of each major component</li>
+    <li>The SAHARA and Firehose protocol interaction model</li>
+    <li>The firmware flashing data flow from CLI invocation to device reset</li>
+    <li>The public SDK API surface</li>
+    <li>Firmware image validation subsystem</li>
+    <li>Platform abstraction and cross-platform support strategy</li>
+    <li>Build system, technology stack, and third-party dependencies</li>
+    <li>Operational concerns: logging, known limitations</li>
+    <li>Security considerations and licensing</li>
+  </ul>
+  <p>This document does <em>not</em> describe low-level implementation details or source-code-level design. Those are covered by in-code documentation and the detailed design specifications for individual modules.</p>
+
+  <h3 id="s1-3">1.3 Intended Audience</h3>
+  <table>
+    <thead><tr><th>Role</th><th>Relevant Sections</th></tr></thead>
+    <tbody>
+      <tr><td>Software Architect</td><td>All sections, particularly §3–§6</td></tr>
+      <tr><td>Application Engineer</td><td>§4, §5, §6, §7</td></tr>
+      <tr><td>QA / Test Engineer</td><td>§6, §7, §8, §12</td></tr>
+      <tr><td>Integration Engineer</td><td>§7.3, §9, §11</td></tr>
+      <tr><td>Security Reviewer</td><td>§8, §13</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="s1-4">1.4 References</h3>
+  <ul>
+    <li><code>README.md</code> — Build instructions and project overview</li>
+    <li><code>doc/User_Guide.md</code> — End-user operational guide</li>
+    <li><code>doc/CliCommandList.md</code> — Full CLI command reference</li>
+    <li><code>THIRD_PARTY_NOTICES.md</code> — Third-party component licenses</li>
+    <li><code>doc/LGPL-COMPLIANCE.md</code> — LGPL compliance guidance for libusb</li>
+    <li>Qualcomm SAHARA Protocol Specification (internal)</li>
+    <li>Qualcomm Firehose Protocol Specification (internal)</li>
+  </ul>
+
+  <!-- ══ 2. SYSTEM OVERVIEW ══ -->
+  <h2 id="s2"><span class="sec-num">2</span> System Overview</h2>
+
+  <h3 id="s2-1">2.1 Product Description</h3>
+  <p>QIL is a command-line firmware flashing tool that transfers, manages, and validates firmware images on Qualcomm-based mobile devices. It communicates with devices operating in <strong>Emergency Download (EDL) mode</strong> — a low-level USB mode exposed by Qualcomm chipsets that bypasses the normal operating system boot path, providing direct access to the device's flash storage subsystem.</p>
+  <p>QIL addresses two categories of use:</p>
+  <ul>
+    <li><strong>Development use:</strong> Developers flash custom ROM builds, recovery images, and individual partitions during bring-up and validation cycles.</li>
+    <li><strong>Manufacturing use:</strong> Factory tooling automates firmware provisioning and validation via the QIL SDK library integrated into host-side manufacturing test systems.</li>
+  </ul>
+
+  <h3 id="s2-2">2.2 Distribution</h3>
+  <p>QIL is distributed as a zipped package per supported platform, containing:</p>
+  <ul>
+    <li><strong>QIL executable</strong> (<code>qil</code>) — the standalone CLI binary</li>
+    <li><strong>QIL User Guide</strong> — PDF user documentation</li>
+    <li><strong>Qualcomm User Space Driver</strong> (optional) — pre-built USB driver for systems without Qualcomm kernel drivers</li>
+  </ul>
+  <p>The source code is also available at <code>https://github.com/qualcomm/qualcomm-image-loader</code>.</p>
+
+  <h3 id="s2-3">2.3 Supported Platforms</h3>
+  <table>
+    <thead><tr><th>Platform</th><th>Architecture</th><th>OS / Distro</th><th>Driver Model</th></tr></thead>
+    <tbody>
+      <tr><td>Windows x64</td><td>x86_64</td><td>Windows 11</td><td>QDS user-space driver (WinUSB / custom)</td></tr>
+      <tr><td>Windows ARM64</td><td>ARM64</td><td>Windows 11</td><td>QDS user-space driver</td></tr>
+      <tr><td>Linux x64</td><td>x86_64</td><td>Ubuntu 24.04+</td><td>Kernel USB CDC/ACM drivers</td></tr>
+      <tr><td>WSL</td><td>x86_64</td><td>Ubuntu 24.04+ (in WSL)</td><td>usbipd-win USB passthrough</td></tr>
+    </tbody>
+  </table>
+  <p>The supported storage memory types are: <strong>UFS</strong>, <strong>eMMC</strong>, <strong>NAND</strong>, <strong>SPINOR</strong>, and <strong>NVMe</strong>.</p>
+
+  <!-- ══ 3. ARCHITECTURE ══ -->
+  <h2 id="s3"><span class="sec-num">3</span> Architecture</h2>
+
+  <h3 id="s3-1">3.1 Layered Architecture</h3>
+  <p>QIL is organised into six horizontal layers. Each layer depends only on the layer directly below it, producing a clean, testable separation of concerns. Higher layers are platform-agnostic; platform specificity is confined to the bottom two layers.</p>
+
+  <div class="arch-stack">
+    <div class="arch-row l1">
+      <div class="arch-label">L1 · CLI Interface</div>
+      <div class="arch-content">
+        <span class="arch-badge">main.cpp</span>
+        <span class="arch-badge">CliParser</span>
+        <span class="arch-badge">CliCommands</span>
+        <span class="arch-badge">Progress / Spinner UI</span>
+        <span class="arch-badge">--help / --version</span>
+      </div>
+    </div>
+    <div class="arch-arrow">↕</div>
+    <div class="arch-row l2">
+      <div class="arch-label">L2 · Public API</div>
+      <div class="arch-content">
+        <span class="arch-badge">SoftwareDownload</span>
+        <span class="arch-badge">DeviceDiscovery</span>
+        <span class="arch-badge">ImageManagement</span>
+      </div>
+    </div>
+    <div class="arch-arrow">↕</div>
+    <div class="arch-row l3">
+      <div class="arch-label">L3 · Core Function</div>
+      <div class="arch-content">
+        <span class="arch-badge">ImageTransfer</span>
+        <span class="arch-badge">Callback / Event Handlers</span>
+        <span class="arch-badge">Validation Engine</span>
+        <span class="arch-badge">Digest Logic</span>
+      </div>
+    </div>
+    <div class="arch-arrow">↕</div>
+    <div class="arch-row l4">
+      <div class="arch-label">L4 · Protocol Layer</div>
+      <div class="arch-content">
+        <span class="arch-badge">SAHARA Protocol</span>
+        <span class="arch-badge">Firehose Protocol</span>
+        <span class="arch-badge">Firehose XML Loader</span>
+        <span class="arch-badge">RPC</span>
+      </div>
+    </div>
+    <div class="arch-arrow">↕</div>
+    <div class="arch-row l5">
+      <div class="arch-label">L5 · Communication</div>
+      <div class="arch-content">
+        <span class="arch-badge">USB I/O Abstraction</span>
+        <span class="arch-badge">QDS Common</span>
+        <span class="arch-badge">Buffer / DataPacket</span>
+        <span class="arch-badge">Connection Manager</span>
+      </div>
+    </div>
+    <div class="arch-arrow">↕</div>
+    <div class="arch-row l6">
+      <div class="arch-label">L6 · Platform / HW</div>
+      <div class="arch-content">
+        <span class="arch-badge">QDS Windows (qds_win)</span>
+        <span class="arch-badge">QDS Linux (qds_lnx)</span>
+        <span class="arch-badge">libusb-1.0</span>
+        <span class="arch-badge">Platform Abstraction</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <strong>Design Principle:</strong> Layers L1–L4 are fully platform-agnostic C++17. Platform-specific code is isolated entirely within L6, with L5 providing a portable interface over it. This makes porting QIL to new operating systems a matter of implementing a new L6 adapter only.
+  </div>
+
+  <h3 id="s3-2">3.2 Source Tree</h3>
+  <pre>QIL/
+├── CMakeLists.txt           # Top-level CMake configuration
+├── src/
+│   ├── cli/                 # L1: CLI parser, command handlers, main.cpp
+│   ├── exports/             # L2: Public SDK API surface
+│   ├── function/            # L3: ImageTransfer, callbacks, digest logic
+│   ├── protocol/            # L4: SAHARA and Firehose protocol engines
+│   │   └── firehose-loader/ #     XML command loader for Firehose
+│   ├── rpc/                 # L4: RPC implementations
+│   ├── communication/       # L5: USB I/O abstraction
+│   ├── device/              # L5: Connection, DeviceManager, Buffer
+│   ├── qds/                 # L6: Qualcomm Device Service
+│   │   ├── common/          #     Shared QDS utilities
+│   │   ├── libusb/          #     libusb interface wrapper
+│   │   ├── qds_win/         #     Windows-specific USB implementation
+│   │   └── qds_lnx/         #     Linux-specific USB implementation
+│   ├── platform/            # L6: OS-specific abstractions
+│   ├── callback/            # Event / progress callback definitions
+│   ├── tracker/             # Function call tracking utilities
+│   ├── report/              # Data reporting and structured logging
+│   ├── util/                # Threading, event queues, messaging
+│   └── external/            # Vendored third-party libraries
+│       ├── kLogger/         #     Header-only logging library
+│       ├── libxml2-win-build/
+│       └── libiconv-win-build/
+├── doc/                     # Documentation (User Guide, HLD, etc.)
+└── build/                   # CMake build output (generated)</pre>
+
+  <!-- ══ 4. COMPONENT DESIGN ══ -->
+  <h2 id="s4"><span class="sec-num">4</span> Component Design</h2>
+
+  <h3 id="s4-1">4.1 CLI Layer (<code>src/cli/</code>)</h3>
+  <p>The CLI layer is the topmost layer and serves as the sole entry point for end-users of the standalone executable.</p>
+  <div class="component-grid">
+    <div class="comp-card">
+      <h4>main.cpp</h4>
+      <p>Process entry point. Initialises the CLI parser, calls into CliCommands, handles top-level exception reporting, and sets the process exit code.</p>
+    </div>
+    <div class="comp-card">
+      <h4>CliParser</h4>
+      <p>Parses <code>argc/argv</code> into a structured command descriptor. Enforces required/optional argument rules per command. Emits formatted usage errors on bad input.</p>
+    </div>
+    <div class="comp-card">
+      <h4>CliCommands</h4>
+      <p>Dispatches the parsed command to the appropriate SDK API call. Translates SDK progress callbacks into terminal progress bars and status lines.</p>
+    </div>
+    <div class="comp-card">
+      <h4>Progress / Spinner UI</h4>
+      <p>Renders real-time transfer progress (percentage, speed, ETA) and operation spinners. Driven by event callbacks from the Core Function layer.</p>
+    </div>
+  </div>
+
+  <h3 id="s4-2">4.2 Public API Layer (<code>src/exports/</code>)</h3>
+  <p>The Public API layer exposes a stable, versioned interface for host-tool integration without exposing internal implementation details. All three classes are the sole integration points for external consumers of the QIL static library.</p>
+  <div class="component-grid">
+    <div class="comp-card green">
+      <h4>SoftwareDownload</h4>
+      <p>Top-level façade. Coordinates device discovery with image transfer operations. Accepts high-level flash parameters and routes them to ImageTransfer. Primary entry point for SDK consumers.</p>
+    </div>
+    <div class="comp-card green">
+      <h4>DeviceDiscovery</h4>
+      <p>Enumerates EDL-mode devices on all connected USB buses. Supports synchronous polling and asynchronous hot-plug callbacks. Returns device identifiers (serial numbers) used by subsequent operations.</p>
+    </div>
+    <div class="comp-card green">
+      <h4>ImageManagement</h4>
+      <p>Provides firmware operation primitives: flash build, erase partitions, read images, get flash info, and UFS provisioning. Each operation maps to a corresponding Firehose command sequence.</p>
+    </div>
+  </div>
+
+  <h3 id="s4-3">4.3 Core Function Layer (<code>src/function/</code>)</h3>
+  <p><strong>ImageTransfer</strong> is the central orchestration engine of QIL. It coordinates the two-stage SAHARA→Firehose protocol handoff, drives the partition write loop, manages the validation pipeline, and emits structured progress events throughout the lifecycle of a firmware operation.</p>
+  <p>Key responsibilities:</p>
+  <ul>
+    <li>Transition device from SAHARA mode to Firehose mode by uploading the EDL programmer image</li>
+    <li>Parse the flat build directory to locate <code>rawprogram.xml</code> and <code>patch.xml</code> files</li>
+    <li>Iterate through each partition descriptor and issue the corresponding Firehose write command</li>
+    <li>Invoke the validation engine post-transfer based on the selected <code>--validation-mode</code></li>
+    <li>Apply CDT image replacement when <code>--cdt</code> is specified</li>
+    <li>Issue the device reset command upon successful completion</li>
+    <li>Emit progress, error, and status events via registered callbacks to the CLI layer</li>
+  </ul>
+
+  <h3 id="s4-4">4.4 Protocol Layer (<code>src/protocol/</code>)</h3>
+  <p>The protocol layer implements the two EDL communication protocols used by Qualcomm devices. Both are binary/XML protocols transported over USB bulk transfer endpoints.</p>
+  <div class="component-grid">
+    <div class="comp-card orange">
+      <h4>SAHARA Protocol Engine</h4>
+      <p>Implements the Qualcomm SAHARA handshake and image-upload sequence. Responsible for sending the EDL programmer binary to the device and completing the transition to Firehose command mode. Handles Hello, Hello Response, Read Data, End Of Image Transfer, and Done packets.</p>
+    </div>
+    <div class="comp-card orange">
+      <h4>Firehose Protocol Engine</h4>
+      <p>Implements the full Firehose XML command-response protocol. Encodes partition configure, program, patch, erase, read, setbootablestoragedrive, and reset commands into XML payloads and parses device ACK/NAK responses.</p>
+    </div>
+    <div class="comp-card orange">
+      <h4>Firehose XML Loader (<code>firehose-loader/</code>)</h4>
+      <p>Parses <code>rawprogram.xml</code> and <code>patch.xml</code> command descriptor files using libxml2. Produces an ordered list of Firehose command objects consumed by the Firehose Protocol Engine. Supports multi-file semicolon-delimited lists.</p>
+    </div>
+    <div class="comp-card orange">
+      <h4>RPC Layer (<code>src/rpc/</code>)</h4>
+      <p>Provides a thin remote-procedure-call abstraction used internally for protocol command dispatch, enabling uniform encoding, timeout management, and retry semantics across both protocol engines.</p>
+    </div>
+  </div>
+
+  <h3 id="s4-5">4.5 Communication Layer (<code>src/communication/</code>)</h3>
+  <p>The communication layer provides a portable, blocking USB I/O interface over the platform-specific QDS implementation. It abstracts bulk read/write operations, manages USB endpoint selection, and handles ZLP (Zero Length Packet) signalling. The <code>--zlp-aware-host</code> flag adjusts ZLP behaviour for WSL environments where usbipd-win changes the USB packet delivery model.</p>
+
+  <h3 id="s4-6">4.6 Device Management Layer (<code>src/device/</code>)</h3>
+  <p>Device management tracks the full lifecycle of a connected EDL device from initial USB enumeration through flash completion.</p>
+  <ul>
+    <li><strong>Connection:</strong> Pairs a discovered device with a protocol handler and USB channel.</li>
+    <li><strong>Manager (DeviceManager):</strong> Maintains the per-device state machine; handles connect, disconnect, and protocol transition events.</li>
+    <li><strong>Buffer / DataPacket:</strong> Manages heap allocation for USB transfer buffers, enforcing alignment and size constraints required by the Firehose protocol.</li>
+  </ul>
+
+  <!-- ══ 5. PROTOCOL DESIGN ══ -->
+  <h2 id="s5"><span class="sec-num">5</span> Protocol Design</h2>
+
+  <h3 id="s5-1">5.1 SAHARA Protocol</h3>
+  <p>SAHARA (Secure Android Hardware Assisted Responsive Architecture) is a Qualcomm proprietary bootstrap protocol. When a device enters EDL mode it exposes USB interface <code>0x9008</code> and speaks SAHARA. The protocol's primary purpose in QIL is to upload the EDL programmer (a small Qualcomm-signed ELF binary) to the device's RAM, which then executes it and switches to Firehose mode.</p>
+
+  <h4>SAHARA Packet Exchange Sequence</h4>
+  <ol>
+    <li>Device sends <strong>Hello</strong> packet advertising its SAHARA version and mode</li>
+    <li>Host responds with <strong>Hello Response</strong>, acknowledging version and selecting IMAGE_TX mode</li>
+    <li>Device sends <strong>Read Data</strong> requests specifying byte offsets into the programmer image</li>
+    <li>Host streams the requested programmer image segments</li>
+    <li>Device sends <strong>End Of Image Transfer</strong> when programmer is fully received</li>
+    <li>Host sends <strong>Done</strong>; device executes the programmer and switches to Firehose mode</li>
+  </ol>
+
+  <div class="callout callout-note">
+    <strong>--skip-sahara flag:</strong> When a device is already in Firehose mode (e.g., because a prior command used <code>--reset=false</code> or failed mid-transfer), the SAHARA stage can be bypassed with <code>--skip-sahara</code> to save time.
+  </div>
+
+  <h3 id="s5-2">5.2 Firehose Protocol</h3>
+  <p>Firehose is the main image-transfer protocol. It is an XML-over-USB protocol: the host sends XML command elements and the device responds with XML <code>&lt;response&gt;</code> or <code>&lt;log&gt;</code> elements. All binary image data is transferred as raw USB bulk payloads following the XML <code>&lt;program&gt;</code> handshake.</p>
+
+  <div class="proto-grid">
+    <div class="proto-box sahara">
+      <h4>Stage 1 · SAHARA (Bootstrap)</h4>
+      <ul>
+        <li>Device powers on in EDL mode (USB 0x9008)</li>
+        <li>SAHARA Hello / Hello Response handshake</li>
+        <li>Host uploads EDL programmer binary</li>
+        <li>Device transitions to Firehose mode</li>
+      </ul>
+    </div>
+    <div class="proto-mid">⟶</div>
+    <div class="proto-box fh">
+      <h4>Stage 2 · Firehose (Transfer)</h4>
+      <ul>
+        <li>Configure storage parameters</li>
+        <li>Parse rawprogram.xml / patch.xml</li>
+        <li>Erase target partitions (optional)</li>
+        <li>Stream firmware image data</li>
+        <li>Apply XML patch commands</li>
+        <li>UFS provision (if requested)</li>
+        <li>Validate and reset device</li>
+      </ul>
+    </div>
+  </div>
+
+  <h4>Key Firehose XML Commands Used by QIL</h4>
+  <table>
+    <thead><tr><th>Command</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>&lt;configure&gt;</code></td><td>Initialises the Firehose session; negotiates max packet size, memory type, and ZLP settings</td></tr>
+      <tr><td><code>&lt;program&gt;</code></td><td>Writes a firmware image to specified LUN/partition/sector range</td></tr>
+      <tr><td><code>&lt;patch&gt;</code></td><td>Applies a binary patch at a specific byte offset within a written partition</td></tr>
+      <tr><td><code>&lt;erase&gt;</code></td><td>Erases a range of sectors on a specified LUN</td></tr>
+      <tr><td><code>&lt;read&gt;</code></td><td>Reads sectors from the device back to the host (used for validation readback)</td></tr>
+      <tr><td><code>&lt;getsha256digest&gt;</code></td><td>Requests the device to compute and return a SHA256 digest of a partition region</td></tr>
+      <tr><td><code>&lt;setbootablestoragedrive&gt;</code></td><td>Sets the active bootable partition/slot index</td></tr>
+      <tr><td><code>&lt;reset&gt;</code></td><td>Commands the device to reset and exit EDL mode</td></tr>
+      <tr><td><code>&lt;getStorageInfo&gt;</code></td><td>Queries device storage geometry (LUN count, sector size, capacity)</td></tr>
+      <tr><td><code>&lt;ufs-provision&gt;</code></td><td>Configures UFS logical unit parameters</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ══ 6. DATA FLOW ══ -->
+  <h2 id="s6"><span class="sec-num">6</span> Data Flow</h2>
+
+  <h3 id="s6-1">6.1 Standard Firmware Flash Flow (<code>--flash-build</code>)</h3>
+  <p>The following sequence describes a complete firmware flashing operation from CLI invocation to device reboot.</p>
+
+  <div class="flow">
+    <div class="flow-step"><div class="num">1</div><h4>CLI Parse</h4><p>Parse args, validate required params</p></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-step"><div class="num">2</div><h4>Device Discover</h4><p>Enumerate EDL-mode USB devices</p></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-step"><div class="num">3</div><h4>USB Connect</h4><p>Open USB channel via QDS / libusb</p></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-step"><div class="num">4</div><h4>SAHARA Stage</h4><p>Upload EDL programmer; enter Firehose</p></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-step"><div class="num">5</div><h4>Firehose Init</h4><p>Configure session; negotiate params</p></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-step"><div class="num">6</div><h4>XML Parse</h4><p>Load rawprogram.xml &amp; patch.xml</p></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-step"><div class="num">7</div><h4>Erase</h4><p>Erase target partitions (if --erase)</p></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-step"><div class="num">8</div><h4>Image Transfer</h4><p>Stream firmware partitions to device</p></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-step"><div class="num">9</div><h4>Patch Apply</h4><p>Apply partition patches from patch.xml</p></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-step"><div class="num">10</div><h4>Validation</h4><p>Readback / SHA256 check (optional)</p></div>
+    <div class="flow-arrow">›</div>
+    <div class="flow-step"><div class="num">11</div><h4>Device Reset</h4><p>Send reset; device boots new firmware</p></div>
+  </div>
+
+  <p>Throughout steps 3–11, the <strong>Callback / Event Handler</strong> layer continuously fires progress events that the CLI layer renders as a progress bar with percentage, transfer rate, and partition name.</p>
+
+  <h3 id="s6-2">6.2 VIP (Verified Image Programming) Download Flow</h3>
+  <p>VIP download extends the standard flash flow with a cryptographic pre-authorisation step. A digest file is created offline from the firmware build, then passed alongside the build during flashing. The device verifies the digest before accepting the images.</p>
+  <ol>
+    <li><strong>Offline (device not needed):</strong> Run <code>--create-flash-build-vip-digest</code> to produce a chained digest and signed digest pair from the flat build.</li>
+    <li><strong>Online:</strong> Run <code>--flash-build</code> with <code>--chained-digest</code> and <code>--signed-digest</code> pointing to the pre-created files. QIL transmits the digests to the device via Firehose before sending images; the device's secure boot subsystem validates them.</li>
+  </ol>
+
+  <div class="callout callout-warn">
+    <strong>Important:</strong> Chained and signed digest files must be generated from the exact same firmware build that will be flashed. Any mismatch will cause the device to reject the image transfer.
+  </div>
+
+  <!-- ══ 7. INTERFACE DESIGN ══ -->
+  <h2 id="s7"><span class="sec-num">7</span> Interface Design</h2>
+
+  <h3 id="s7-1">7.1 CLI Commands</h3>
+  <table>
+    <thead><tr><th>Category</th><th>Command</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="3"><strong>Flash Operations</strong></td><td><code>--flash-build</code></td><td>Flash a complete firmware build to the device</td></tr>
+      <tr><td><code>--send-image</code></td><td>Transfer a single binary image to a specified LUN/sector</td></tr>
+      <tr><td><code>--send-xml</code></td><td>Send a raw Firehose XML command file (e.g., peek commands)</td></tr>
+      <tr><td><strong>UFS Provisioning</strong></td><td><code>--ufs-provision</code></td><td>Configure UFS logical unit parameters from a provision XML</td></tr>
+      <tr><td rowspan="3"><strong>Create Digest Files</strong></td><td><code>--create-flash-build-vip-digest</code></td><td>Create VIP digest for flash build (offline, no device)</td></tr>
+      <tr><td><code>--create-ufs-provision-vip-digest</code></td><td>Create VIP digest for UFS provision (offline)</td></tr>
+      <tr><td><code>--create-validation-digest</code></td><td>Create build validation digest (offline)</td></tr>
+      <tr><td><strong>Erase</strong></td><td><code>--erase-partitions</code></td><td>Erase specified partitions on the device</td></tr>
+      <tr><td rowspan="2"><strong>Read from Device</strong></td><td><code>--read-images</code></td><td>Read partition images from device to host</td></tr>
+      <tr><td><code>--get-flash-info</code></td><td>Query device flash storage geometry and LUN information</td></tr>
+      <tr><td><strong>Query Devices</strong></td><td><code>--devices</code></td><td>List all connected EDL-mode devices</td></tr>
+      <tr><td rowspan="3"><strong>Control &amp; Utility</strong></td><td><code>--reset-device</code></td><td>Reset device from Firehose mode (used after <code>--reset=false</code>)</td></tr>
+      <tr><td><code>--version</code></td><td>Display QIL version</td></tr>
+      <tr><td><code>--help</code> / <code>-h</code></td><td>Display usage help</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="s7-2">7.2 Key CLI Arguments</h3>
+  <table>
+    <thead><tr><th>Argument</th><th>Value</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>--device</code></td><td><code>&lt;serial&gt;</code></td><td>Target device serial number from <code>--devices</code></td></tr>
+      <tr><td><code>--build</code></td><td><code>&lt;path&gt;</code></td><td>Absolute path to flat build directory</td></tr>
+      <tr><td><code>--memory-type</code></td><td><code>UFS|EMMC|NAND|SPINOR</code></td><td>Target flash storage type</td></tr>
+      <tr><td><code>--reset</code></td><td><code>true|false</code></td><td>Reset device after Firehose operations complete</td></tr>
+      <tr><td><code>--device-programmer</code></td><td><code>&lt;path&gt;</code></td><td>Path to EDL programmer ELF / SAHARA XML</td></tr>
+      <tr><td><code>--validation-mode</code></td><td><code>0–4</code></td><td>Post-flash image validation mode (see §8)</td></tr>
+      <tr><td><code>--slot</code></td><td><code>&lt;index&gt;</code></td><td>Memory slot (default 0)</td></tr>
+      <tr><td><code>--erase</code></td><td>(flag)</td><td>Erase target partitions before download</td></tr>
+      <tr><td><code>--partition-index</code></td><td><code>0,1,2,…</code></td><td>Comma-separated list of partition indexes</td></tr>
+      <tr><td><code>--skip-sahara</code></td><td>(flag)</td><td>Skip SAHARA stage (device already in Firehose mode)</td></tr>
+      <tr><td><code>--firehose-init-time</code></td><td><code>&lt;ms&gt;</code></td><td>Firehose init timeout (increase for slow devices)</td></tr>
+      <tr><td><code>--firehose-rx-timeout</code></td><td><code>&lt;ms&gt;</code></td><td>Firehose receive timeout</td></tr>
+      <tr><td><code>--zlp-aware-host</code></td><td><code>true|false</code></td><td>ZLP handling — set <code>false</code> for WSL hosts</td></tr>
+      <tr><td><code>--active-partition</code></td><td><code>&lt;index&gt;</code></td><td>Set active bootable partition (1 for UFS, 0 for eMMC)</td></tr>
+      <tr><td><code>--cdt</code></td><td><code>&lt;path&gt;</code></td><td>CDT binary to substitute during flash-build</td></tr>
+      <tr><td><code>--raw-program</code></td><td><code>xml;xml;…</code></td><td>Override rawprogram XML file list</td></tr>
+      <tr><td><code>--patch-program</code></td><td><code>xml;xml;…</code></td><td>Override patch XML file list</td></tr>
+      <tr><td><code>--chained-digest</code></td><td><code>&lt;path&gt;</code></td><td>Chained VIP digest file path</td></tr>
+      <tr><td><code>--signed-digest</code></td><td><code>&lt;path&gt;</code></td><td>Signed VIP digest file path</td></tr>
+      <tr><td><code>--validate-image-size</code></td><td>(flag)</td><td>Validate image sizes against rawprogram.xml before flash</td></tr>
+      <tr><td><code>--verbose</code></td><td>(flag)</td><td>Enable detailed debug log output</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="s7-3">7.3 SDK Public API</h3>
+  <p>External tools that embed QIL as a library link against the <code>SoftwareDownloadLib</code> static library and include the public headers from <code>src/exports/</code>. The three entry-point classes are:</p>
+  <table>
+    <thead><tr><th>Class</th><th>Key Methods</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>DeviceDiscovery</code></td>
+        <td><code>getDevices()</code><br><code>registerHotplugCallback()</code></td>
+        <td>Enumerate connected EDL devices; register for hot-plug events</td>
+      </tr>
+      <tr>
+        <td><code>ImageManagement</code></td>
+        <td><code>flashBuild()</code><br><code>erasePartitions()</code><br><code>readImages()</code><br><code>getFlashInfo()</code><br><code>ufsProvision()</code></td>
+        <td>High-level firmware operations; each method maps to a CLI command</td>
+      </tr>
+      <tr>
+        <td><code>SoftwareDownload</code></td>
+        <td><code>download()</code><br><code>registerProgressCallback()</code></td>
+        <td>Top-level SDK façade; preferred integration point for host tools</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>Progress and error events are delivered to callers via registered callback functions, enabling host tools to display transfer progress in their own UI.</p>
+
+  <!-- ══ 8. VALIDATION ══ -->
+  <h2 id="s8"><span class="sec-num">8</span> Validation Subsystem</h2>
+  <p>QIL implements a five-level validation framework selected at runtime via <code>--validation-mode</code>. Higher modes provide stronger integrity guarantees at the cost of additional transfer time (readback modes) or pre-computation effort (digest file modes).</p>
+  <table>
+    <thead><tr><th>Mode</th><th>Name</th><th>Mechanism</th><th>Digest File Required</th></tr></thead>
+    <tbody class="mode-row">
+      <tr><td>0</td><td>No Validation</td><td>No post-flash verification; default if not specified</td><td>No</td></tr>
+      <tr><td>1</td><td>Binary Readback</td><td>Read back raw binary from device → compute digest₁ → compute digest₂ from original file at runtime → compare</td><td>No</td></tr>
+      <tr><td>2</td><td>SHA256 Readback</td><td>Read SHA256 digest directly from device → compute digest₂ from original file at runtime → compare</td><td>No</td></tr>
+      <tr><td>3</td><td>Binary Readback + Digest File</td><td>Read back raw binary from device → compute digest₁ → load pre-created digest₂ from file → compare</td><td>Yes (<code>--create-validation-digest</code>)</td></tr>
+      <tr><td>4</td><td>SHA256 Readback + Digest File</td><td>Read SHA256 digest directly from device → load pre-created digest₂ from file → compare</td><td>Yes (<code>--create-validation-digest</code>)</td></tr>
+    </tbody>
+  </table>
+  <p>Modes 3 and 4 require a validation digest file to be pre-generated with <code>--create-validation-digest</code> before flashing. The digest file encodes expected hash values for each partition, enabling faster validation (no runtime digest computation from large image files) and offline authorisation of firmware builds.</p>
+  <p>When <code>--read-image-path</code> is provided alongside validation mode 1 or 3, the binary data read back from the device is saved to the specified directory for manual inspection.</p>
+  <p>The <code>--validate-image-size</code> flag adds a separate pre-transfer size check: it compares each firmware image file size against the partition size declared in <code>rawprogram.xml</code> and fails fast if any image exceeds the declared size, before any data is sent to the device.</p>
+
+  <!-- ══ 9. PLATFORM ABSTRACTION ══ -->
+  <h2 id="s9"><span class="sec-num">9</span> Platform Abstraction</h2>
+  <p>Cross-platform support is achieved through a two-part abstraction strategy:</p>
+  <ol>
+    <li><strong>QDS (Qualcomm Device Service):</strong> The USB hardware access layer has two concrete implementations — <code>qds_win</code> and <code>qds_lnx</code> — that implement an identical interface declared in <code>qds/common/</code>. The build system selects the correct implementation at compile time via CMake platform guards.</li>
+    <li><strong>Platform Abstraction Layer (<code>src/platform/</code>):</strong> Wraps OS-level primitives (threading, timers, path handling) behind a uniform interface used throughout the L3–L5 layers.</li>
+  </ol>
+  <table>
+    <thead><tr><th>Platform</th><th>USB Access</th><th>Driver Requirement</th><th>ZLP Behaviour</th></tr></thead>
+    <tbody>
+      <tr><td>Windows x64 / ARM64</td><td>QDS Windows (qds_win)</td><td>Qualcomm user-space driver or WDK WinUSB</td><td>ZLP-aware by default</td></tr>
+      <tr><td>Linux x86_64</td><td>QDS Linux (qds_lnx)</td><td>Kernel CDC/ACM driver; udev rules for permissions</td><td>ZLP-aware by default</td></tr>
+      <tr><td>WSL</td><td>QDS Linux (same binary)</td><td>usbipd-win passthrough</td><td>Set <code>--zlp-aware-host=false</code></td></tr>
+    </tbody>
+  </table>
+  <p>libusb-1.0 (statically linked) provides a portable USB bulk transfer API used by both QDS implementations for the actual byte-level I/O.</p>
+
+  <!-- ══ 10. TECHNOLOGY STACK ══ -->
+  <h2 id="s10"><span class="sec-num">10</span> Technology Stack</h2>
+  <table>
+    <thead><tr><th>Category</th><th>Component</th><th>Version</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Language</strong></td><td>C++</td><td>C++17</td><td>All QIL production source code</td></tr>
+      <tr><td><strong>Build System</strong></td><td>CMake</td><td>≥ 3.15</td><td>Cross-platform build configuration and target generation</td></tr>
+      <tr><td><strong>Windows Compiler</strong></td><td>MSVC</td><td>v142 (VS 2019)</td><td>Windows x64 and ARM64 compilation</td></tr>
+      <tr><td><strong>Linux Compiler</strong></td><td>GCC / G++</td><td>C++17-capable</td><td>Linux x86_64 compilation</td></tr>
+      <tr><td><strong>USB Library</strong></td><td>libusb</td><td>1.0.27</td><td>Cross-platform USB bulk I/O; statically linked</td></tr>
+      <tr><td><strong>XML Parsing</strong></td><td>libxml2</td><td>system / vendored</td><td>Parsing rawprogram.xml, patch.xml, provision.xml</td></tr>
+      <tr><td><strong>Character Encoding</strong></td><td>libiconv</td><td>vendored (Win)</td><td>Character encoding conversion for libxml2 on Windows</td></tr>
+      <tr><td><strong>Compression</strong></td><td>liblzma / libz</td><td>system</td><td>Transparent decompression of compressed firmware images</td></tr>
+      <tr><td><strong>Logging</strong></td><td>kLogger</td><td>internal</td><td>Structured, level-filtered log output; header-only</td></tr>
+      <tr><td><strong>Windows SDK</strong></td><td>Windows 11 SDK</td><td>10.0.22621.0</td><td>WinUSB and platform API headers for qds_win</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ══ 11. BUILD SYSTEM ══ -->
+  <h2 id="s11"><span class="sec-num">11</span> Build System</h2>
+  <p>QIL uses CMake as its build system. A single top-level <code>CMakeLists.txt</code> manages all platform targets through CMake generator expressions and conditional includes.</p>
+  <h4>Build Outputs</h4>
+  <table>
+    <thead><tr><th>Platform</th><th>Architecture</th><th>Output Path</th></tr></thead>
+    <tbody>
+      <tr><td>Windows</td><td>x64</td><td><code>build/Windows/x64/Release/bin/qil.exe</code></td></tr>
+      <tr><td>Windows</td><td>ARM64</td><td><code>build/Windows/ARM64/Release/bin/qil.exe</code></td></tr>
+      <tr><td>Linux</td><td>x86_64</td><td><code>build/Linux/x86_64/Release/bin/qil</code></td></tr>
+    </tbody>
+  </table>
+
+  <h4>Windows Build</h4>
+  <pre>mkdir build && cd build
+cmake .. -A x64               # or -A ARM64
+cmake --build . --config Release</pre>
+
+  <h4>Linux Build</h4>
+  <pre>mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build .</pre>
+
+  <p>Linux prerequisites: <code>cmake</code>, <code>libusb-1.0-0-dev</code>, <code>libudev-dev</code>, <code>uuid-dev</code>, <code>pkg-config</code>, <code>zlib1g-dev</code>, <code>build-essential</code>, <code>libxml2-dev</code>.</p>
+
+  <!-- ══ 12. OPERATIONAL ASPECTS ══ -->
+  <h2 id="s12"><span class="sec-num">12</span> Operational Aspects</h2>
+
+  <h3 id="s12-1">12.1 Logging</h3>
+  <p>QIL writes structured debug logs to persistent directories automatically during operation. The <code>--verbose</code> flag additionally echoes detailed debug output to stdout.</p>
+  <table>
+    <thead><tr><th>Platform</th><th>Log Directory</th></tr></thead>
+    <tbody>
+      <tr><td>Linux / WSL</td><td><code>/var/tmp/QFS/QIL/Logs/</code></td></tr>
+      <tr><td>Windows</td><td><code>C:\ProgramData\QFS\QIL\Logs\</code></td></tr>
+    </tbody>
+  </table>
+  <p>Logs capture the full protocol exchange, transfer statistics, validation results, and error diagnostics. They are the primary troubleshooting artefact when reporting issues.</p>
+
+  <h3 id="s12-2">12.2 Known Limitations</h3>
+  <table>
+    <thead><tr><th>#</th><th>Limitation</th><th>Workaround</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><strong>ADB and QIL cannot run simultaneously.</strong> Both tools contend for exclusive ownership of the USB device interface handle.</td>
+        <td>Stop ADB before using QIL: <code>adb kill-server</code></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><strong>EDL mode required for all device operations.</strong> QIL cannot communicate with devices in normal Android boot mode.</td>
+        <td>Use <code>adb reboot edl</code> or hardware volume-button sequence to enter EDL mode first.</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><strong>Single device at a time.</strong> Parallel multi-device flashing is not supported in the CLI.</td>
+        <td>Script sequential QIL invocations; or integrate via the SDK to manage device queuing in the host application.</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><strong>WSL ZLP behaviour.</strong> usbipd-win changes USB packet delivery semantics relative to native Linux.</td>
+        <td>Always pass <code>--zlp-aware-host=false</code> when running QIL inside WSL.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ══ 13. SECURITY ══ -->
+  <h2 id="s13"><span class="sec-num">13</span> Security Considerations</h2>
+  <ul>
+    <li><strong>EDL programmer authenticity:</strong> The EDL programmer binary uploaded during the SAHARA stage must be a Qualcomm-signed image. The device's secure boot ROM verifies the signature before executing the programmer. QIL does not bypass or modify this verification step.</li>
+    <li><strong>VIP (Verified Image Programming):</strong> The VIP digest mechanism (<code>--chained-digest</code> / <code>--signed-digest</code>) allows the device's secure boot subsystem to cryptographically verify firmware builds before they are written to flash. Deployment environments with strict firmware integrity requirements should use VIP mode.</li>
+    <li><strong>Physical access requirement:</strong> All QIL operations require physical USB connection to the target device in EDL mode. There is no network-accessible attack surface.</li>
+    <li><strong>Log file sensitivity:</strong> QIL logs may contain device serial numbers, firmware build paths, and partition contents (in binary readback validation modes). Log directories should be protected with appropriate OS-level access controls in production environments.</li>
+    <li><strong>libusb LGPL compliance:</strong> libusb is statically linked. See <code>doc/LGPL-COMPLIANCE.md</code> for redistribution obligations.</li>
+  </ul>
+
+  <!-- ══ 14. LICENSING ══ -->
+  <h2 id="s14"><span class="sec-num">14</span> Licensing</h2>
+  <p>QIL source code is licensed under the <strong>BSD 3-Clause Clear License</strong>. See <code>LICENSE.txt</code> for the full text.</p>
+  <table>
+    <thead><tr><th>Component</th><th>License</th><th>Link Method</th><th>Compliance Artifact</th></tr></thead>
+    <tbody>
+      <tr><td>QIL</td><td>BSD 3-Clause</td><td>N/A (source)</td><td><code>LICENSE.txt</code></td></tr>
+      <tr><td>libusb 1.0.27</td><td>LGPL-2.1-or-later</td><td>Static</td><td><code>LICENSES/libusb-1.0-LGPL-2.1.txt</code>, <code>doc/LGPL-COMPLIANCE.md</code></td></tr>
+      <tr><td>libxml2</td><td>MIT</td><td>Static / System</td><td><code>THIRD_PARTY_NOTICES.md</code></td></tr>
+      <tr><td>libiconv</td><td>LGPL-2.1</td><td>Static (Windows)</td><td><code>THIRD_PARTY_NOTICES.md</code></td></tr>
+      <tr><td>liblzma / libz</td><td>Public Domain / zlib</td><td>Static / System</td><td><code>THIRD_PARTY_NOTICES.md</code></td></tr>
+      <tr><td>kLogger</td><td>Internal</td><td>Header-only</td><td>Included in source</td></tr>
+    </tbody>
+  </table>
+  <p>Downstream distributors who ship QIL binaries are subject to LGPL §6 obligations for libusb. See <code>doc/LGPL-COMPLIANCE.md</code> for the complete guidance on what must be provided to end users.</p>
+
+  <!-- ══ 15. GLOSSARY ══ -->
+  <h2 id="s15"><span class="sec-num">15</span> Glossary</h2>
+  <table>
+    <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+    <tbody>
+      <tr><td><strong>CDT</strong></td><td>Configuration Data Table — a binary configuration blob flashed to a dedicated partition</td></tr>
+      <tr><td><strong>EDL</strong></td><td>Emergency Download mode — a Qualcomm chipset boot mode exposing USB interface 0x9008 for direct flash access</td></tr>
+      <tr><td><strong>eMMC</strong></td><td>Embedded MultiMediaCard — a NAND flash storage standard common in older Qualcomm devices</td></tr>
+      <tr><td><strong>Firehose</strong></td><td>Qualcomm XML-over-USB protocol for partition-level firmware transfer; runs in the device's EDL programmer context</td></tr>
+      <tr><td><strong>Flat Build</strong></td><td>A directory containing all firmware partition images plus rawprogram.xml and patch.xml descriptor files</td></tr>
+      <tr><td><strong>LUN</strong></td><td>Logical Unit Number — a UFS addressing unit analogous to a disk partition group</td></tr>
+      <tr><td><strong>NVMe</strong></td><td>Non-Volatile Memory Express — a high-performance storage protocol used in some Qualcomm platforms</td></tr>
+      <tr><td><strong>QDS</strong></td><td>Qualcomm Device Service — the platform-specific USB driver layer within QIL</td></tr>
+      <tr><td><strong>QIL</strong></td><td>Qualcomm Image Loader — the tool described by this document</td></tr>
+      <tr><td><strong>SAHARA</strong></td><td>Qualcomm bootstrap protocol used to upload the EDL programmer binary at EDL device entry</td></tr>
+      <tr><td><strong>SPINOR</strong></td><td>SPI NOR Flash — serial NOR flash used for boot-critical firmware storage</td></tr>
+      <tr><td><strong>UFS</strong></td><td>Universal Flash Storage — the primary high-speed NAND storage standard in modern Qualcomm mobile SoCs</td></tr>
+      <tr><td><strong>VIP</strong></td><td>Verified Image Programming — a secure flashing mode using pre-computed cryptographic digests</td></tr>
+      <tr><td><strong>ZLP</strong></td><td>Zero Length Packet — a USB bulk transfer termination signal; behaviour differs between native Linux and WSL USB passthrough</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:48px; padding-top:20px; border-top:1px solid #e2e8f0; color:#94a3b8; font-size:11.5px; text-align:center;">
+    Qualcomm Image Loader · High Level Design Document · v1.1 · April 2026 · Qualcomm Technologies, Inc. · BSD 3-Clause License
+  </div>
+
+</main>
+
+<script>
+  // Highlight active TOC item on scroll
+  const headers = document.querySelectorAll('h2[id], h3[id]');
+  const links = document.querySelectorAll('#toc-sidebar a');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector('#toc-sidebar a[href="#' + e.target.id + '"]');
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-10% 0px -80% 0px' });
+  headers.forEach(h => obs.observe(h));
+</script>
+</body>
+</html>

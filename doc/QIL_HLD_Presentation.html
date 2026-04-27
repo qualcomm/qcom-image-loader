@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QIL - High Level Design</title>
+<style>
+  :root {
+    --qc-blue: #3253DC;
+    --qc-dark: #1A1A2E;
+    --qc-accent: #00C8FF;
+    --qc-green: #00D4A1;
+    --qc-orange: #FF6B35;
+    --qc-gray: #F4F6FB;
+    --qc-text: #1A1A2E;
+    --card-shadow: 0 4px 24px rgba(50,83,220,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #E8ECF8;
+    color: var(--qc-text);
+  }
+
+  /* ── Navigation ── */
+  #nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--qc-dark);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 52px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+  #nav .brand { color: var(--qc-accent); font-weight: 700; font-size: 1rem; letter-spacing: 1px; }
+  #nav-controls { display: flex; gap: .5rem; align-items: center; }
+  #nav-controls button {
+    background: none; border: 1.5px solid var(--qc-blue); color: #fff;
+    border-radius: 6px; padding: 4px 14px; cursor: pointer; font-size: .85rem;
+    transition: background .2s, color .2s;
+  }
+  #nav-controls button:hover { background: var(--qc-blue); }
+  #slide-counter { color: #aaa; font-size: .85rem; }
+
+  /* ── Slides container ── */
+  #deck {
+    margin-top: 52px;
+    width: 100%; display: flex; flex-direction: column; align-items: center;
+    gap: 0;
+  }
+
+  .slide {
+    width: 100%; min-height: calc(100vh - 52px);
+    display: none; flex-direction: column; justify-content: center;
+    padding: 3rem 6rem;
+    background: white;
+    position: relative; overflow: hidden;
+  }
+  .slide.active { display: flex; }
+
+  /* ── Slide: title ── */
+  .slide-title {
+    background: linear-gradient(135deg, var(--qc-dark) 0%, #16213E 60%, #0F3460 100%);
+    color: white;
+    justify-content: center; align-items: center; text-align: center;
+  }
+  .slide-title .eyebrow {
+    color: var(--qc-accent); font-size: .95rem; letter-spacing: 3px;
+    text-transform: uppercase; margin-bottom: .75rem;
+  }
+  .slide-title h1 {
+    font-size: 3.4rem; font-weight: 800; line-height: 1.1;
+    margin-bottom: .5rem;
+    background: linear-gradient(90deg, #fff 40%, var(--qc-accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .slide-title .subtitle { font-size: 1.2rem; color: #b0bec5; margin-bottom: 2rem; }
+  .slide-title .meta { font-size: .85rem; color: #78909c; }
+  .title-grid {
+    display: flex; gap: 2rem; margin-top: 2.5rem; justify-content: center;
+    flex-wrap: wrap;
+  }
+  .title-badge {
+    background: rgba(0,200,255,.10); border: 1px solid rgba(0,200,255,.25);
+    border-radius: 8px; padding: .5rem 1.2rem; color: var(--qc-accent);
+    font-size: .85rem; font-weight: 600;
+  }
+
+  /* ── Generic slide header ── */
+  .slide-header {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--qc-gray); padding-bottom: 1rem;
+  }
+  .slide-header .icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--qc-blue); display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+  }
+  .slide-header h2 { font-size: 1.8rem; font-weight: 700; color: var(--qc-dark); }
+  .slide-num {
+    margin-left: auto; color: #b0bec5; font-size: .85rem;
+    font-weight: 600; letter-spacing: 1px;
+  }
+
+  /* ── Accent bar ── */
+  .accent-bar {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 5px; background: linear-gradient(180deg, var(--qc-blue), var(--qc-accent));
+  }
+
+  /* ── Cards ── */
+  .card-grid { display: grid; gap: 1.2rem; }
+  .card-grid-2 { grid-template-columns: 1fr 1fr; }
+  .card-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .card-grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  .card {
+    background: var(--qc-gray); border-radius: 12px; padding: 1.4rem;
+    border-left: 4px solid var(--qc-blue);
+    box-shadow: var(--card-shadow);
+    transition: transform .2s;
+  }
+  .card:hover { transform: translateY(-2px); }
+  .card.green  { border-left-color: var(--qc-green); }
+  .card.orange { border-left-color: var(--qc-orange); }
+  .card.accent { border-left-color: var(--qc-accent); }
+
+  .card h3 { font-size: 1rem; font-weight: 700; margin-bottom: .5rem; color: var(--qc-dark); }
+  .card p, .card li { font-size: .88rem; color: #4a5568; line-height: 1.55; }
+  .card ul { padding-left: 1.1rem; }
+  .card .tag {
+    display: inline-block; font-size: .72rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px; margin-bottom: .5rem;
+    background: rgba(50,83,220,.12); color: var(--qc-blue);
+  }
+  .card.green  .tag { background: rgba(0,212,161,.12); color: #00a87e; }
+  .card.orange .tag { background: rgba(255,107,53,.12); color: #cc4a1a; }
+  .card.accent .tag { background: rgba(0,200,255,.12); color: #0099cc; }
+
+  /* ── Architecture box ── */
+  .arch-diagram {
+    display: flex; flex-direction: column; gap: .5rem; align-items: center;
+    margin-top: .5rem;
+  }
+  .arch-layer {
+    width: 100%; border-radius: 10px; padding: .75rem 1.4rem;
+    text-align: center; position: relative;
+    font-weight: 600; font-size: .9rem;
+  }
+  .arch-layer.l1 { background: linear-gradient(90deg,#3253DC,#5b79ff); color: white; }
+  .arch-layer.l2 { background: linear-gradient(90deg,#00C8FF,#00a0d4); color: white; }
+  .arch-layer.l3 { background: linear-gradient(90deg,#00D4A1,#00a880); color: white; }
+  .arch-layer.l4 { background: linear-gradient(90deg,#FF6B35,#cc4a1a); color: white; }
+  .arch-layer.l5 { background: linear-gradient(90deg,#7c3aed,#5b21b6); color: white; }
+  .arch-layer small { font-weight: 400; font-size: .78rem; opacity: .9; display: block; margin-top: 2px; }
+  .arch-arrow { color: #b0bec5; font-size: 1.2rem; }
+
+  /* ── Protocol flow ── */
+  .protocol-flow {
+    display: flex; align-items: center; gap: 0; width: 100%; margin-top: .5rem;
+  }
+  .proto-box {
+    flex: 1; border-radius: 10px; padding: 1.2rem 1rem; text-align: center;
+    background: var(--qc-gray);
+  }
+  .proto-box h4 { font-size: .95rem; font-weight: 700; margin-bottom: .5rem; }
+  .proto-box ul { font-size: .78rem; color: #4a5568; list-style: none; padding: 0; }
+  .proto-box li::before { content: "▸ "; color: var(--qc-blue); }
+  .proto-box.sahara { border: 2px solid var(--qc-blue); }
+  .proto-box.sahara h4 { color: var(--qc-blue); }
+  .proto-box.firehose { border: 2px solid var(--qc-green); }
+  .proto-box.firehose h4 { color: #00a87e; }
+  .proto-arrow {
+    font-size: 2rem; color: var(--qc-accent); padding: 0 .5rem; flex-shrink: 0;
+  }
+
+  /* ── Pipeline steps ── */
+  .pipeline {
+    display: flex; align-items: stretch; gap: 0; width: 100%; margin-top: .5rem;
+    overflow-x: auto;
+  }
+  .pipe-step {
+    flex: 1; min-width: 120px; border-radius: 10px;
+    background: var(--qc-gray); padding: .9rem .7rem; text-align: center;
+    border-top: 3px solid var(--qc-blue); font-size: .82rem;
+  }
+  .pipe-step .num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--qc-blue); color: white; font-weight: 700; font-size: .75rem;
+    display: flex; align-items: center; justify-content: center; margin: 0 auto .4rem;
+  }
+  .pipe-step h4 { font-size: .82rem; font-weight: 700; margin-bottom: .3rem; }
+  .pipe-step p  { font-size: .74rem; color: #4a5568; line-height: 1.4; }
+  .pipe-arrow { color: var(--qc-accent); font-size: 1.3rem; align-self: center; padding: 0 .1rem; flex-shrink: 0; }
+
+  /* ── Table ── */
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  th {
+    background: var(--qc-blue); color: white; padding: .65rem 1rem;
+    text-align: left; font-weight: 600;
+  }
+  td { padding: .6rem 1rem; border-bottom: 1px solid #e2e8f0; }
+  tr:nth-child(even) td { background: var(--qc-gray); }
+
+  /* ── Two-col text ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+
+  /* ── Summary slide ── */
+  .slide-summary {
+    background: linear-gradient(135deg, var(--qc-dark), #16213E);
+    color: white;
+  }
+  .slide-summary .slide-header h2 { color: white; }
+  .slide-summary .slide-header { border-color: rgba(255,255,255,.1); }
+  .summary-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.2rem; margin-top: 1rem; }
+  .summary-card {
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+    border-radius: 12px; padding: 1.4rem; text-align: center;
+  }
+  .summary-card .big { font-size: 2.2rem; font-weight: 800; color: var(--qc-accent); }
+  .summary-card p { font-size: .82rem; color: #b0bec5; margin-top: .3rem; }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .slide { padding: 2rem 1.5rem; }
+    .card-grid-3, .card-grid-4 { grid-template-columns: 1fr 1fr; }
+    .card-grid-2 { grid-template-columns: 1fr; }
+    .slide-title h1 { font-size: 2.2rem; }
+    .summary-grid { grid-template-columns: 1fr 1fr; }
+    .two-col { grid-template-columns: 1fr; }
+    .protocol-flow { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<div id="nav">
+  <span class="brand">QIL · High Level Design</span>
+  <div id="nav-controls">
+    <button onclick="prevSlide()">&#8592; Prev</button>
+    <span id="slide-counter">1 / 10</span>
+    <button onclick="nextSlide()">Next &#8594;</button>
+  </div>
+</div>
+
+<div id="deck">
+
+  <!-- ════════════ SLIDE 1: Title ════════════ -->
+  <section class="slide slide-title active" id="s1">
+    <div class="eyebrow">Qualcomm Internal · 2026</div>
+    <h1>Qualcomm Image Loader</h1>
+    <div class="subtitle">High Level Design — Architecture &amp; Data Flow</div>
+    <div class="title-grid">
+      <span class="title-badge">Firmware Flashing</span>
+      <span class="title-badge">Cross-Platform</span>
+      <span class="title-badge">SAHARA / Firehose</span>
+      <span class="title-badge">C++17 · CMake</span>
+      <span class="title-badge">Windows &amp; Linux</span>
+      <span class="title-badge">UFS · eMMC · NVMe</span>
+    </div>
+    <div class="meta" style="margin-top:2.5rem">QIL v1.1 &nbsp;·&nbsp; April 2026 &nbsp;·&nbsp; Qualcomm Technologies, Inc.</div>
+  </section>
+
+  <!-- ════════════ SLIDE 2: Overview ════════════ -->
+  <section class="slide" id="s2">
+    <div class="accent-bar"></div>
+    <div class="slide-header">
+      <div class="icon">&#128270;</div>
+      <h2>Project Overview</h2>
+      <span class="slide-num">2 / 10</span>
+    </div>
+    <div class="card-grid card-grid-2">
+      <div class="card">
+        <span class="tag">PURPOSE</span>
+        <h3>What is QIL?</h3>
+        <p>QIL is a professional <strong>firmware image flashing tool</strong> for Qualcomm-based devices. It enables engineers to transfer, validate, and manage firmware images to mobile devices operating in Emergency Download (EDL) mode.</p>
+      </div>
+      <div class="card green">
+        <span class="tag">AUDIENCE</span>
+        <h3>Who Uses It?</h3>
+        <p>Software engineers and manufacturing teams use QIL to flash custom ROMs, firmware updates, recovery images, and perform storage provisioning on Qualcomm-chipset devices during development and production.</p>
+      </div>
+      <div class="card accent">
+        <span class="tag">DEPLOYMENT</span>
+        <h3>Distribution Model</h3>
+        <ul>
+          <li>Standalone <strong>CLI executable</strong> (qil)</li>
+          <li>Static <strong>SDK library</strong> for third-party integration</li>
+          <li>Pre-built binaries: Windows x64/ARM64 &amp; Linux x86_64</li>
+          <li>WSL (Windows Subsystem for Linux) support</li>
+        </ul>
+      </div>
+      <div class="card orange">
+        <span class="tag">SCOPE</span>
+        <h3>Supported Storage Types</h3>
+        <ul>
+          <li>UFS (Universal Flash Storage)</li>
+          <li>eMMC (embedded MultiMediaCard)</li>
+          <li>NAND flash memory</li>
+          <li>SPINOR (SPI NOR Flash)</li>
+          <li>NVMe (Non-Volatile Memory Express)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ SLIDE 3: Architecture ════════════ -->
+  <section class="slide" id="s3">
+    <div class="accent-bar"></div>
+    <div class="slide-header">
+      <div class="icon">&#127963;</div>
+      <h2>System Architecture</h2>
+      <span class="slide-num">3 / 10</span>
+    </div>
+    <div class="two-col" style="align-items:center">
+      <div class="arch-diagram">
+        <div class="arch-layer l1">CLI Interface<small>Command parser · Progress UI · Handlers</small></div>
+        <div class="arch-arrow">&#8595;</div>
+        <div class="arch-layer l2">Exported Public API<small>DeviceDiscovery · ImageManagement · SoftwareDownload</small></div>
+        <div class="arch-arrow">&#8595;</div>
+        <div class="arch-layer l3">Core Function Layer<small>ImageTransfer · Callback Orchestration</small></div>
+        <div class="arch-arrow">&#8595;</div>
+        <div class="arch-layer l4">Protocol Layer<small>SAHARA Protocol &nbsp;|&nbsp; Firehose Protocol</small></div>
+        <div class="arch-arrow">&#8595;</div>
+        <div class="arch-layer l5">Communication &amp; Device Layer<small>USB I/O · QDS (Win/Linux) · libusb-1.0 · DeviceManager</small></div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:1rem;">
+        <div class="card">
+          <h3>&#9679; CLI Interface</h3>
+          <p>Parses user commands, routes to handlers, and renders progress spinners and status output.</p>
+        </div>
+        <div class="card green">
+          <h3>&#9679; Public API Layer</h3>
+          <p>Stable SDK surface for external tool integration — device discovery, image ops, and firmware transfer.</p>
+        </div>
+        <div class="card accent">
+          <h3>&#9679; Protocol Layer</h3>
+          <p>Dual SAHARA → Firehose pipeline. SAHARA bootstraps the device; Firehose performs actual image transfer.</p>
+        </div>
+        <div class="card orange">
+          <h3>&#9679; Communication Layer</h3>
+          <p>Platform-specific USB drivers (QDS) wrapped by libusb for cross-OS hardware access.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ SLIDE 4: Key Modules ════════════ -->
+  <section class="slide" id="s4">
+    <div class="accent-bar"></div>
+    <div class="slide-header">
+      <div class="icon">&#128193;</div>
+      <h2>Key Modules</h2>
+      <span class="slide-num">4 / 10</span>
+    </div>
+    <div class="card-grid card-grid-3">
+      <div class="card">
+        <span class="tag">CLI</span>
+        <h3>CLI Layer</h3>
+        <ul>
+          <li>main.cpp — entry point</li>
+          <li>CliParser — argument parsing</li>
+          <li>CliCommands — command dispatch</li>
+          <li>Progress UI / spinner</li>
+        </ul>
+      </div>
+      <div class="card green">
+        <span class="tag">EXPORTS</span>
+        <h3>Public API</h3>
+        <ul>
+          <li>SoftwareDownload — SDK façade</li>
+          <li>DeviceDiscovery — enumeration</li>
+          <li>ImageManagement — operations</li>
+        </ul>
+      </div>
+      <div class="card accent">
+        <span class="tag">FUNCTION</span>
+        <h3>ImageTransfer</h3>
+        <ul>
+          <li>Main transfer orchestration</li>
+          <li>Stage coordination</li>
+          <li>Validation logic (modes 0–4)</li>
+          <li>Event/progress emission</li>
+        </ul>
+      </div>
+      <div class="card orange">
+        <span class="tag">PROTOCOL</span>
+        <h3>SAHARA</h3>
+        <ul>
+          <li>EDL bootstrap sequence</li>
+          <li>Device handshake</li>
+          <li>Programmer image upload</li>
+          <li>Mode transition to Firehose</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag">PROTOCOL</span>
+        <h3>Firehose</h3>
+        <ul>
+          <li>XML command parser</li>
+          <li>Partition write / erase</li>
+          <li>UFS provisioning</li>
+          <li>Read &amp; digest operations</li>
+        </ul>
+      </div>
+      <div class="card green">
+        <span class="tag">DEVICE</span>
+        <h3>Device &amp; Comm</h3>
+        <ul>
+          <li>USB I/O abstraction</li>
+          <li>QDS Windows/Linux impl.</li>
+          <li>Connection management</li>
+          <li>Buffer / DataPacket mgmt</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ SLIDE 5: Protocol Stack ════════════ -->
+  <section class="slide" id="s5">
+    <div class="accent-bar"></div>
+    <div class="slide-header">
+      <div class="icon">&#128260;</div>
+      <h2>Dual-Protocol EDL Communication</h2>
+      <span class="slide-num">5 / 10</span>
+    </div>
+    <p style="color:#4a5568; font-size:.9rem; margin-bottom:1.2rem;">Device firmware transfer operates as a two-stage protocol handoff — SAHARA bootstraps the device, Firehose performs the heavy-lifting image transfer.</p>
+    <div class="protocol-flow">
+      <div class="proto-box sahara">
+        <h4>Stage 1 · SAHARA</h4>
+        <ul>
+          <li>Device powers on in EDL mode</li>
+          <li>Host detects device on USB</li>
+          <li>Sends Hello/Hello Response</li>
+          <li>Transfers EDL programmer binary</li>
+          <li>Device executes programmer</li>
+          <li>Transitions to Firehose mode</li>
+        </ul>
+      </div>
+      <div class="proto-arrow">&#8594;</div>
+      <div class="proto-box firehose">
+        <h4>Stage 2 · Firehose</h4>
+        <ul>
+          <li>Parses rawprogram.xml &amp; patch.xml</li>
+          <li>Configures storage parameters</li>
+          <li>Erases target partitions</li>
+          <li>Transfers firmware image data</li>
+          <li>Applies patches &amp; digests</li>
+          <li>Optionally provisions UFS</li>
+          <li>Issues device reset to boot</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-grid card-grid-2" style="margin-top:1.2rem;">
+      <div class="card accent">
+        <h3>XML-Driven Commands</h3>
+        <p>Firehose commands are described in <code>rawprogram.xml</code> and <code>patch.xml</code>. This allows firmware teams to ship configuration alongside the image without recompiling QIL.</p>
+      </div>
+      <div class="card orange">
+        <h3>Device Reset &amp; Boot</h3>
+        <p>After transfer, QIL sends a Firehose reset command. The device exits EDL and boots the newly flashed firmware image, confirming a successful flash cycle.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ SLIDE 6: Data Flow ════════════ -->
+  <section class="slide" id="s6">
+    <div class="accent-bar"></div>
+    <div class="slide-header">
+      <div class="icon">&#128202;</div>
+      <h2>Firmware Flash Data Flow</h2>
+      <span class="slide-num">6 / 10</span>
+    </div>
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="num">1</div>
+        <h4>CLI Parse</h4>
+        <p>User invokes <code>qil --flash-build</code> with arguments</p>
+      </div>
+      <div class="pipe-arrow">&#8250;</div>
+      <div class="pipe-step">
+        <div class="num">2</div>
+        <h4>Device Discover</h4>
+        <p>Enumerate connected USB devices in EDL mode</p>
+      </div>
+      <div class="pipe-arrow">&#8250;</div>
+      <div class="pipe-step">
+        <div class="num">3</div>
+        <h4>USB Connect</h4>
+        <p>QDS opens USB channel via libusb</p>
+      </div>
+      <div class="pipe-arrow">&#8250;</div>
+      <div class="pipe-step">
+        <div class="num">4</div>
+        <h4>SAHARA Boot</h4>
+        <p>Upload programmer, transition to Firehose</p>
+      </div>
+      <div class="pipe-arrow">&#8250;</div>
+      <div class="pipe-step">
+        <div class="num">5</div>
+        <h4>XML Parse</h4>
+        <p>Load rawprogram.xml &amp; patch.xml commands</p>
+      </div>
+      <div class="pipe-arrow">&#8250;</div>
+      <div class="pipe-step">
+        <div class="num">6</div>
+        <h4>Image Transfer</h4>
+        <p>Stream firmware partitions via Firehose</p>
+      </div>
+      <div class="pipe-arrow">&#8250;</div>
+      <div class="pipe-step">
+        <div class="num">7</div>
+        <h4>Validation</h4>
+        <p>SHA256 / binary readback digest check</p>
+      </div>
+      <div class="pipe-arrow">&#8250;</div>
+      <div class="pipe-step">
+        <div class="num">8</div>
+        <h4>Device Reset</h4>
+        <p>Reset device; normal boot begins</p>
+      </div>
+    </div>
+    <div class="card-grid card-grid-3" style="margin-top:1.2rem;">
+      <div class="card">
+        <h3>Event-Driven Progress</h3>
+        <p>Callbacks fire at each stage boundary, driving the CLI progress bar and log output in real time.</p>
+      </div>
+      <div class="card green">
+        <h3>Multi-Device Support</h3>
+        <p>DeviceManager can track multiple connected devices simultaneously, each with its own transfer state machine.</p>
+      </div>
+      <div class="card accent">
+        <h3>Validation Modes 0–4</h3>
+        <p>From no validation (mode 0) through full binary readback + SHA256 comparison (mode 4), selectable at runtime.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ SLIDE 7: Technology Stack ════════════ -->
+  <section class="slide" id="s7">
+    <div class="accent-bar"></div>
+    <div class="slide-header">
+      <div class="icon">&#9881;</div>
+      <h2>Technology Stack</h2>
+      <span class="slide-num">7 / 10</span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Category</th><th>Technology</th><th>Role</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Language</strong></td><td>C++17</td><td>All production source code</td><td>Modern C++ standards throughout</td></tr>
+        <tr><td><strong>Build System</strong></td><td>CMake 3.15+</td><td>Cross-platform build configuration</td><td>Out-of-tree builds; multi-platform targets</td></tr>
+        <tr><td><strong>USB Library</strong></td><td>libusb 1.0.27</td><td>Cross-platform USB I/O</td><td>LGPL-2.1; statically linked</td></tr>
+        <tr><td><strong>XML Parsing</strong></td><td>libxml2 + libiconv</td><td>Firehose command parsing</td><td>rawprogram.xml / patch.xml</td></tr>
+        <tr><td><strong>Compression</strong></td><td>liblzma · libz</td><td>Image compression support</td><td>Transparent decompression during transfer</td></tr>
+        <tr><td><strong>Logging</strong></td><td>kLogger</td><td>Structured log output</td><td>Header-only custom library</td></tr>
+        <tr><td><strong>Windows Build</strong></td><td>MSVC v142 (VS 2019)</td><td>Windows x64 &amp; ARM64 compilation</td><td>WDK for driver-level USB access</td></tr>
+        <tr><td><strong>Linux Build</strong></td><td>GCC / G++</td><td>Linux x86_64 compilation</td><td>Kernel USB drivers (CDC/ACM)</td></tr>
+        <tr><td><strong>License</strong></td><td>BSD 3-Clause</td><td>QIL source license</td><td>LGPL compliance for libusb</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ════════════ SLIDE 8: Platform Support ════════════ -->
+  <section class="slide" id="s8">
+    <div class="accent-bar"></div>
+    <div class="slide-header">
+      <div class="icon">&#128187;</div>
+      <h2>Cross-Platform Support</h2>
+      <span class="slide-num">8 / 10</span>
+    </div>
+    <div class="card-grid card-grid-3" style="margin-bottom:1.2rem;">
+      <div class="card">
+        <span class="tag">WINDOWS x64</span>
+        <h3>Windows x64</h3>
+        <ul>
+          <li>MSVC v142 (VS 2019) compiler</li>
+          <li>User-space QDS driver model</li>
+          <li>WinUSB / custom driver layer</li>
+          <li>qds_win platform implementation</li>
+          <li>Native ARM64 Windows support</li>
+        </ul>
+      </div>
+      <div class="card green">
+        <span class="tag">LINUX x86_64</span>
+        <h3>Linux x86_64</h3>
+        <ul>
+          <li>GCC/G++ compiler toolchain</li>
+          <li>Kernel USB CDC/ACM drivers</li>
+          <li>qds_lnx platform implementation</li>
+          <li>udev rules for device permissions</li>
+          <li>Full parity with Windows feature set</li>
+        </ul>
+      </div>
+      <div class="card accent">
+        <span class="tag">WSL</span>
+        <h3>Windows Subsystem for Linux</h3>
+        <ul>
+          <li>Linux binary runs inside WSL</li>
+          <li>USB passthrough via usbipd-win</li>
+          <li>Transparent device forwarding</li>
+          <li>Same Linux build artifacts</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-grid card-grid-2">
+      <div class="card orange">
+        <h3>Platform Abstraction Layer</h3>
+        <p>OS-specific code is isolated in <code>src/platform/</code> and <code>src/qds/</code>. The core SAHARA, Firehose, and ImageTransfer modules are fully platform-agnostic, enabling clean port to new OS targets.</p>
+      </div>
+      <div class="card">
+        <h3>Build Matrix</h3>
+        <p>CMake generates separate build trees per OS/architecture. A single top-level CMakeLists.txt configures all targets with conditional platform guards.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ SLIDE 9: Key Operations ════════════ -->
+  <section class="slide" id="s9">
+    <div class="accent-bar"></div>
+    <div class="slide-header">
+      <div class="icon">&#128736;</div>
+      <h2>Key Operations &amp; SDK API</h2>
+      <span class="slide-num">9 / 10</span>
+    </div>
+    <div class="two-col">
+      <div>
+        <h3 style="margin-bottom:.8rem; font-size:1rem; color:#4a5568; text-transform:uppercase; letter-spacing:.5px;">CLI Commands</h3>
+        <table>
+          <thead><tr><th>Flag</th><th>Operation</th></tr></thead>
+          <tbody>
+            <tr><td><code>--flash-build</code></td><td>Full firmware flash with optional validation</td></tr>
+            <tr><td><code>--devices</code></td><td>List connected EDL-mode devices</td></tr>
+            <tr><td><code>--get-flash-info</code></td><td>Query device storage capabilities</td></tr>
+            <tr><td><code>--erase-partitions</code></td><td>Selective partition erasure</td></tr>
+            <tr><td><code>--ufs-provision</code></td><td>Configure UFS storage parameters</td></tr>
+            <tr><td><code>--send-image</code></td><td>Transfer custom binary to partition</td></tr>
+            <tr><td><code>--send-xml</code></td><td>Send raw Firehose XML commands</td></tr>
+            <tr><td><code>--read-images</code></td><td>Read partition data from device</td></tr>
+            <tr><td><code>--create-validation-digest</code></td><td>Pre-compute validation checksums</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h3 style="margin-bottom:.8rem; font-size:1rem; color:#4a5568; text-transform:uppercase; letter-spacing:.5px;">SDK Public API</h3>
+        <div class="card" style="margin-bottom:.8rem;">
+          <span class="tag">DeviceDiscovery</span>
+          <p>Enumerate, monitor, and filter connected Qualcomm devices. Supports async callbacks for hot-plug events.</p>
+        </div>
+        <div class="card green" style="margin-bottom:.8rem;">
+          <span class="tag">ImageManagement</span>
+          <p>High-level firmware operations: flash, erase, read, validate. Returns structured status and progress events.</p>
+        </div>
+        <div class="card accent">
+          <span class="tag">SoftwareDownload</span>
+          <p>Top-level SDK façade. Coordinates discovery and transfer, providing a single integration point for host tools.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ SLIDE 10: Summary ════════════ -->
+  <section class="slide slide-summary" id="s10">
+    <div class="slide-header">
+      <div class="icon" style="background:var(--qc-accent); color:var(--qc-dark);">&#9733;</div>
+      <h2>Design Summary</h2>
+      <span class="slide-num" style="color:#78909c;">10 / 10</span>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="big">5</div>
+        <p>Layered architecture tiers from CLI to hardware</p>
+      </div>
+      <div class="summary-card">
+        <div class="big">2</div>
+        <p>Protocol stages: SAHARA bootstrap → Firehose transfer</p>
+      </div>
+      <div class="summary-card">
+        <div class="big">3</div>
+        <p>Platform targets: Windows x64, ARM64, Linux x86_64</p>
+      </div>
+      <div class="summary-card">
+        <div class="big">5</div>
+        <p>Flash storage types: UFS, eMMC, NAND, SPINOR, NVMe</p>
+      </div>
+      <div class="summary-card">
+        <div class="big">9</div>
+        <p>CLI commands covering full device lifecycle</p>
+      </div>
+      <div class="summary-card">
+        <div class="big">4</div>
+        <p>Validation modes from none to full SHA256 readback</p>
+      </div>
+    </div>
+    <div class="card-grid card-grid-3" style="margin-top:1.5rem;">
+      <div style="background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:1.2rem;">
+        <h3 style="color:var(--qc-accent); margin-bottom:.5rem;">Modular Design</h3>
+        <p style="color:#b0bec5; font-size:.85rem;">Platform-agnostic core with OS-specific adapters — cleanly separates protocol logic from hardware access.</p>
+      </div>
+      <div style="background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:1.2rem;">
+        <h3 style="color:var(--qc-green); margin-bottom:.5rem;">SDK-First API</h3>
+        <p style="color:#b0bec5; font-size:.85rem;">Stable public API surface allows QIL to be embedded in larger toolchains without exposing internal complexity.</p>
+      </div>
+      <div style="background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:1.2rem;">
+        <h3 style="color:var(--qc-orange); margin-bottom:.5rem;">Production Ready</h3>
+        <p style="color:#b0bec5; font-size:.85rem;">Validation modes, structured logging, and event callbacks make QIL suitable for both dev-lab and manufacturing environments.</p>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /deck -->
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const counter = document.getElementById('slide-counter');
+  let current = 0;
+
+  function showSlide(n) {
+    slides[current].classList.remove('active');
+    current = Math.max(0, Math.min(n, slides.length - 1));
+    slides[current].classList.add('active');
+    counter.textContent = (current + 1) + ' / ' + slides.length;
+  }
+
+  function nextSlide() { showSlide(current + 1); }
+  function prevSlide() { showSlide(current - 1); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') nextSlide();
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')  prevSlide();
+  });
+</script>
+</body>
+</html>
