@@ -1,5 +1,3 @@
-// Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
-// SPDX-License-Identifier: BSD 3-Clause Clear License
 /*
  * Public libusb header file
  * Copyright © 2001 Johannes Erdfelt <johannes@erdfelt.com>
