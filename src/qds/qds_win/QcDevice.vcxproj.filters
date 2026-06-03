@@ -1,26 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\Common\qdver.cpp">
-      <Filter>Common</Filter>
+    <ClCompile Include="..\common\qdver.cpp">
+      <Filter>common</Filter>
     </ClCompile>
-    <ClCompile Include="..\Common\utils.cpp">
-      <Filter>Common</Filter>
+    <ClCompile Include="..\common\utils.cpp">
+      <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="..\libusb\source\qcom-libusb.cpp">
       <Filter>Libusb</Filter>
-    </ClCompile>
-    <ClCompile Include="..\qds_lnx\libLNX\liblpc.cpp">
-      <Filter>qds_lnx\libLNX</Filter>
-    </ClCompile>
-    <ClCompile Include="..\qds_lnx\libLNX\qcdev.cpp">
-      <Filter>qds_lnx\libLNX</Filter>
-    </ClCompile>
-    <ClCompile Include="..\qds_lnx\libLNX\qdaio.cpp">
-      <Filter>qds_lnx\libLNX</Filter>
-    </ClCompile>
-    <ClCompile Include="..\qds_lnx\libLNX\QdIoQmi.cpp">
-      <Filter>qds_lnx\libLNX</Filter>
     </ClCompile>
     <ClCompile Include="QdIoQmi.cpp">
       <Filter>qds_win</Filter>
@@ -28,37 +16,19 @@
     <ClCompile Include="scandev.cpp">
       <Filter>qds_win</Filter>
     </ClCompile>
+    <ClCompile Include="..\libusb\source\libusb-dynamic-loader.cpp">
+      <Filter>Libusb</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Common\qdver.h">
-      <Filter>Common</Filter>
+    <ClInclude Include="..\common\qdver.h">
+      <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="..\Common\utils.h">
-      <Filter>Common</Filter>
+    <ClInclude Include="..\common\utils.h">
+      <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\libusb\source\qcom-libusb.h">
       <Filter>Libusb</Filter>
-    </ClInclude>
-    <ClInclude Include="..\qds_lnx\inc\lpcpublic.h">
-      <Filter>qds_lnx\inc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\qds_lnx\inc\qdaio.h">
-      <Filter>qds_lnx\inc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\qds_lnx\inc\QdIoQmi.h">
-      <Filter>qds_lnx\inc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\qds_lnx\inc\qdpublic.h">
-      <Filter>qds_lnx\inc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\qds_lnx\inc\qdutils.h">
-      <Filter>qds_lnx\inc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\qds_lnx\inc\version.h">
-      <Filter>qds_lnx\inc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\qds_lnx\inc\windows_compatible.h">
-      <Filter>qds_lnx\inc</Filter>
     </ClInclude>
     <ClInclude Include="QdIoQmi.h">
       <Filter>qds_win</Filter>
@@ -69,22 +39,16 @@
     <ClInclude Include="scandev.h">
       <Filter>qds_win</Filter>
     </ClInclude>
+    <ClInclude Include="..\libusb\source\libusb-dynamic-loader.h">
+      <Filter>Libusb</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Common">
+    <Filter Include="common">
       <UniqueIdentifier>{ca182bc6-f32e-49e5-8544-11a21985a5d8}</UniqueIdentifier>
     </Filter>
     <Filter Include="Libusb">
       <UniqueIdentifier>{01bd6cae-69da-47b3-a96e-4cb48fd4c763}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qds_lnx">
-      <UniqueIdentifier>{80fb1b6a-d442-474a-9ef6-3581e0acf84c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qds_lnx\libLNX">
-      <UniqueIdentifier>{42599192-ede5-418a-b419-9752486da776}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qds_lnx\inc">
-      <UniqueIdentifier>{2800e50e-f5f3-40e6-904b-9531f3f1efb8}</UniqueIdentifier>
     </Filter>
     <Filter Include="qds_win">
       <UniqueIdentifier>{e24ca5fc-ed89-4059-9e21-03dbb207ef17}</UniqueIdentifier>

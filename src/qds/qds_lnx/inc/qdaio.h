@@ -19,8 +19,9 @@
 #define QCDEV_MIN_REF_CNT 2
 
 #define BUS_LOC "/dev/bus/usb/"
-/* To align structure to 8 bytes packing */
-#pragma pack(8)
+
+/* Align structures to 8 bytes packing. */
+#pragma pack(push, 8)
 
 /**
  * @brief       Application handle states
@@ -268,5 +269,7 @@ namespace QDAIO
             DWORD  NumBytesToSend, LPDWORD NumBytesSent);
 
 }  // QDAIO
+
+#pragma pack(pop)
 
 #endif

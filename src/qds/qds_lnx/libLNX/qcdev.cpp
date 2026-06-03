@@ -1,10 +1,33 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD 3-Clause Clear License
+/*
+* Copyright (c) 2022 Qualcomm Technologies, Inc.  All Rights Reserved.
+
+ * Qualcomm Technologies Proprietary and Confidential.
+
+ *
+
+ * Not a Contribution.
+ */
+ 
+ /*
+ * Copyright (c) 2017-2019 Cisco and/or its affiliates.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "qdpublic.h"
 #include <libudev.h>
 #include "qdutils.h"
-#include "../../libusb/source/qcom-libusb.h"
 #include <pthread.h>
 #include <sys/socket.h>
 #include <signal.h>
@@ -48,7 +71,7 @@ pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
 FILE *fp = NULL;
 #endif
 QcdevCtx qcdevCtx = {NULL, NULL,
-                     NULL, NULL, NULL, NULL, NULL, PTHREAD_MUTEX_INITIALIZER, (pthread_t)-1, 0, 0, 0, NULL};
+                     NULL, NULL, NULL, NULL, NULL, PTHREAD_MUTEX_INITIALIZER, -1, 0, 0, 0, NULL};
 QcomLibUSBdevCtx qcom_dev;
 int log_level = 0;
 /**
@@ -960,9 +983,7 @@ static void processAddDevice(struct udev_device *dev)
     else if (qcdevCtx.mSetting &&
              (!qcdevCtx.mSetting->DeviceClass ||
               (qcdevCtx.mSetting->DeviceClass & DEV_CLASS_NET)) &&
-             (!(qcdevCtx.mSetting->Settings & DEV_FEATURE_SCAN_USB_WITH_VID) || !(qcdevCtx.mSetting)->VID || NULL != strcasestr((qcdevCtx.mSetting)->VID, vendor)) &&
-             (!(qcdevCtx.mSetting->Settings & DEV_FEATURE_SCAN_USB_WITH_VID) || !(qcdevCtx.mSetting)->VID || !strcasestr((qcdevCtx.mSetting)->VID, "PID_") ||
-              NULL != strcasestr((qcdevCtx.mSetting)->VID, udev_device_get_sysattr_value(dev, "idProduct") ? udev_device_get_sysattr_value(dev, "idProduct") : "0000")))
+             (!(qcdevCtx.mSetting->Settings & DEV_FEATURE_SCAN_USB_WITH_VID) || !(qcdevCtx.mSetting)->VID || NULL != strcasestr((qcdevCtx.mSetting)->VID, vendor)))
     {
         QCDEV_LOG_INFO("Arrival: %s : %s\n",subsystem, devNode);
         /* To extract the serial num  */
@@ -1402,7 +1423,7 @@ static void processAddDevice(struct udev_device *dev)
     if (IsQcomLibusbEnable()) {
         if(pdeviceCtx->mDevParams.Protocol == 0x0 && pdeviceCtx->mDevParams.DevDesc !=NULL){
             QCDEV_LOCK_MUTEX_AND_UNLOCK_ON_RETURN(&qcdevCtx.mListLock);
-            register_libusb_hotplug_callback(&qcom_dev, pdeviceCtx);
+            register_libusb_hotplug_callback(pdeviceCtx);
         }
     }
 }
@@ -1548,7 +1569,8 @@ static void process_device(struct udev_device *dev)
         /* Process the device when it is removed */
         processRemoveDevice(dev);
         if (IsQcomLibusbEnable()) {
-            register_libusb_hotplug_callback(&qcom_dev, qcdevCtx.mpDeviceCtx);
+            QCDEV_LOCK_MUTEX_AND_UNLOCK_ON_RETURN(&qcdevCtx.mListLock);
+            register_libusb_hotplug_callback(qcdevCtx.mpDeviceCtx);
         }
     }
     return;
@@ -1802,9 +1824,9 @@ void PushLibUSBToApplication(PQcomDeviceInfo devinfo)
     pdeviceCtx->mCbParams.ParentDev = devinfo->ParentDev;
     pdeviceCtx->mCbParams.ParentLocationInfomation = devinfo->ParentLocationInformation;
     pdeviceCtx->mCbParams.DevDetails = new std::unordered_map<std::string, std::string>();
-    if (devinfo->DevDetailsMP)
-    {
-        *(pdeviceCtx->mCbParams.DevDetails) = *(devinfo->DevDetailsMP);
+    if (devinfo->DevDetailsMP) 
+    { 
+        *(pdeviceCtx->mCbParams.DevDetails) = *(devinfo->DevDetailsMP); 
     }
 
     if (qcdevCtx.mCallbackCtx != NULL)
@@ -2288,7 +2310,12 @@ VOID QcDevice::StartDeviceMonitor(VOID)
     }
     /* Store in global Cntxt */
     qcdevCtx.mUdev = udev;
-    initialize_libusb(&qcom_dev);
+    if (!load_libusb()) {
+        QCDEV_LOG_INFO("Failed to load libusb library. Hence, libusb won't be initialized.\n");
+    } 
+    else {
+        initialize_libusb();
+    }
 
     /* Unlock mutex, as mutex acquired as part of push to context in
      * enumerate_devices
@@ -2341,7 +2368,9 @@ QCDEVLIB_API VOID QcDevice::StopDeviceMonitor(VOID)
 
     /* To clear stored values */
     clearDeviceCnxt();
-    deinitialize_libusb(&qcom_dev);
+    if (is_libusb_loaded()) {
+        deinitialize_libusb();
+    }
     qcdevCtx.mpDeviceCtx = NULL;
     qcdevCtx.mCallback = NULL;
     if (qcdevCtx.mSetting)
@@ -2662,7 +2691,7 @@ HANDLE QcDevice::OpenDevice(PVOID DeviceName)
 
     if (IsQcomLibusbEnable())
     {
-        int retStatus = QcomLibusbDevice::qcom_libusb_open(&qcom_dev, DeviceName, NULL, (void**)&appHdl);
+        int retStatus = QcomLibusbDevice::qcom_libusb_open((PCHAR)DeviceName, (PCHAR)NULL, (void**)&appHdl);
         if (retStatus != LIBUSB_SUCCESS) {
             QCDEV_LOG_ERR("libusb open failed: %d\n", retStatus);
         }
@@ -2765,6 +2794,12 @@ BOOL QcDevice::ReadFromDevice(HANDLE hDevice, PVOID RxBuffer,
             *NumBytesReturned = bytesTransferred;
             QCDEV_LOG_DBG("Handle: 0x%x, readFrom %d bytes, ActualNumBytesReturned: %d\n", hDevice, NumBytesToRead, bytesTransferred);
             return QCDEV_TRUE;
+        }
+		else if (retStatus == LIBUSB_ERROR_TIMEOUT)
+        {
+			*NumBytesReturned = 0;
+			QCDEV_LOG_DBG("Timeout!! Handle: 0x%x, readFrom %d bytes, ActualNumBytesReturned: %d\n", hDevice, NumBytesToRead, bytesTransferred);
+            return TRUE;
         }
         else
         {

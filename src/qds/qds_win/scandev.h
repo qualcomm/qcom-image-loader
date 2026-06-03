@@ -16,6 +16,9 @@
 #include <Shlwapi.h>
 #include <Cfgmgr32.h>
 #include <atomic>
+#include <initguid.h>
+//#include <devpropdef.h>
+#include <devpkey.h>
 #include <sstream>
 
 #include "..\libusb\source\qcom-libusb.h"
@@ -119,6 +122,7 @@ typedef struct _QC_DEV_ITEM
    CHAR SerNum[256];
    CHAR SocVer[256];
    CHAR SerNumMsm[256];
+   CHAR PortNos[256];
    UCHAR BusType;
    std::unordered_map<std::string, std::string>* DevDetails; // pointer-based: contains fields obtained from parsed device description string
 } QC_DEV_ITEM, *PQC_DEV_ITEM;

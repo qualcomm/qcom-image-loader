@@ -137,8 +137,9 @@
 #define DevNode "/dev/"
 
 struct device_info;
-/* To align structure to 4 bytes packing */
-#pragma pack(push, 4)
+
+/* Align structures to 8 bytes packing. */
+#pragma pack(push, 8)
 
 #define VOID void
 
@@ -192,8 +193,6 @@ typedef enum _DEV_INFO_ERRNO
     DEV_INFO_SER_NUM_LEN  = 5,
     DEV_INFO_END          = 255
 } DEV_INFO_ERRNO;
-
-#pragma pack(pop)
 
 /**
  *  @brief          Device change callback
@@ -500,5 +499,7 @@ namespace QcDevice
 #ifdef __cplusplus
 //}
 #endif
+
+#pragma pack(pop)
 
 #endif // QDPUB_H

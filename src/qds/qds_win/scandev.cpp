@@ -3,6 +3,14 @@
 // #include "stdafx.h"
 #include "../common/qdver.h"
 #include "scandev.h"
+#include <devpropdef.h>
+#include <queue>
+
+static const DEVPROPKEY QDS_DEVPKEY_BusReportedDeviceDesc =
+{
+    { 0x540b947e, 0x8b40, 0x45bc, { 0xa8, 0xa2, 0x6a, 0x0b, 0x89, 0x4c, 0xbd, 0xa2 } },
+    4
+};
 #include <string>
 #include <set>
 #include "../common/Utils.h"
@@ -33,7 +41,6 @@ namespace QcDevice
       LIST_ENTRY ArrivalList, FreeList, NewArrivalList;
       LIST_ENTRY NotifyFreeList, AnnouncementList;
       PQC_NOTIFICATION_STORE NotifyStore;
-      QcomLibUSBdevCtx qcom_dev;
       std::atomic<BOOL> IsQcomLibusbEnable = FALSE;
 
       VOID InitializeLists(VOID)
@@ -68,6 +75,7 @@ namespace QcDevice
             ZeroMemory(pItem->SerNum, 256);
             ZeroMemory(pItem->SocVer, 256);
             ZeroMemory(pItem->SerNumMsm, 256);
+            ZeroMemory(pItem->PortNos, 256);
             pItem->DevDetails = new std::unordered_map<std::string, std::string>();
             InsertTailList(&FreeList, &(pItem->List));
          }
@@ -85,21 +93,6 @@ namespace QcDevice
             }
          }
       }  // InitializeLists
-
-      VOID CleanupListLibusb(PLIST_ENTRY ItemList)
-      {
-          PLIST_ENTRY pEntry;
-          PQcomDeviceInfo pItem;
-
-          EnterCriticalSection(&opLock);
-          while (!IsListEmpty(ItemList))
-          {
-              pEntry = RemoveHeadList(ItemList);
-              pItem = CONTAINING_RECORD(pEntry, QcomDeviceInfo, List);
-              free(pItem);
-          }
-          LeaveCriticalSection(&opLock);
-      }  // CleanupListLibusb
 
       VOID CleanupList(PLIST_ENTRY ItemList)
       {
@@ -1609,93 +1602,6 @@ namespace QcDevice
          return result;
       }  // FindParent
 
-      // Determine protocol based on friendlyName
-      BOOL ProtocolFromDriverDesc(PTSTR InterfaceName, ULONG protocol)
-      {
-          if (StrStrW(InterfaceName, TEXT("Diagnostics")) && protocol == DEV_PROTOCOL_DIAG) {
-              return true;
-          }
-          else if (StrStrW(InterfaceName, TEXT("Modem")) && protocol == DEV_PROTOCOL_DUN) {
-              return true;
-          }
-          else if (StrStrW(InterfaceName, TEXT("DPL")) && protocol == DEV_PROTOCOL_ADPL) {
-              return true;
-          }
-          else if (StrStrW(InterfaceName, TEXT("QDSS")) && protocol == DEV_PROTOCOL_QDSS) {
-              return true;
-          }
-          else if (StrStrW(InterfaceName, TEXT("WWAN")) && protocol == DEV_PROTOCOL_RMNET) {
-              return true;
-          }
-          else if (StrStrW(InterfaceName, TEXT("QDLoader")) && protocol == DEV_PROTOCOL_SAHARA_PBL_EMERGENCY_DOWNLOAD) {
-              return true;
-          }
-          else if (StrStrW(InterfaceName, TEXT("Diagnostics")) && protocol == DEV_PROTOCOL_SAHARA) {
-              return true;
-          }
-          else if (StrStrW(InterfaceName, TEXT("QDLoader")) && protocol == DEV_PROTOCOL_SAHARA) {
-              return true;
-          }
-          else {
-              return false;
-          }
-      }
-
-      VOID SetParamsInRegistry(LPCSTR driverKeyPath, PTSTR InterfaceName)
-      {
-          QcomDeviceInfo* pDevInfo;
-          LIST_ENTRY* head = &qcom_dev.deviceListHead;
-          LIST_ENTRY* pos;
-
-          EnterCriticalSection(&opLock);
-          if (!IsListEmpty(head))
-          {
-              head = &qcom_dev.deviceListHead;
-              pos = head->Flink;
-              while (pos != head)
-              {
-                  pDevInfo = CONTAINING_RECORD(pos, QcomDeviceInfo, List);
-                  QCD_Printf(Debug, "InterfaceName: %ws , SerNum: [%s] SerNumMsm: [%s] Protocol: [%ld]\n", InterfaceName, pDevInfo->SerNum, pDevInfo->SerNumMSM, pDevInfo->protocol);
-                  DWORD Status = ProtocolFromDriverDesc(InterfaceName, pDevInfo->protocol);
-
-                  if (Status == true) {
-                      if (SetSerialNumInRegistry(driverKeyPath, pDevInfo->SerNum) != true) {
-                          QCD_Printf(Error, "Failed to set SerNum registry: %s\n", pDevInfo->SerNum);
-                      }
-                      else {
-                          QCD_Printf(Debug, "Successfully Set registry for SerNum: %s\n", pDevInfo->SerNum);
-                      }
-                      if (SetSerialNumMsmInRegistry(driverKeyPath, pDevInfo->SerNumMSM) != true) {
-                          QCD_Printf(Error, "Failed to set SerNumMsm registry: %s\n", pDevInfo->SerNumMSM);
-                      }
-                      else {
-                          QCD_Printf(Debug, "Successfully Set registry for SerNumMsm: %s\n", pDevInfo->SerNumMSM);
-                      }
-                      if (SetDevDetailsInRegistry(driverKeyPath, pDevInfo->DevDetails) != true) {
-                          QCD_Printf(Error, "Failed to set DevDetails registry\n");
-                      }
-                      else {
-                          QCD_Printf(Debug, "Successfully Set registry for DevDetails\n");
-                      }
-                      if (SetProtocolInRegistry(driverKeyPath, pDevInfo->protocol) != true) {
-                          QCD_Printf(Error, "Failed to set protocol in registry: %ld\n", pDevInfo->protocol);
-                      }
-                      else {
-                          QCD_Printf(Debug, "InterfaceName:> [%ws], Successfully set registry for protocol: %ld\n", InterfaceName, pDevInfo->protocol);
-                      }
-                  }
-                  else {
-                      QCD_Printf(Debug, "Unknown protocol, not setting protocol in registry. Status from ProtocolFromDriverDesc: %ld\n", Status);
-                  }
-                  
-                  pos = pos->Flink;
-              }
-          }
-          LeaveCriticalSection(&opLock);
-
-      }
-
-
       void ParseDevDesc(PWSTR input, std::unordered_map<std::string, std::string>& deviceMap)
       {
           QCD_Printf(Debug, "String:  %ws\n", input);
@@ -1760,6 +1666,7 @@ namespace QcDevice
          CHAR            parentLocationInformation[QC_MAX_VALUE_NAME];
          CHAR            ifName[QC_MAX_VALUE_NAME];
          CHAR            friendlyName[QC_MAX_VALUE_NAME];
+         CHAR            busReportedDevDesc[QC_MAX_VALUE_NAME];
          CHAR            location[QC_MAX_VALUE_NAME];
          CHAR            devPath[QC_MAX_VALUE_NAME];
          LONG            mtu;
@@ -1778,6 +1685,9 @@ namespace QcDevice
          BOOL            bProcessorAdded = FALSE;
          WCHAR           driverKeyPath[REG_HW_ID_SIZE];
          CHAR            driverKeyPathNew[REG_HW_ID_SIZE];
+         WCHAR           LocationPath[REG_HW_ID_SIZE];
+         DEVPROPTYPE type = DEVPROP_TYPE_EMPTY;
+         WCHAR           busRepDescW[QC_MAX_VALUE_NAME];
          std::unordered_map<std::string, std::string> devDetailsMP;
 
 
@@ -1810,6 +1720,7 @@ namespace QcDevice
              ZeroMemory(instanceId, 512);
              ZeroMemory(ifName, QC_MAX_VALUE_NAME);
              ZeroMemory(friendlyName, QC_MAX_VALUE_NAME);
+             ZeroMemory(busReportedDevDesc, QC_MAX_VALUE_NAME);
              ZeroMemory(location, QC_MAX_VALUE_NAME);
              ZeroMemory(devPath, QC_MAX_VALUE_NAME);
              ZeroMemory(potentialSerNum, 256);
@@ -1821,6 +1732,7 @@ namespace QcDevice
              ZeroMemory(parentLocationInformation, QC_MAX_VALUE_NAME);
              ZeroMemory(driverKeyPath, REG_HW_ID_SIZE);
              ZeroMemory(driverKeyPathNew, REG_HW_ID_SIZE);
+             ZeroMemory(LocationPath, REG_HW_ID_SIZE);
              devDetailsMP.clear();
              bAdbDetected = FALSE;
              devType = QC_DEV_TYPE_NONE;
@@ -2034,10 +1946,8 @@ namespace QcDevice
                      //libusb API's
                      EnterCriticalSection(&opLock);
                      _IsQcomLibusbEnable = TRUE;
-                     if (_IsQcomLibusbEnable == TRUE) {
-                         CleanupListLibusb(&qcom_dev.deviceListHead);
-                     }
-                     enumerate_devices(&qcom_dev);
+                     /* ensure to clear deviceListHead*/
+                     enumerate_devices();
                      LeaveCriticalSection(&opLock);
                  }
              }
@@ -2067,6 +1977,25 @@ namespace QcDevice
                    pSwIdx++;
                    // QCD_Printf("driver key <%ws> IDX <%ws>\n", (PWSTR)driverKey, pSwIdx);
                 }
+             }
+             // retrieve device description for parsing
+             DEVPROPTYPE propType = 0;
+             DWORD propSize = sizeof(busRepDescW);
+             ZeroMemory(busRepDescW, sizeof(busRepDescW));
+
+             if (SetupDiGetDeviceProperty(
+                 devInfoHandle,
+                 &devInfoData,
+                 &QDS_DEVPKEY_BusReportedDeviceDesc,
+                 &propType,
+                 (PBYTE)busRepDescW,
+                 propSize,
+                 &propSize,
+                 0) == TRUE)
+             {
+                 WideCharToMultiByte(CP_ACP, 0, busRepDescW, -1,
+                     busReportedDevDesc, QC_MAX_VALUE_NAME, NULL, NULL);
+                     QCD_Printf(Debug, "BusReportedDeviceDesc: <%ws> for <%ws>\n",busRepDescW, (PTSTR)friendlyName);
              }
 
              // retrieve deivce name for display
@@ -2147,6 +2076,65 @@ namespace QcDevice
              }
              #endif
 
+
+             if (SetupDiGetDevicePropertyW
+                 (devInfoHandle,
+                 &devInfoData,
+                 &DEVPKEY_Device_LocationPaths,
+                 &type,
+                 (PBYTE)LocationPath,
+                 sizeof(LocationPath),
+                 &requiredSize,
+                 0))
+             {
+               //   QCD_Printf(Info, "Location Path: %ws\n", LocationPath);
+             }
+             else
+             {
+                 // ERROR_NOT_FOUND (1168) is expected for devices that do not
+                 // publish a LocationPaths property (non-USB nodes, or USB
+                 // nodes mid-PnP-publish right after arrival / mode switch).
+                 DWORD err = GetLastError();
+                 if (err == ERROR_NOT_FOUND) {
+                     QCD_Printf(Data,
+                         "%d: DEVPKEY_Device_LocationPaths not present (err=%lu type=%u)\n",
+                         __LINE__, err, (unsigned)type);
+                 } else {
+                     QCD_Printf(Warn,
+                         "%d: DEVPKEY_Device_LocationPaths failed err=%lu type=%u\n",
+                         __LINE__, err, (unsigned)type);
+                 }
+                 LocationPath[0] = L'\0';
+             }
+
+             unsigned Port = 0;
+             vector<unsigned> portsarr;
+             if (!LocationPath) {
+                 QCD_Printf(Info, "LocationPath Empty");
+             }
+             else {
+                 const WCHAR* p = LocationPath;
+
+                 while ((p = wcsstr(p, L"USB(")) != nullptr) {
+                     p += 4; // skip "USB("
+                     const WCHAR* end = wcschr(p, L')');
+                     if (!end) break;
+
+                     //lastPort = (unsigned)wcstoul(std::wstring(p, end).c_str(), nullptr, 10);
+                     Port = (unsigned)wcstoul(p, nullptr, 10);
+                     portsarr.push_back(Port);
+                     p = end + 1; // continue searching for next USB(n)
+                 }
+             }
+
+             string portnos = "";
+             for (size_t i = 0; i < portsarr.size(); i++) {
+                 if (i) {
+                     portnos += "-";
+                 }
+                 portnos += to_string(portsarr[i]);
+             }
+             QCD_Printf(Info, "Location Path: %ws, portnos: %s\n", LocationPath, portnos.c_str());
              StringCchCopyW(driverKeyPath, REG_HW_ID_SIZE, TEXT(QC_REG_SW_KEY));
              StringCchCatW(driverKeyPath, REG_HW_ID_SIZE, (PTSTR)driverKey);
              WideCharToMultiByte(CP_ACP, 0, driverKeyPath, -1, driverKeyPathNew, REG_HW_ID_SIZE, NULL, NULL);
@@ -2164,12 +2152,16 @@ namespace QcDevice
                    }
                    else
                    {
-                      QCD_Printf(Debug, "\tDevice started with driverKeyPath: %s\n", driverKeyPathNew);
+                     //  QCD_Printf(Debug, "\tDevice started with driverKeyPath: %s\n", driverKeyPathNew);
+                      EnterCriticalSection(&opLock);
                       if (StrStrW((PTSTR)devClass, TEXT(D_CLASS_LIBUSB)) != NULL) {
-                          if (_IsQcomLibusbEnable == TRUE) { // QcDevice namespace variable
-                              SetParamsInRegistry(driverKeyPathNew, (PTSTR)friendlyName);
-                          }
+                      	if (_IsQcomLibusbEnable == TRUE) { // QcDevice namespace variable
+                            CHAR friendlyNameANSI[QC_MAX_VALUE_NAME];
+                            WideCharToMultiByte(CP_ACP, 0, (PTSTR)friendlyName, -1, friendlyNameANSI, QC_MAX_VALUE_NAME, NULL, NULL);
+                            set_param_in_registry(driverKeyPathNew, (const char *)friendlyNameANSI, portnos);
+			            }
                       }
+                      LeaveCriticalSection(&opLock);
                    }
                 }
                 else
@@ -2214,7 +2206,7 @@ namespace QcDevice
                    QCD_Printf(Error, "\tLOCATION_PATHS failure: 0x%x\n", GetLastError());
                 }
              }
-
+             QCD_Printf(Debug, "SPDRP Location path: %ws", devPath);
              // if location is not available, use devPath
              if ((location[0] == 0) && (location[1] == 0))
              {
@@ -2309,7 +2301,7 @@ namespace QcDevice
                               devStatus
                            );
              }
-
+             
              if (bActive == TRUE)
              {
                 if (pItem != NULL)
@@ -2318,6 +2310,7 @@ namespace QcDevice
 
                    if (busType == QC_DEV_BUS_TYPE_USB)
                    {
+                       StringCchCopy((PTSTR)devDetails, 128, busRepDescW);
                        ParseDevDesc((PWSTR)devDetails, devDetailsMP);
                        if (pItem->DevDetails)
                        {
@@ -2360,6 +2353,15 @@ namespace QcDevice
                    pItem->CbParams.Mtu = (ULONG)mtu;
                    pItem->BusType = busType;
                    StringCchCopy((PTSTR)pItem->DevDesc, QC_MAX_VALUE_NAME/2, (PTSTR)friendlyName);
+                   if (StrStrW((PTSTR)devClass, TEXT(D_CLASS_LIBUSB)) != NULL) {
+                       if (_IsQcomLibusbEnable == TRUE) {
+                           if (!portnos.empty()) {
+                               WCHAR portNo[128];
+                               swprintf_s(portNo, 128, L" (%S)", portnos.c_str());
+                               StringCchCat((PTSTR)pItem->DevDesc, QC_MAX_VALUE_NAME / 2, portNo);
+                           }
+                       }
+                   }
                    wcstombs_s(&rtnBytes, pItem->DevDescA, QC_MAX_VALUE_NAME, (PWCHAR)pItem->DevDesc, _TRUNCATE);
 
                    StringCchCopy((PTSTR)pItem->DevNameW, QC_MAX_VALUE_NAME/2, TEXT(QC_DEV_PREFIX));
@@ -2388,6 +2390,8 @@ namespace QcDevice
                    StringCchCopy((PTSTR)pItem->SerNum, 128, (PTSTR)serNum);
                    StringCchCopy((PTSTR)pItem->SocVer, 128, (PTSTR)socVer);
                    StringCchCopy((PTSTR)pItem->SerNumMsm, 128, (PTSTR)serNumMsm);
+                   StringCchCopyA(pItem->PortNos, 128, portnos.c_str());
+                   QCD_Printf(Debug, "PortNos <%s>\n", pItem->PortNos);
                    // Since we need the parent location so find parent is necessary for every enumeration, use the DevDesc
                    // if ((parentDev[0] == 0) && (parentDev[1] == 0))
                    {
@@ -2415,7 +2419,7 @@ namespace QcDevice
              }  // if
              else
              {
-                // QCD_Printf("Dev failed to be added: <%ws>\n", (PTSTR)pItem->DevDesc);
+                //QCD_Printf(Debug, "Dev failed to be added: <%ws>\n", (PTSTR)pItem->DevDesc);
                 EnterCriticalSection(&opLock);
                 InsertHeadList(&FreeList, &pItem->List);
                 LeaveCriticalSection(&opLock);
@@ -2462,10 +2466,6 @@ namespace QcDevice
          CleanupList(&ArrivalList);
          CleanupList(&NewArrivalList);
          CleanupList(&FreeList);
-         if (_IsQcomLibusbEnable == TRUE) {
-             CleanupListLibusb(&qcom_dev.deviceListHead);
-             CleanupListLibusb(&qcom_dev.ArrivalListLibusb);
-         }
 
          if (NotifyStore != NULL)
          {
@@ -2608,7 +2608,14 @@ QCDEVLIB_API VOID QcDevice::StartDeviceMonitor(VOID)
       InitializeLists();
       bMonitorRunning = TRUE;
       //libusb API's
-      initialize_libusb(&qcom_dev);
+      if (!load_libusb()) {
+          QCD_Printf(Info, "Failed to load libusb library.\n");
+          QCD_Printf(Info, "libusb DLL not found at QUD-Userspace DriverPackage path, skipping libusb initialization\n");
+      }
+      else 
+      {
+         initialize_libusb();
+      }
       hMonitorThread = ::CreateThread(NULL, 0, RunDevMonitor, NULL, 0, &tid);
       if (hMonitorThread == NULL)
       {
@@ -2643,11 +2650,15 @@ QCDEVLIB_API VOID QcDevice::StopDeviceMonitor(VOID)
    CloseHandle(hAnnouncementEvt);
    CloseHandle(hAnnouncementExitEvt);
    CloseHandle(hStopMonitorEvt);
-   if (_IsQcomLibusbEnable == TRUE) {
-       CleanupListLibusb(&qcom_dev.deviceListHead);
-       CleanupListLibusb(&qcom_dev.ArrivalListLibusb);
+
+   if (is_libusb_loaded())
+   {
+         deinitialize_libusb();
    }
-   deinitialize_libusb(&qcom_dev);
+   else
+   {
+      QCD_Printf(Info, "libusb DLL not found at QUD-Userspace DriverPackage path, skipping libusb deinitialization\n");
+   }
    _IsQcomLibusbEnable = FALSE;
 
    for (i = QC_REG_DEVMAP; i < QC_REG_MAX; i++)
@@ -2658,6 +2669,7 @@ QCDEVLIB_API VOID QcDevice::StopDeviceMonitor(VOID)
    DeleteCriticalSection(&opLock);
    DeleteCriticalSection(&notifyLock);
    lInitialized = 0;
+   QCD_Printf(Info, "%s", __func__);
 }  // StopDeviceMonitor
 
 // =================== Removal Notification ====================
@@ -2805,6 +2817,7 @@ QCDEVLIB_API ULONG QcDevice::GetDevice(PVOID UserBuffer)
          {
             DevInfo->Flag = (((ULONG)devItem->Info.Type << 8) | (ULONG)devItem->Info.IsQCDriver);
          }
+
          free(devItem);
          infoFilled = 1;
          break;
@@ -3002,6 +3015,8 @@ QCDEVLIB_API HANDLE QcDevice::OpenDevice(PVOID DeviceName, DWORD Baudrate, BOOL 
    WCHAR usbDev[256];
    CHAR deviceNAME[256];
    CHAR SerialNAME[256];
+   WCHAR serialMsmPortNosW[256];
+   CHAR serialMsmPortNos[256];
 
    QCD_Printf(Info, "-->QcDevice::OpenDevice: <%ws>\n", (PWCHAR)DeviceName);
    
@@ -3021,11 +3036,11 @@ QCDEVLIB_API HANDLE QcDevice::OpenDevice(PVOID DeviceName, DWORD Baudrate, BOOL 
                if (StrIntlEqN((PWCHAR)DeviceName, (PWCHAR)pDevInfo->DevDesc, wcslen((PWCHAR)pDevInfo->DevDesc)))
                {
                    WideCharToMultiByte(CP_ACP, 0, (PWCHAR)pDevInfo->DevDesc, -1, deviceNAME, 256, NULL, NULL);
-                   WideCharToMultiByte(CP_ACP, 0, (PWCHAR)pDevInfo->SerNumMsm, -1, SerialNAME, 256, NULL, NULL);
-                   int res = QcomLibusbDevice::qcom_libusb_open(&qcom_dev, deviceNAME, SerialNAME, &hDevice);
+                   QCD_Printf(Info, "%s: OpenDevice I Port Path: %s, SerNumMsm: <%ws>\n", __func__, (char*)pDevInfo->PortNos, (PWCHAR)pDevInfo->SerNumMsm);
+                   int res = QcomLibusbDevice::qcom_libusb_open(deviceNAME, (char *)pDevInfo->PortNos, &hDevice);
                    if (res != LIBUSB_SUCCESS)
                    {
-                       res = QcomLibusbDevice::qcom_libusb_open(&qcom_dev, pDevInfo->InterfaceNumber, &hDevice);
+                       res = QcomLibusbDevice::qcom_libusb_open((char*)pDevInfo->PortNos, pDevInfo->InterfaceNumber, &hDevice);
                    }
                    LeaveCriticalSection(&opLock);
                    return (res ? INVALID_HANDLE_VALUE : hDevice);
@@ -3140,6 +3155,11 @@ QCDEVLIB_API BOOL QcDevice::ReadFromDevice
        {
            QCD_Printf(Debug, "%s: Handle: 0x%x, readFrom %d bytes, ActualNumBytesReturned: %d\n", __func__, hDevice, NumBytesToRead, bytesTransferred);
            return TRUE;
+       }
+       else if (bResult == LIBUSB_ERROR_TIMEOUT)
+       {
+          QCD_Printf(Debug, "%s: Timeout!! Handle: 0x%x, readFrom %d bytes, ActualNumBytesReturned: %d\n", __func__, hDevice, NumBytesToRead, bytesTransferred);
+          return TRUE;
        }
        else
        {

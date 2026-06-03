@@ -95,7 +95,7 @@ static inline void QCDEV_Log(QLogLevel Level,
     vsnprintf(msgBuf, sizeof(msgBuf), fmt, args);
     va_end(args);
 
-    char fullBuf[1100];
+    char fullBuf[2048];
     if (ver_num && ver_num[0] != '\0')
         snprintf(fullBuf, sizeof(fullBuf), "[v%s][%s:%d][%s] %s",
                  ver_num, file, line, func, msgBuf);

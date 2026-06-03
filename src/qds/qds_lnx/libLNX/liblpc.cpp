@@ -9,11 +9,11 @@ GENERAL DESCRIPTION
   To get notified on device arrival/departue events
 
 *====*====*====*====*====*====*====*====*====*====*====*====*====*====*====*/
-#include <cstdint>
 #include <dlfcn.h>
 #include <qdpublic.h>
 #include <qdaio.h>
 #include "lpcpublic.h"
+
 PCHAR DevTypeName[4] =
 {
    (PCHAR)"NONE",
@@ -129,16 +129,17 @@ void *TriggerUserCb(void *Userdata)
 // Device-change callback (device arrival/departure)
 VOID MyDeviceChangeCb(PCB_PARAMS CbParams, PVOID *Context)
 {
-   uintptr_t id = (uintptr_t)(*Context);
+   DWORD id = 0;
    UCHAR devState = (UCHAR)((CbParams->Flag & QC_FLAG_MASK_DEV_STATE) >> 4);
    UCHAR devType  = (UCHAR)((CbParams->Flag & QC_FLAG_MASK_DEV_TYPE) >> 8);
    UCHAR isQCDriver = (UCHAR)(CbParams->Flag & QC_FLAG_MASK_QC_DRIVER);
    PDEVICE_CONTEXT devCtx = NULL;
 
+   id = *Context;
    if (devState == QC_DEV_STATE_ARRIVAL)
    {
       pthread_t thId;
-      *Context = (PVOID)(id + 1);
+      *Context = (PVOID)(id++);
 
       printf("  ->Arrival: Q[%d] %s <%s> [%s] Vid Context 0x%p\n",
               isQCDriver, (PCHAR)DevTypeName[devType], (PCHAR)CbParams->DevDesc, (PCHAR)(CbParams->DevName), *Context);

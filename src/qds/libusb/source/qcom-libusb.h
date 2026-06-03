@@ -1,29 +1,7 @@
-// Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
-// SPDX-License-Identifier: BSD 3-Clause Clear License
 #ifndef QCOMLIBUSB_H
 #define QCOMLIBUSB_H
 
-#include "../lib-1.0.27/include/libusb-1.0/libusb.h"
-
 #pragma once
-
-#if defined(_WIN32) || defined(_WIN64)
-#define QCOM_WIN_ENV 1
-#define strtok_r strtok_s
-#define QCOM_MAX_STRING_SIZE			1024
-#endif
-
-#if (defined(__GNUC__) && defined(__unix__))
-#include <sys/stat.h>
-#define ERROR_INVALID_PARAMETER       EINVAL
-#define QCOM_LNX_ENV 1
-#define QCOM_MAX_STRING_SIZE			256
-#define QCOM_DIAG_DEV_NAME			"QCOM_LIBUSB_Diagnostics"
-#define QCOM_MODEM_DEV_NAME			"QCOM_LIBUSB_Modem"
-#define QCOM_DPL_DEV_NAME			"QCOM_LIBUSB_DPL_Data"
-#define QCOM_QDSS_DEV_NAME			"QCOM_LIBUSB_QDSS_Data"
-#define QCOM_EDL_DEV_NAME			"QCOM_LIBUSB_QDLoader"
-#endif
 
 enum interface_protocols {
     INTERFACE_DIAG_PROTOCOL = 0x30,
@@ -39,6 +17,24 @@ enum interface_protocols {
     INTERFACE_RMNET_PROTOCOL = 0x50
 };
 
+#if defined(_WIN32) || defined(_WIN64)
+#define strtok_r strtok_s
+#define QCOM_MAX_STRING_SIZE			1024
+#endif
+
+#include "libusb-dynamic-loader.h"
+
+#if (defined(__GNUC__) && defined(__unix__))
+#include <sys/stat.h>
+#define ERROR_INVALID_PARAMETER       EINVAL
+#define QCOM_MAX_STRING_SIZE			256
+#define QCOM_DIAG_DEV_NAME			"QCOM_LIBUSB_Diagnostics"
+#define QCOM_MODEM_DEV_NAME			"QCOM_LIBUSB_Modem"
+#define QCOM_DPL_DEV_NAME			"QCOM_LIBUSB_DPL_Data"
+#define QCOM_QDSS_DEV_NAME			"QCOM_LIBUSB_QDSS_Data"
+#define QCOM_EDL_DEV_NAME			"QCOM_LIBUSB_QDLoader"
+#endif
+
 //#ifdef __cplusplus
 //extern "C" {
 //#endif
@@ -50,10 +46,11 @@ enum interface_protocols {
 #ifdef QCOM_WIN_ENV
 #include <windows.h>
 #include <conio.h>
+#include <sstream>
 #include <cstdio>
 #include <strsafe.h>
 #include <vector>
-//#include <Shlwapi.h>
+//#include <shlwapi.h>
  #define QC_REG_SW_KEY_LIBUSB "SYSTEM\\CurrentControlSet\\Control\\Class\\{eb781aaf-9c70-4523-a5df-642a87eca567}"
  #define QC_SPEC_SERNUM      "QCDeviceSerialNumber"
  #define QC_SPEC_SERNUM_MSM  "QCDeviceMsmSerialNumber"
@@ -88,15 +85,20 @@ enum interface_protocols {
 using namespace std;
 struct _QcdevCtx;
 
+#include <mutex>
+#include <condition_variable>
+
 typedef struct qcom_libusb_device
 {
-    struct libusb_context* ctx;
-    struct libusb_device_handle* dev_handle; //single dev handle per device
-    struct libusb_device* dev;
-    struct libusb_device_descriptor* desc;
-    struct libusb_config_descriptor* config;
-    BOOL                             num_devices;
-    INT                              ref_count;
+    struct libusb_device_handle*    dev_handle; //single dev handle per device
+    struct libusb_device*           dev;
+    BOOL                            num_devices;
+    INT                             ref_count;
+    atomic<int>                     active_transfer;
+    mutex                           dev_handle_mutex; /* Per-device synchronization primitives */
+    condition_variable              active_transfer_cv;
+    CHAR                            SerNumMSM[QCOM_MAX_STRING_SIZE];
+    CHAR                            qcomDevKey[64];
     LIST_ENTRY                      deviceListHead;
     LIST_ENTRY                      ArrivalListLibusb;
 }QcomLibUSBdevCtx, *PQcomLibUSBdevCtx;
@@ -127,45 +129,49 @@ typedef struct device_info
     PQcomLibUSBdevCtx               devCtx;
 }QcomDeviceInfo, * PQcomDeviceInfo;
 
-BOOL initialize_libusb(QcomLibUSBdevCtx* qcom_dev);
-VOID deinitialize_libusb(QcomLibUSBdevCtx* qcom_dev);
-BOOL enumerate_devices(QcomLibUSBdevCtx* qcom_dev);
-BOOL process_device(QcomLibUSBdevCtx* qcom_dev, libusb_device* dev, void *QcdevCtx);
+BOOL initialize_libusb();
+VOID deinitialize_libusb();
+BOOL enumerate_devices();
+BOOL process_device(libusb_device* dev, void *QcdevCtx);
 int qcom_libusb_open_internal(QcomDeviceInfo* qcomDevInfo, void** devHandle);
-VOID DisplayDevices(QcomLibUSBdevCtx* qcom_dev);
-VOID UpdateArrivalListLibusb(QcomLibUSBdevCtx* qcomdevCtx);
+VOID display_devices(QcomLibUSBdevCtx* qcom_dev);
+VOID update_arrival_list_libusb(QcomLibUSBdevCtx* qcom_dev);
 
 #ifdef QCOM_WIN_ENV
-BOOLEAN SetSerialNumInRegistry(LPCSTR SW_KEY_PATH, const char* SerNum);
-BOOLEAN SetSerialNumMsmInRegistry(LPCSTR SW_KEY_PATH, const char* SerNumMsm);
-BOOLEAN SetProtocolInRegistry(LPCSTR SW_KEY_PATH, DWORD protocol);
-BOOLEAN SetDevDetailsInRegistry(LPCSTR SW_KEY_PATH, const char* DevDetails);
+BOOLEAN set_serial_num_in_registry(LPCSTR SW_KEY_PATH, const char* SerNum);
+BOOLEAN set_serial_num_msm_in_registry(LPCSTR SW_KEY_PATH, const char* SerNumMsm);
+BOOLEAN set_protocol_in_registry(LPCSTR SW_KEY_PATH, DWORD protocol);
+// VOID SetParamsInRegistry(QcomLibUSBdevCtx* qcom_dev, LPCSTR driverKeyPath, PTSTR InterfaceName)
+VOID set_param_in_registry(LPCSTR driverKeyPath, const char * InterfaceName, string);
+BOOLEAN set_dev_details_in_registry(LPCSTR SW_KEY_PATH, const char* DevDetails);
 PQcomDeviceInfo find_device(PQcomLibUSBdevCtx devContext, const char* SernumMsm, const char* devDesc);
 #endif
 
 #ifdef QCOM_LNX_ENV
-VOID register_libusb_hotplug_callback(QcomLibUSBdevCtx* qcom_dev, void *device_ctx);
+VOID register_libusb_hotplug_callback(void *device_ctx);
 BOOL libusb_device_change_callback(libusb_context *ctx,
                                   libusb_device *dev,
                                   libusb_hotplug_event event,
                                   void *user_data);
 void PushLibUSBToApplication(PQcomDeviceInfo devinfo);
+std::unordered_map<std::string, std::string> ParseDevDesc(const char* input, std::unordered_map<std::string, std::string>& deviceMap);
 BOOL IsQcomLibusbEnable();
 PQcomDeviceInfo find_device(PQcomLibUSBdevCtx devContext, const char* devDesc);
-std::unordered_map<std::string, std::string> ParseDevDesc(const char* input, std::unordered_map<std::string, std::string>& deviceMap);
 #endif
+
 namespace QcomLibusbDevice {
 
-    BOOL qcom_libusb_open(QcomLibUSBdevCtx* qcom_dev, char* DeviceName, char *SernumMsm, void** devHandle);
-    int qcom_libusb_open(QcomLibUSBdevCtx* qcomDev, unsigned int bInterfaceNumber, void** devHandle);
+    BOOL qcom_libusb_open(char* DeviceName, char *SernumMsm, void** devHandle);
+    BOOL qcom_libusb_open(char *SernumMsm, unsigned int bInterfaceNumber, void** devHandle);
     VOID qcom_libusb_close(void** devHandle);
-    int qcom_libusb_read(void **devHandle, void* buffer, int bufferLen, int* bytesRead, unsigned timeout);
-    int qcom_libusb_write(void** devHandle, void* buffer, int bufferLen, int* bytesSent, unsigned timeout);
+    BOOL qcom_libusb_read(void **devHandle, void* buffer, int bufferLen, int* bytesRead, unsigned timeout);
+    BOOL qcom_libusb_write(void** devHandle, void* buffer, int bufferLen, int* bytesSent, unsigned timeout);
 
 } //namespace QcomLibusbDevice
 
 //#ifdef __cplusplus
 //}
 //#endif
+
 
 #endif
