@@ -193,10 +193,10 @@ Qualcomm Image Loader is licensed under the [BSD-3-clause License](https://spdx.
 
 ## Third-Party Components
 
-qil incorporates third-party libraries under their own licenses. In particular it statically links **libusb-1.0** (<https://libusb.info>), which is licensed under the **GNU Lesser General Public License v2.1 or later** (LGPL-2.1-or-later).
+qil incorporates third-party libraries under their own licenses. In particular it dynamically links **libusb-1.0** (<https://libusb.info>), which is licensed under the **GNU Lesser General Public License v2.1 or later** (LGPL-2.1-or-later).
 
 - A verbatim copy of the LGPL-2.1 license text is at [`LICENSES/libusb-1.0-LGPL-2.1.txt`](LICENSES/libusb-1.0-LGPL-2.1.txt).
 - A full inventory of third-party components and their licenses is in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 - Guidance on how qil itself complies with LGPL §6 and what downstream redistributors of `qil` binaries must do is in [`doc/LGPL-COMPLIANCE.md`](doc/LGPL-COMPLIANCE.md).
 
-The exact libusb version linked into qil, and its corresponding source, are recorded in `THIRD_PARTY_NOTICES.md` (currently libusb 1.0.27, unmodified, from <https://github.com/libusb/libusb/releases/tag/v1.0.27>).
+The exact libusb version used by qil, and its corresponding source, are recorded in `THIRD_PARTY_NOTICES.md` (currently libusb 1.0.27, unmodified, from <https://github.com/libusb/libusb/releases/tag/v1.0.27>).

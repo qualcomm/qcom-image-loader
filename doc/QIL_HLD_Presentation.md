@@ -200,7 +200,7 @@ From no validation (mode 0) through full binary readback + SHA256 comparison (mo
 |---|---|---|---|
 | **Language** | C++17 | All production source code | Modern C++ standards throughout |
 | **Build System** | CMake 3.15+ | Cross-platform build configuration | Out-of-tree builds; multi-platform targets |
-| **USB Library** | libusb 1.0.27 | Cross-platform USB I/O | LGPL-2.1; statically linked |
+| **USB Library** | libusb 1.0.27 | Cross-platform USB I/O | LGPL-2.1; dynamically linked |
 | **XML Parsing** | libxml2 + libiconv | Firehose command parsing | `rawprogram.xml` / `patch.xml` |
 | **Compression** | liblzma · libz | Image compression support | Transparent decompression during transfer |
 | **Logging** | kLogger | Structured log output | Header-only custom library |
