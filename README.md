@@ -189,7 +189,7 @@ How to contact maintainers. E.g. GitHub Issues, GitHub Discussions could be indi
 
 ## License
 Qualcomm Image Loader and BSD 3-Clause Clear License
-Qualcomm Image Loader is licensed under the [BSD-3-clause License](https://spdx.org/licenses/BSD-3-Clause.html). See [LICENSE.txt](LICENSE.txt) for the full license text.
+Qualcomm Image Loader is licensed under the [BSD-3-Clause-Clear License](https://spdx.org/licenses/BSD-3-Clause.html). See [LICENSE.txt](LICENSE.txt) for the full license text.
 
 ## Third-Party Components
 
