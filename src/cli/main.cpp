@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
       if(createLogDirectory())
       {
         // Initialize logger with log directory and size limit of 100MB
-        KL::Logger::get_instance().init(LOG_DIR, 0, KL::MAX_LOG_FILE_SIZE, getVersionString());
+        KL::Logger::get_instance().init(LOG_DIR, PTRACE_DIR, 0, KL::MAX_LOG_FILE_SIZE, getVersionString());
         FLOG_INFO("Successfully created LOG directory: " + std::string(LOG_DIR));
       }
       else {

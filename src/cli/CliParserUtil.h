@@ -86,6 +86,20 @@ public:
 
    static QC::ValidationMode::type parseValidationMode(const std::string& str);
    static QC::DigestHeaderType::type parseDigestHeaderType(const std::string& str);
+
+   /**
+    * @brief Parse preserve-partitions argument
+    *
+    * Format: "<index>:<name1>,<name2>,...;<index>:<name1>,<name2>,..."
+    * where index is a LUN number or 'x' for auto-find.
+    *
+    * Example: "0:modem,fsc,fsg;1:persist" produces 4 PreservedPartitionInfo entries.
+    *
+    * @param value String value
+    * @return Vector of PreservedPartitionInfo
+    * @throws CommandLineException if format is invalid
+    */
+   static std::vector<QC::PreservedPartitionInfo> parsePreservePartitionList(const std::string& value);
 };
 
 } // namespace CLI

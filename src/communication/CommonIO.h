@@ -8,8 +8,6 @@
 
 #include <functional>
 
-#define COMMONIO_LOG_CAT LOGGER_CAT("CommonIO")
-
 namespace Device {
 namespace Communication {
 
@@ -21,14 +19,6 @@ namespace Communication {
 class CommonIo
 {
 public:
-   enum Access
-   {
-      NONE = 0,                  ///< Process has no access to the file
-      READ = 1,                  ///< Process can read the file
-      WRITE = 2,                 ///< Process can write the file
-      READ_WRITE = READ | WRITE, ///< Process can read and write
-   };
-
    enum SendAsyncStatus
    {
       PENDING = 0,

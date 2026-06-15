@@ -179,15 +179,6 @@ Communication::CommonIoPtr Base::getCommonIo() const
    return m_pIo;
 }
 
-// ----------------------------------------------------------------------------
-// getUserIface
-//
-/// @returns The user object associated with this protocol
-// ----------------------------------------------------------------------------
-Util::UserPtr Base::getUserIface() const
-{
-   return m_pUser;
-}
 
 // ----------------------------------------------------------------------------
 // getState

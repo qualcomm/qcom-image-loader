@@ -60,11 +60,6 @@ void Spinner::start(const std::string& message)
    render(0, message);
 }
 
-void Spinner::update(int percentage)
-{
-   update(percentage, m_currentMessage);
-}
-
 void Spinner::update(int percentage, const std::string& message)
 {
    if(!m_bIsActive)
@@ -135,19 +130,6 @@ void Spinner::finish(const std::string& message)
    {
       clearLine();
       KL::Logger::get_instance().consoleOverwriteLine(message + " (100%)\n");
-      m_bIsActive = false;
-
-      // Unregister this spinner from kLogger
-      KL::Logger::get_instance().removeSpinnerLine();
-   }
-}
-
-void Spinner::error(const std::string& message)
-{
-   if(m_bIsActive)
-   {
-      clearLine();
-      KL::Logger::get_instance().consoleOverwriteLine("❌ " + message + "\n");
       m_bIsActive = false;
 
       // Unregister this spinner from kLogger

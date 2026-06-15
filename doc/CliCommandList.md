@@ -31,19 +31,19 @@ A device can be set into EDL mode via the following methods:<br>
 ## 1. Software Download
 | Command | Description | Required Argument | Optional Argument |
 | --------| ------------| ----------------- | ----------------- | 
-| `--create-flash-build-vip-digest` | Command used to create flash build VIP digest. Offline process, no device needed | --build<br>--memory-type<br>--out<br>--reset | --slot<br>--erase<br>--cdt<br>--validation-mode<br>--raw-program<br>--patch-program<br>--digest-header-type<br>--verbose |
-| `--create-ufs-provision-vip-digest` | Command used to create UFS provision VIP digest. Offline process, no device needed | --out<br>--ufs-provision-xml | --slot<br>--digest-header-type<br>--verbose |
-| `--create-validation-digest` | Command used to create build validation digest. Offline process, no device needed | --build<br>--memory-type<br>--out | --raw-program<br>--verbose |
+| `--create-flash-build-vip-digest` | Command used to create flash build VIP digest. Offline process, no device needed | --build<br>--memory-type<br>--out<br>--reset | --slot<br>--erase<br>--cdt<br>--validation-mode<br>--raw-program<br>--patch-program<br>--digest-header-type<br>--port-trace<br>--verbose |
+| `--create-ufs-provision-vip-digest` | Command used to create UFS provision VIP digest. Offline process, no device needed | --out<br>--ufs-provision-xml | --slot<br>--digest-header-type<br>--port-trace<br>--verbose |
+| `--create-validation-digest` | Command used to create build validation digest. Offline process, no device needed | --build<br>--memory-type<br>--out | --raw-program<br>--port-trace<br>--verbose |
 | `--devices` | Command used to list all available device identifiers. |  | --verbose |
-| `--erase-partitions` | Command used to erase specified partitions in device. | --device<br>--device-programmer<br>--memory-type | --slot<br>--partition-index<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--verbose |
-| `--flash-build` | Command used to flash firmware build to device. | --build<br>--device<br>--memory-type<br>--reset | --read-image-path<br>--slot<br>--erase<br>--device-programmer<br>--cdt<br>--active-partition<br>--chained-digest<br>--signed-digest<br>--validation-mode<br>--raw-program<br>--partition-index<br>--patch-program<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--validate-image-size<br>--verbose |
-| `--get-flash-info` | Command used to get device flash information only. | --device<br>--device-programmer<br>--memory-type<br>--reset | --slot<br>--partition-index<br>--skip-lun-info<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--verbose |
+| `--erase-partitions` | Command used to erase specified partitions in device. | --device<br>--device-programmer<br>--memory-type | --slot<br>--partition-index<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
+| `--flash-build` | Command used to flash firmware build to device. | --build<br>--device<br>--memory-type<br>--reset | --read-image-path<br>--slot<br>--erase<br>--device-programmer<br>--cdt<br>--active-partition<br>--chained-digest<br>--signed-digest<br>--validation-mode<br>--raw-program<br>--partition-index<br>--patch-program<br>--preserve-partitions<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--validate-image-size<br>--port-trace<br>--verbose |
+| `--get-flash-info` | Command used to get device flash information only. | --device<br>--device-programmer<br>--memory-type<br>--reset | --slot<br>--partition-index<br>--skip-lun-info<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
 | `--help, -h` | Command used to display help information |  |  |
-| `--read-images` | Command used to read partition images from device. | --build<br>--device<br>--memory-type<br>--read-image-path<br>--reset | --slot<br>--erase<br>--device-programmer<br>--raw-program<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--verbose |
-| `--reset-device` | Command used to reset device from firehose mode<br>Normally used in a subsequent command when the previous command was executed with '--reset=false' option. | --device | --verbose |
-| `--send-xml` | Command used to send a firehose command sequence in an XML file. Can be used to send peek command. | --device<br>--device-programmer<br>--memory-type<br>--reset<br>--xml-path | --slot<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--verbose |
-| `--send-image` | Command used to send a binary image to a user defined region in device (With **partition index and start index**). | --device<br>--device-programmer<br>--memory-type<br>--image-path<br>--lun<br>--reset<br>--start-sector | --slot<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--verbose |
-| `--ufs-provision` | Command used to execute a UFS provision. | --device<br>--device-programmer<br>--ufs-provision-xml | --slot<br>--chained-digest<br>--signed-digest<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--verbose |
+| `--read-images` | Command used to read partition images from device. | --build<br>--device<br>--memory-type<br>--read-image-path<br>--reset | --slot<br>--erase<br>--device-programmer<br>--raw-program<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
+| `--reset-device` | Command used to reset device from firehose mode<br>Normally used in a subsequent command when the previous command was executed with '--reset=false' option. | --device | --port-trace<br>--verbose |
+| `--send-xml` | Command used to send a firehose command sequence in an XML file. Can be used to send peek command. | --device<br>--device-programmer<br>--memory-type<br>--reset<br>--xml-path | --slot<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
+| `--send-image` | Command used to send a binary image to a user defined region in device (With **partition index and start index**). | --device<br>--device-programmer<br>--memory-type<br>--image-path<br>--lun<br>--reset<br>--start-sector | --slot<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
+| `--ufs-provision` | Command used to execute a UFS provision. | --device<br>--device-programmer<br>--ufs-provision-xml | --slot<br>--chained-digest<br>--signed-digest<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
 | `--version` | Display QIL Application version. |  | --verbose |
 |
 ## <br><br>
@@ -60,10 +60,13 @@ A device can be set into EDL mode via the following methods:<br>
 | `--firehose-init-time` | `<TIME_IN_MS>` | Configure firehose initialization time in ms. Increase for slower devices or connections. |
 | `--firehose-rx-timeout` | `<TIME_IN_MS>` | Configure firehose data reception timeout in ms. Increase for slower devices or connections. |
 | `--image-path` | `<BINARY_IMAGE_FILE_PATH>` | Specify binary image path for --send-image. |
-| `--partition-index` | `<COMMA_SPERATED_PARTITION_INDEXES_LIST>` | Comma-separated list of partition indexes to erase during download, erase partition only or get flash info.<br>•**Flash Images**: Only erase specified partition, but this does not impact the download partition which is configured by rawprogram<br>•**Get flash info**: Specify the partition index to get information on<br>•**Erase flash only**: Specify the flash partition to be erased. |
-| `--patch-program` | `<SEMICOLON_SPERATED_PATCH_XML_FILE_NAME_LIST>` | Semicolon-separated list of patch XML files. Specify dedicated XML files to override auto-detection of patch files, only used in download build. |
 | `--lun` | `<LUN_NUMBER>` | Configure partition index for --send-image. |
 | `--memory-type` | `<UFS\|EMMC\|NAND\|SPINOR>` | Specify type of flash memory on the target device. |
+| `--out` | `<DIR_PATH_FOR_READ>` | Output path to save generated digest file. Must be used inside create vip digest or build validation digest process. |
+| `--partition-index` | `<COMMA_SPERATED_PARTITION_INDEXES_LIST>` | Comma-separated list of partition indexes to erase during download, erase partition only or get flash info.<br>•**Flash Images**: Only erase specified partition, but this does not impact the download partition which is configured by rawprogram<br>•**Get flash info**: Specify the partition index to get information on<br>•**Erase flash only**: Specify the flash partition to be erased. |
+| `--patch-program` | `<SEMICOLON_SPERATED_PATCH_XML_FILE_NAME_LIST>` | Semicolon-separated list of patch XML files. Specify dedicated XML files to override auto-detection of patch files, only used in download build. |
+| `--preserve-partitions` | `<INDEX>:<NAME1>,<NAME2>,...;<INDEX>:...` | Partitions to preserve (backup and restore) during flash. Format: semicolon-separated groups of `<index>:<name1>,<name2>,...` where index is a LUN number or `x` for auto-find.<br>•Partitions are backed up before flash and restored after download completes.<br>•Not supported with VIP or single-image mode. |
+| `--port-trace` || Enable port trace logging. Writes raw TX/RX data to port-trace files in the log directory for protocol-level debugging. |
 | `--raw-program` | `<SEMICOLON_SPERATED_RAW_XML_FILE_NAME_LIST>` | Semicolon-separated list of rawprogram XML files. Specify dedicated XML file if you don't want to use default list, only used in download build & read images. |
 | `--read-image-path` | `<DIR_PATH_FOR_READ>` | Directory path to store read-out binary images:<br>•**Flash build**: Stores binaries read back from device during validation (validation-mode 1 or 3 only)<br>•**Read images**: Output directory for partition images read from device |
 | `--reset` | <true\|false>| Enable or disable reset device after firehose process completion. Device will remain in firehose mode if set to false. |
@@ -72,7 +75,6 @@ A device can be set into EDL mode via the following methods:<br>
 | `--skip-sahara` || While device already in firehose mode. Enable skipping the transfer of device programmer using Sahara. Normally used in a subsequent command when the previous command was executed with '--reset=false' or when the previous command failed and the device remains in firehose mode. |
 | `--slot` | `<SLOT_INDEX>` | Configure Memory slot number. Default to slot 0 if not specified |
 | `--start-sector` | `<START_SECTOR_NUMBER>` | Configure start sector for --send-image. |
-| `--out` | `<DIR_PATH_FOR_READ>` | Output path to save generated digest file. Must be used inside create vip digest or build validation digest process. |
 | `--ufs-provision-xml` | `<PROVISION_XML>` | Given absolute Path to UFS provision XML file. Only used together with --ufs-provision & --create-ufs-provision-vip-digest. |
 | `--validate-image-size` || Validate image sizes against rawprogram.xml during download. Compares image file sizes with sizes specified in rawprogram.xml and fails if any image exceeds the defined size. |
 | `--validation-mode` | `<0\|1\|2\|3\|4>` | Validate firmware images during download. No validation if not specified:<br> 0 - No validation<br> 1 - **Binary Readback**: Read back binary data from mobile -> create digest 1 from those flash data -> read original download binary file -> create digest 2 for download file in runtime -> compare digest 2 with digest 1<br> 2 - **SHA256 Readback**: Read digest 1 from mobile directly -> read download binary file -> create digest 2 for original download file in runtime -> compare digest 2 with digest 1<br> 3 - **Binary readback with digest file (Requires Build Validation File)**: Read back binary data from mobile -> create digest 1 from those flash data -> load pre-created digest 2 from file -> compare digest 2 with digest 1<br> 4 - **SHA256 Readback with digest file (Requires Build Validation File)**: Read digest 1 from mobile directly -> load pre-created digest 2 from file -> compare digest 2 with digest 1 |
@@ -188,6 +190,16 @@ A device can be set into EDL mode via the following methods:<br>
 - **Validate image size during download**
   ```bash
   qil --device=<MSM SN> --flash-build --reset=true --build="<FLAT_BUILD>" --memory-type=UFS --validate-image-size
+  ```
+
+- **Preserve partitions during flash (auto-find LUN)**
+  ```bash
+  qil --device=<MSM SN> --flash-build --reset=true --build="<FLAT_BUILD>" --memory-type=UFS --preserve-partitions=x:modem,fsc,fsg
+  ```
+
+- **Preserve partitions with explicit LUN indexes**
+  ```bash
+  qil --device=<MSM SN> --flash-build --reset=true --build="<FLAT_BUILD>" --memory-type=UFS --preserve-partitions=0:modem,fsc,fsg;1:persist
   ```
 
 - **Erase flash memory only with presetting partition index**

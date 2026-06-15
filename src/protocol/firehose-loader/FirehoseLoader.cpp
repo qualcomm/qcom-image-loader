@@ -1,139 +1,5 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD 3-Clause Clear License
-/****************************************************************************
-=============================================================================
-
-                        EDIT HISTORY FOR MODULE
-
-  This section contains comments describing changes made to the module.
-  Notice that changes are listed in reverse chronological order.
-
- $Header:
-//source/qcom/qct/core/storage/tools/fh_loader/vs2010/fh_loader/fh_loader.c#114
-$ $DateTime: 2021/06/22 23:24:34 $ $Author: wkimberl $
-
-when        who  what, where, why
-----------  ---  ---------------------------------------------------------
-2021-05-27  as   Add support for CHUNK_TYPE_FILL type for sparse images.
-2021-05-25  wek  Make the read back verify code use output directory.
-2021-03-10  wek  Include the slot when using verify_programming.
-2021-03-10  wek  Look in the command line for the header to use for VIP.
-2021-02-24  wek  Yield success when output directory does not exist beforehand.
-2021-01-21  cm   Add logic to remove compile time warnings.
-2021-01-07  wek  On contents.xml parsing fail gracefully if end of file_path.
-2020-10-20  sk   Update the output directory with readback only on failure.
-2020-09-28  wek  Delete define that re-maps memscpy.
-2020-06-12  wek  Add ./ as the default main output directory.
-2020-06-05  wek  Pad the first table of hashes to 54 regardless of size.
-2020-05-30  wek  At digest creation compute the right number of tables.
-2020-05-29  wek  Terminate XML string that checks for sparse image.
-2020-05-27  wek  Remove handling of Windows FFU image.
-2020-05-22  wek  Implement skip of VIP for transport layer when not using layer
-2020-04-29  sk   Correct calculation of readback, overwriting original images
-2020-01-29  wek  Include option to power off or reboot the device.
-2020-01-28  gp   Add slot support to fh_loader command line.
-2020-01-07  wek  Enhance fh_loader by making modules of transport layers.
-2019-07-18  wek  Made read port not print error in linux on select timeout.
-2019-06-07  wek  Make it possible to use on target SHA256 to verify flashing
-2019-05-31  wek  Add deprecated messages to deprecated arguments.
-2019-05-15  wek  Create a log header file to handle logs from all modules.
-2019-05-02  wek  List NVMe as a new memory type.
-2018-09-26  wek  Add initalization of file list array.
-2018-04-04  wek  Increase the max number of supported XML entries.
-2018-04-04  wek  Revise how throughput is calculated.
-2018-02-16  wek  Enlarge the buffer sizes used for logs from target.
-2018-02-14  wek  Verify that allocated pointers are properly casted.
-2018-01-15  wek  Implement getting alternative build flavor.
-2017-12-09  wek  Validate input parameter for the list of file helper.
-2017-12-08  wek  Implement parsing meta_cli output JSON path data.
-2017-11-16  wek  Add the root path to the file path when parsing contents.xml
-2017-10-30  wek  New handling of invalid lun/labels to return error early.
-2017-07-24  wek  Solve issue seen on VIP where file data was considered XML.
-2017-07-21  wek  Add implementation of fixgpt.
-2017-07-20  wek  Repair bug of trying to open cwd instead of the file.
-2017-06-08  wek  Add checks when adding a command to make sure it fits
-2017-04-24  wek  Write the handling logic for labels and notlabels.
-2017-03-10  wek  Improve throughput printout for larger than 4GB builds.
-2017-03-10  wek  Look for special character to allow absolute paths.
-2016-05-25  wek  Lighten the memory load by adding a feature for debug code
-2016-05-25  wek  Improve memory usage by freeing the memory in StoreXMLFile
-2016-05-23  wek  Add a static base version to know the original source.
-2016-05-23  wek  Make the port timeout 20ms to improve small transfer times.
-2016-05-23  wek  Kill bug of keeping files open in handle program.
-2016-05-05  wek  Introduce a fix to close file handle when calculating size.
-2016-05-02  wek  Make sure all allocated memory in sparse open is free.
-2016-04-13  wek  Bond the use of size_t format when printing hashes.
-2016-04-12  wek  Enhance reading of data when buffer less than sector size
-2016-04-07  wek  Remove bug on length for copy string in XML file path.
-2016-04-06  wek  Last set of banned APIs were removed.
-2016-04-05  wek  Yield to path given in search_path instead of contentsxml
-2016-04-01  wek  Remove banned API replaced by snprintf.
-2016-03-29  wek  Remove the need for an Entire XML buffer and its macros.
-2016-03-10  wek  Handle XML escape characters in attribute values.
-2016-03-10  wek  Support SPI-NOR storage type in contents.xml
-2016-02-03  wek  Return a non zero value on error.
-2016-01-29  wek  Skip over files that have ignore to true on contents.xml
-2016-01-28  wek  Fix the number of hashes of the first VIP table to 54.
-2016-01-27  wek  Increase the maximum size of the input XML file
-2016-01-27  wek  Start sector from the end of the device using negative numbers
-2016-01-27  wek  Report error on NAK for unrecognized command.
-2016-01-14  wek  Move all the SHA functions to a spearate file.
-2015-12-02  wek  Remove strtoull, not supported on VS2010.
-2015-09-29  wek  Increase the max number of Commands/XMLs that can be sent.
-2015-08-18  ky   flavor no longer necessary in contentsxml
-2015-08-13  ky   Showpercentagecomplete works with flattenbuild
-2015-08-10  ky   Don't copy over existing flattenbuild files unless
-forceoverwrite 2015-08-07  ky   Redirect all output files to MainOutputDir
-option 2015-08-06  ky   Added large file support 2015-07-21  ky   Added windows
-FFU image support. 2015-07-02  wek  Fix error of opening NULL file for sparse
-files. 2015-07-02  wek  Removing uncessesary memset. 2015-06-18  ky   Added
-sparse image support. 2015-06-03  wek  Fix printing wrong build size for large
-builds. 2015-06-02  wek  Accept upper case UFS from the command line argument.
-2015-06-02  wek  Handle VIP tables that are multiple of 512 bytes.
-2015-05-29  wek  Fix printing wrong percentage complete on large builds.
-2015-05-27  wek  Fix the sector size for firmware update from the command line.
-2015-05-26  ah   Do wipe first only for program tag.
-2015-05-20  wek  Fix firmware update from the command line.
-2015-05-20  wek  Fix double printing entries in the output digest file.
-2015-05-15  wek  Print version, the version is same as date.
-2015-05-15  wek  Print out the percentage when reading from the device.
-2015-05-14  wek  Copy the device programmer binary when flattening build.
-2015-05-06  wek  Change how the percentage completed is printed.
-2015-05-05  wek  Move populating variable after the log name is known.
-2015-05-04  wek  Run the soruce through a beautifier.
-2015-04-22  ah   Build flattening improved
-2015-04-12  ah   Build flattening based on flavor added
-2015-03-27  ah   COM port hanging is corrected
-2015-03-27  ah   Various features added
-2015-03-24  ah   Various features added
-2015-03-06  ah   Initial release
-
-=============================================================================
-
-O: maps to \\corebsp-tst-173\c$\preflight\builds\test_job_1\8994
-
-Get driver working on Linux
-sudo rmmod qcserial
-sudo rmmod usbserial
-sudo modprobe usbserial vendor=0x5c6 product=0x9008
-
-After this
-ahughes@ahughes-laptop-dell:~/programming/fh_loader$ ls /dev/ttyU*
-/dev/ttyUSB0
-
-Get DeviceProgrammer file over to Kickstart
-./QSaharaServer -p /dev/ttyUSB0 -s 13:prog_firehose_ddr.bin
-
-To build in Linux:
-gcc fh_loader.c fh_loader_sha.c fh_cobs.c fh_crc.c fh_hsuart_packet.c
-fh_transfer.c fh_transport.c fh_transport_com.c fh_transport_linux_pipe.c
-fh_transport_hsuart.c stringl/memscpy.c stringl/memsmove.c stringl/strlcat.c
-stringl/strlcpy.c -o fh_loader -lrt -I stringl/
-
-./fh_loader --port=/dev/ttyUSB0 --sendimage=big.bin
-
-****************************************************************************/
-
 #include "protocol/firehose-loader/FirehoseLoader.h"
 
 #include "device/Buffer.h"
@@ -6269,7 +6135,7 @@ uint32_t FirehoseLoader::ReadPort(uint8_t* pData, uint32_t length, uint32_t MaxL
    uint32_t localBytesRead = 0;
    uint64_t byteToRead = std::min(length, MaxLength);
    Device::SharedByteBufferPtr pReadDataBuffer;
-   dbg(LOG_DEBUG, "CharsInBuffer=%d Trying to read from USB %ld bytes", CharsInBuffer, length);
+   dbg(LOG_DEBUG, "CharsInBuffer=%" SIZE_T_FORMAT " Trying to read from USB %u bytes", CharsInBuffer, length);
    // Issue blocking read here
    if(m_rxTimeoutInMs.has_value() && m_rxTimeoutInMs.value() > std::chrono::milliseconds(0))
    {
@@ -7270,16 +7136,16 @@ char* FirehoseLoader::RemoveEverythingButTags(char* Packet, SIZE_T CurrentPacket
 
          dbg(
             LOG_DEBUG,
-            "XML FILE (%i bytes): CharsInBuffer=%i-%i=%i\n"
+            "XML FILE (%" SIZE_T_FORMAT " bytes): CharsInBuffer=%" SIZE_T_FORMAT "-%" SIZE_T_FORMAT "=%" SIZE_T_FORMAT "\n"
             "-----------------------------------------------------------------"
             "--------------------------\n"
             "%s\n"
             "-----------------------------------------------------------------"
             "--------------------------\n",
-            strlen(temp_buffer),
+            (SIZE_T)strlen(temp_buffer),
             CharsInBuffer,
-            strlen(temp_buffer),
-            CharsInBuffer - strlen(temp_buffer),
+            (SIZE_T)strlen(temp_buffer),
+            CharsInBuffer - (SIZE_T)strlen(temp_buffer),
             temp_buffer
          );
       }
@@ -7387,7 +7253,7 @@ FirehoseLoader::SIZE_T FirehoseLoader::DetermineTag(char* Packet, SIZE_T Current
 
    if(Packet[CurrentPacketLoc] != '<')
    {
-      dbg(LOG_ERROR, "XML not formed correctly. Expected a &lt; character at loc %d", CurrentPacketLoc);
+      dbg(LOG_ERROR, "XML not formed correctly. Expected a &lt; character at loc %" SIZE_T_FORMAT, CurrentPacketLoc);
       return 0; // not formed correctly
    }
 
@@ -7442,7 +7308,7 @@ FirehoseLoader::SIZE_T FirehoseLoader::DetermineTag(char* Packet, SIZE_T Current
          dbg(
             LOG_ERROR,
             "1) XML not formed correctly. Expected one SPACE character at loc "
-            "%d",
+            "%" SIZE_T_FORMAT,
             CurrentPacketLoc
          );
          return 0; // not formed correctly
@@ -7655,7 +7521,7 @@ FirehoseLoader::SIZE_T FirehoseLoader::DetermineAttributes(char* Packet, SIZE_T 
          dbg(
             LOG_ERROR,
             "XML not formed correctly. Expected one &quot; character at loc "
-            "%d",
+            "%" SIZE_T_FORMAT,
             CurrentPacketLoc
          );
          return 0; // not formed correctly
@@ -8848,7 +8714,7 @@ FirehoseLoader::firehose_error_t FirehoseLoader::GetNextPacket(void)
 
          CharsInBuffer += BytesRead;
 
-         dbg(LOG_DEBUG, "CharsInBuffer = %ld", CharsInBuffer);
+         dbg(LOG_DEBUG, "CharsInBuffer = %" SIZE_T_FORMAT, CharsInBuffer);
 
          // BytesReadPlusLeftOver += BytesRead;
          if(CharsInBuffer > 0)
@@ -13289,7 +13155,7 @@ void FirehoseLoader::ParseContentsXML(char* FileAndPath)
          pch_download_end = strstr(pch, "</download_file>");
          if(pch_download_end == NULL)
          {
-            dbg(LOG_WARN, "Failed to find closing </download_file>, last offset %d", CurrentPacketLoc);
+            dbg(LOG_WARN, "Failed to find closing </download_file>, last offset %" SIZE_T_FORMAT, CurrentPacketLoc);
             break;
          }
       }
@@ -13656,7 +13522,7 @@ void FirehoseLoader::ParseContentsXML(char* FileAndPath)
                pch = strstr(pch, "<file_path ");
                if(pch > pch_download_end || pch == NULL)
                {
-                  dbg(LOG_INFO, "Failed to match a matching flavor %s, offset %d", flavor, CurrentPacketLoc);
+                  dbg(LOG_INFO, "Failed to match a matching flavor %s, offset %" SIZE_T_FORMAT, flavor, CurrentPacketLoc);
                   pch = pchOld;
                   break;
                }

@@ -3,8 +3,8 @@
 #include "SoftwareDownloadUtility.h"
 
 #include "Globals.h"
-#include "rpc/ImageManagementServiceHandler.h"
-#include "rpc/UtilityServiceHandler.h"
+#include "service/ImageManagementServiceHandler.h"
+#include "service/UtilityServiceHandler.h"
 #include "Version.h"
 
 #include <iostream>
@@ -14,10 +14,10 @@ ErrorType SoftwareDownloadUtility::
    createDigestsForVipDownload(std::string buildPath, DownloadBuildOptions options, std::string outputPath)
 {
    QC::ErrorType result;
-   std::shared_ptr<Rpc::UtilityServiceHandler> pUtility;
+   std::shared_ptr<Service::UtilityServiceHandler> pUtility;
    try
    {
-      pUtility = std::make_shared<Rpc::UtilityServiceHandler>();
+      pUtility = std::make_shared<Service::UtilityServiceHandler>();
       result.errorCode = pUtility->initializeService();
       if(result.errorCode == QC::ErrorCode::DEVICE_NO_ERROR)
       {
@@ -36,10 +36,10 @@ ErrorType SoftwareDownloadUtility::
    createDigestsForBuildValidation(std::string buildPath, DownloadBuildOptions options, std::string outputPath)
 {
    QC::ErrorType result;
-   std::shared_ptr<Rpc::UtilityServiceHandler> pUtility;
+   std::shared_ptr<Service::UtilityServiceHandler> pUtility;
    try
    {
-      pUtility = std::make_shared<Rpc::UtilityServiceHandler>();
+      pUtility = std::make_shared<Service::UtilityServiceHandler>();
       result.errorCode = pUtility->initializeService();
       if(result.errorCode == QC::ErrorCode::DEVICE_NO_ERROR)
       {

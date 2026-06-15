@@ -29,33 +29,12 @@
 #if defined TOOLS_COMPILER_MSVC
 #define TOOLS_I64(c) TOOLS_CONCATENATE(c, I64)
 #define TOOLS_UI64(c) TOOLS_CONCATENATE(c, UI64)
-#if defined TOOLS_ARCH_32BIT
-#define TOOLS_SIZE(i) TOOLS_CONCATENATE(i, U)
-#elif defined TOOLS_ARCH_64BIT
-#define TOOLS_SIZE(i) TOOLS_UI64(i)
-#else
-#error Unkonwn architecture type
-#endif
 #elif defined TOOLS_COMPILER_GNUC
 #define TOOLS_I64(c) TOOLS_CONCATENATE(c, LL)
 #define TOOLS_UI64(c) TOOLS_CONCATENATE(c, ULL)
-#if defined TOOLS_ARCH_32BIT
-#define TOOLS_SIZE(i) TOOLS_CONCATENATE(i, U)
-#elif defined TOOLS_ARCH_64BIT
-#define TOOLS_SIZE(i) TOOLS_UI64(i)
-#else
-#error Unkonwn architecture type
-#endif
 #elif defined TOOLS_COMPILER_CLANG
 #define TOOLS_I64(c) TOOLS_CONCATENATE(c, LL)
 #define TOOLS_UI64(c) TOOLS_CONCATENATE(c, ULL)
-#if defined TOOLS_ARCH_32BIT
-#define TOOLS_SIZE(i) TOOLS_CONCATENATE(i, U)
-#elif defined TOOLS_ARCH_64BIT
-#define TOOLS_SIZE(i) TOOLS_UI64(i)
-#else
-#error Unkonwn architecture type
-#endif
 #else
 #error Unknown compiler
 #endif
@@ -104,24 +83,6 @@ inline bool TOOLS_FALSE() noexcept
 {
    return false;
 }
-
-// --------------------------------------------------------------------------
-// TOOLS_TRUE
-//
-/// Helper to serve as a true value and avoid compiler warnings about
-/// constant value conditions.
-// --------------------------------------------------------------------------
-inline bool TOOLS_TRUE() noexcept
-{
-   return true;
-}
-
-// --------------------------------------------------------------------------
-// TOOLS_FALLTHROUGH
-//
-/// Allows fallthrough in case statments without lint warnings
-// --------------------------------------------------------------------------
-#define TOOLS_FALLTHROUGH /*lint -e(616, 825)*/ /* FALLTHROUGH */ ;
 
 // --------------------------------------------------------------------------
 // TOOLS_FIELD_SIZE

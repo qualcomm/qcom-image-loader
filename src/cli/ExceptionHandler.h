@@ -104,84 +104,6 @@ public:
       return result;
    }
 
-   /// Handle standard exception
-   static HandleResult handleStandardException(const std::exception& ex, const std::string& operation = "")
-   {
-      Exception cliEx(Exception::UNKNOWN_ERROR, ex.what(), operation);
-      return handleException(cliEx, operation);
-   }
-
-   /// Handle unknown exception
-   static HandleResult handleUnknownException(const std::string& operation = "")
-   {
-      Exception cliEx(Exception::UNKNOWN_ERROR, "Unknown exception occurred", operation);
-      return handleException(cliEx, operation);
-   }
-
-   /// Execute operation with automatic exception handling
-   template <typename Func>
-   static int executeWithExceptionHandling(Func&& func, const std::string& operation = "", int maxRetries = 0)
-   {
-      int retryCount = 0;
-
-      while(retryCount <= maxRetries)
-      {
-         try
-         {
-            func();
-            return 0; // Success
-         }
-         catch(const Exception& ex)
-         {
-            HandleResult result = handleException(ex, operation);
-
-            if(!result.shouldContinue)
-            {
-               if(!result.message.empty())
-               {
-                  std::cerr << result.message << std::endl;
-               }
-               return result.exitCode;
-            }
-
-            if(result.shouldRetry && retryCount < maxRetries)
-            {
-               retryCount++;
-               logRetry(retryCount, maxRetries, operation);
-               continue;
-            }
-
-            if(!result.message.empty())
-            {
-               std::cerr << result.message << std::endl;
-            }
-            return result.exitCode;
-         }
-         catch(const std::exception& ex)
-         {
-            HandleResult result = handleStandardException(ex, operation);
-
-            if(!result.message.empty())
-            {
-               std::cerr << result.message << std::endl;
-            }
-            return result.exitCode;
-         }
-         catch(...)
-         {
-            HandleResult result = handleUnknownException(operation);
-
-            if(!result.message.empty())
-            {
-               std::cerr << result.message << std::endl;
-            }
-            return result.exitCode;
-         }
-      }
-
-      return 1; // Should not reach here
-   }
-
    /// Get current timestamp for logging
    static std::string getCurrentTimestamp()
    {
@@ -275,51 +197,6 @@ private:
 } // namespace Common
 } // namespace QC
 
-// --------------------------------------------------------------------------
-// Exception Handling Macros (similar to TUF TOOLS_CATCH system)
-// --------------------------------------------------------------------------
-
-/// Macro for catching and handling exceptions with automatic logging
-#define QC_CATCH_EXCEPTION(operation)                                                                                  \
-   catch(const QC::Common::Exception& ex)                                                                              \
-   {                                                                                                                   \
-      auto result = QC::Common::ExceptionHandler::handleException(ex, operation);                                      \
-      if(!result.message.empty())                                                                                      \
-      {                                                                                                                \
-         std::cerr << result.message << std::endl;                                                                     \
-      }                                                                                                                \
-      if(!result.shouldContinue)                                                                                       \
-      {                                                                                                                \
-         return result.exitCode;                                                                                       \
-      }                                                                                                                \
-   }
-
-/// Macro for catching standard exceptions
-#define QC_CATCH_STD_EXCEPTION(operation)                                                                              \
-   catch(const std::exception& ex)                                                                                     \
-   {                                                                                                                   \
-      auto result = QC::Common::ExceptionHandler::handleStandardException(ex, operation);                              \
-      if(!result.message.empty())                                                                                      \
-      {                                                                                                                \
-         std::cerr << result.message << std::endl;                                                                     \
-      }                                                                                                                \
-      return result.exitCode;                                                                                          \
-   }
-
-/// Macro for catching all exceptions
-#define QC_CATCH_ALL_EXCEPTIONS(operation)                                                                             \
-   QC_CATCH_EXCEPTION(operation)                                                                                       \
-   QC_CATCH_STD_EXCEPTION(operation)                                                                                   \
-   catch(...)                                                                                                          \
-   {                                                                                                                   \
-      auto result = QC::Common::ExceptionHandler::handleUnknownException(operation);                                   \
-      if(!result.message.empty())                                                                                      \
-      {                                                                                                                \
-         std::cerr << result.message << std::endl;                                                                     \
-      }                                                                                                                \
-      return result.exitCode;                                                                                          \
-   }
-
 /// Macro for throwing exceptions with context
 #define QC_THROW(errorCode, message, context) throw QC::Common::Exception(errorCode, message, context)
 
@@ -335,40 +212,11 @@ private:
 #define QC_THROW_CMDLINE_ERROR(errorCode, parameter, value, ...)                                                       \
    throw QC::Common::CommandLineException(errorCode, parameter, value, ##__VA_ARGS__)
 
-/// Macro for safe execution with exception handling
-#define QC_SAFE_EXECUTE(operation, func)                                                                               \
-   QC::Common::ExceptionHandler::executeWithExceptionHandling([&]() { func; }, operation)
-
-/// Macro for safe execution with retry capability
-#define QC_SAFE_EXECUTE_WITH_RETRY(operation, func, maxRetries)                                                        \
-   QC::Common::ExceptionHandler::executeWithExceptionHandling([&]() { func; }, operation, maxRetries)
-
-/// Macro for validating parameters and throwing appropriate exceptions
-#define QC_VALIDATE_PARAM(condition, parameter, message)                                                               \
-   if(!(condition))                                                                                                    \
-   {                                                                                                                   \
-      QC_THROW_CMDLINE_ERROR(QC::Common::Exception::INVALID_PARAMETERS, parameter, message);                           \
-   }
-
 /// Macro for validating required parameters
 #define QC_REQUIRE_PARAM(condition, parameter)                                                                         \
    if(!(condition))                                                                                                    \
    {                                                                                                                   \
       QC_THROW_CMDLINE_ERROR(QC::Common::Exception::MISSING_REQUIRED_PARAMETER, parameter, "");                        \
-   }
-
-/// Macro for validating file existence
-#define QC_VALIDATE_FILE_EXISTS(filePath)                                                                              \
-   if(!std::filesystem::exists(filePath))                                                                              \
-   {                                                                                                                   \
-      QC_THROW_FILE_ERROR(QC::Common::Exception::FILE_NOT_FOUND, filePath, "file validation");                         \
-   }
-
-/// Macro for validating directory existence
-#define QC_VALIDATE_DIR_EXISTS(dirPath)                                                                                \
-   if(!std::filesystem::exists(dirPath) || !std::filesystem::is_directory(dirPath))                                    \
-   {                                                                                                                   \
-      QC_THROW_FILE_ERROR(QC::Common::Exception::DIRECTORY_NOT_FOUND, dirPath, "directory validation");                \
    }
 
 /// Macro to convert ErrorType from DLL to RCA Exception and throw

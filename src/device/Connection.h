@@ -61,7 +61,6 @@ public:
 
    void elevateAccess(const Protocol::Base::Access& access, const Protocol::Base::Share& share);
 
-   bool hasReadAccess() const;
    bool hasWriteAccess() const;
 
    virtual void connect();

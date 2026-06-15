@@ -24,102 +24,11 @@ namespace Util {
 using tick_duration = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
 
 // Primary time types using 100ns tick precision
-using time_point = std::chrono::time_point<std::chrono::system_clock, tick_duration>;
 using duration = tick_duration;
-
-// Optional variants for nullable timestamps
-using optional_time_point = std::optional<time_point>;
-using optional_duration = std::optional<duration>;
 
 // ============================================================================
 // Formatting Functions
 // ============================================================================
-
-/**
- * Format a time_point as "YYYY-MM-DD HH:MM:SS.mmm" (UTC)
- * Compatible with System::Time::DateTime::toString() format
- */
-inline std::string format_time_point(const time_point& tp)
-{
-   // Convert to time_t for standard formatting
-   auto time_since_epoch = tp.time_since_epoch();
-   auto seconds = std::chrono::duration_cast<std::chrono::seconds>(time_since_epoch);
-   std::time_t tt = seconds.count();
-
-   // Get milliseconds component
-   auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(time_since_epoch - seconds);
-
-   // Format using gmtime (UTC)
-   std::tm tm_buf;
-   std::memset(&tm_buf, 0, sizeof(tm_buf));
-#ifdef TOOLS_TARGET_WINDOWS
-   gmtime_s(&tm_buf, &tt);
-#else
-   gmtime_r(&tt, &tm_buf);
-#endif
-
-   // Build string in format: YYYY-MM-DD HH:MM:SS.mmm
-   std::ostringstream oss;
-   oss << std::setfill('0') << std::setw(4) << (tm_buf.tm_year + 1900) << '-' << std::setw(2) << (tm_buf.tm_mon + 1)
-       << '-' << std::setw(2) << tm_buf.tm_mday << ' ' << std::setw(2) << tm_buf.tm_hour << ':' << std::setw(2)
-       << tm_buf.tm_min << ':' << std::setw(2) << tm_buf.tm_sec << '.' << std::setw(3) << millis.count();
-
-   return oss.str();
-}
-
-/**
- * Template overload for any time_point type
- */
-template <typename Clock, typename Duration>
-inline std::string format_time_point(const std::chrono::time_point<Clock, Duration>& tp)
-{
-   // Convert to our internal time_point type
-   auto converted = std::chrono::time_point_cast<tick_duration>(tp);
-   return format_time_point(converted);
-}
-
-/**
- * Format a time_point as "YYYY-MM-DD HH:MM:SS.mmm" (local timezone)
- * Compatible with System::Time::DateTime::toLocal().toString() format
- */
-inline std::string format_time_point_local(const time_point& tp)
-{
-   // Convert to time_t for standard formatting
-   auto time_since_epoch = tp.time_since_epoch();
-   auto seconds = std::chrono::duration_cast<std::chrono::seconds>(time_since_epoch);
-   std::time_t tt = seconds.count();
-
-   // Get milliseconds component
-   auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(time_since_epoch - seconds);
-
-   // Format using localtime (local timezone)
-   std::tm tm_buf;
-   std::memset(&tm_buf, 0, sizeof(tm_buf));
-#ifdef TOOLS_TARGET_WINDOWS
-   localtime_s(&tm_buf, &tt);
-#else
-   localtime_r(&tt, &tm_buf);
-#endif
-
-   // Build string in format: YYYY-MM-DD HH:MM:SS.mmm
-   std::ostringstream oss;
-   oss << std::setfill('0') << std::setw(4) << (tm_buf.tm_year + 1900) << '-' << std::setw(2) << (tm_buf.tm_mon + 1)
-       << '-' << std::setw(2) << tm_buf.tm_mday << ' ' << std::setw(2) << tm_buf.tm_hour << ':' << std::setw(2)
-       << tm_buf.tm_min << ':' << std::setw(2) << tm_buf.tm_sec << '.' << std::setw(3) << millis.count();
-
-   return oss.str();
-}
-
-/**
- * Template overload for any time_point type
- */
-template <typename Clock, typename Duration>
-inline std::string format_time_point_local(const std::chrono::time_point<Clock, Duration>& tp)
-{
-   // Convert to our internal time_point type
-   auto converted = std::chrono::time_point_cast<tick_duration>(tp);
-   return format_time_point_local(converted);
-}
 
 /**
  * Format a duration as "HH:MM:SS.mmm"

@@ -101,7 +101,7 @@ public:
       return BasePtr(shared_from_this());
    }
    Communication::CommonIoPtr getCommonIo() const;
-   Util::UserPtr getUserIface() const;
+
    virtual State getState() const;
    virtual void setState(State newState);
    virtual void flowControlCallback(FlowControl::FlowControlStatus status);
@@ -261,38 +261,6 @@ private:
    BasePtr m_pProtocol;                                ///< Protocol that disconnected
    Base::Direction m_direction;                        ///< Direction of flow control
    FlowControl::FlowControlStatus m_flowControlStatus; ///< The current flow control status for protocol
-};
-
-// ----------------------------------------------------------------------------
-// LockStatusChangeEvent
-//
-/// Event from a protocol changing lock status
-// ----------------------------------------------------------------------------
-class LockStatusChangeEvent : public Util::Event
-{
-   TOOLS_FORBID_COPY(LockStatusChangeEvent);
-
-public:
-   LockStatusChangeEvent(const BasePtr& pProtocol, Base::LockStatus lockStatus)
-   : Util::Event()
-   , m_pProtocol(pProtocol)
-   , m_lockStatus(lockStatus)
-   {
-   }
-
-   BasePtr getProtocol() const
-   {
-      return m_pProtocol;
-   }
-
-   Base::LockStatus getStatus() const
-   {
-      return m_lockStatus;
-   }
-
-private:
-   BasePtr m_pProtocol;           ///< Protocol that disconnected
-   Base::LockStatus m_lockStatus; ///< The current lock status for protocol
 };
 
 

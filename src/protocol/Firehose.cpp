@@ -252,6 +252,10 @@ Base::TransactionId Firehose::sendAsync(const Device::SharedByteBufferPtr& pBuff
 #endif
    }
 
+   PTRACE_LOG(
+      "Tx size: " + std::string(std::to_string(pBuffer->size()).c_str()) + " data: " + Util::bufferToHex(pBuffer)
+   );
+
    // FLOG_DATA(
    //    "Tx size: " + std::string(std::to_string(pBuffer->size()).c_str()),
    //    pBuffer,
@@ -341,7 +345,7 @@ void Firehose::getBytes(uint8_t* pDestination, uint32_t bytesToRead, uint32_t& b
    updateFlowControlCount(getSize());
    if(0 == getSize())
    {
-      // LOG_TRACE(getLogger(), "All bytes pushed");
+      FLOG_DEBUG("All bytes pushed");
       m_rxDataEvent.reset();
    }
 }
@@ -507,6 +511,9 @@ void Firehose::receiveData(const Device::SharedByteBufferPtr& pBuffer)
 {
    if(pBuffer != nullptr && pBuffer->size() > 0)
    {
+      PTRACE_LOG(
+         "Rx size: " + std::string(std::to_string(pBuffer->size()).c_str()) + " data: " + Util::bufferToHex(pBuffer)
+      );
       // FLOG_DATA(
       //    "Rx size: " + std::string(std::to_string(pBuffer->size()).c_str()),
       //    pBuffer,

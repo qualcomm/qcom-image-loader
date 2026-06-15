@@ -144,8 +144,13 @@ QC::ErrorType ProgressWrapper::execute(std::function<QC::ErrorType()> operation)
    return result;
 }
 
+#ifdef TOOLS_TARGET_WINDOWS
+void __stdcall ProgressWrapper::
+   serviceEventCallback(const std::string& serviceName, int64_t eventId, const std::string& eventDescription)
+#else
 void ProgressWrapper::
    serviceEventCallback(const std::string& serviceName, int64_t eventId, const std::string& eventDescription)
+#endif
 {
    (void)serviceName; // Suppress unused parameter warning
 

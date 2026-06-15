@@ -25,9 +25,6 @@
     <ClCompile Include="Cdt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ProgressCallback.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ProgressWrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -72,9 +69,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CliLogger.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ProgressCallback.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ProgressWrapper.h">

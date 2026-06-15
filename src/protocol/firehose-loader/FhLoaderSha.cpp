@@ -1,126 +1,8 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD 3-Clause Clear License
-/*  from OpenBSD: sha2.c,v 1.11 2005/08/08 08:05:35 espie Exp    */
-/*
- * FILE:   sha2.c
- * AUTHOR:   Aaron D. Gifford <me@aarongifford.com>
- *
- * Copyright (c) 2000-2001, Aaron D. Gifford
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- * notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the copyright holder nor the names of contributors
- * may be used to endorse or promote products derived from this software
- * without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTOR(S) "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTOR(S) BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- * $From: sha2.c,v 1.1 2001/11/08 00:01:51 adg Exp adg $
- */
-
-
-/*===========================================================================
-
-                      EDIT HISTORY FOR FILE
-
-  This section contains comments describing changes made to the
-  module. Notice that changes are listed in reverse chronological
-  order.
-
-  $Header:
-//depot/HTE/QDART/QDART_MFG/BSP_Storage/FHLoader/fh_loader/fh_loader_sha.c#2 $
-  $DateTime: 2020/03/09 18:55:59 $
-  $Author: wkimberl $
-
-YYYY-MM-DD   who   what, where, why
-----------   ---   ---------------------------------------------------------
-2016-01-14   wek   Create. Move SHA functions from security to a new file.
-
-===========================================================================*/
-
 #include "protocol/firehose-loader/FhLoaderSha.h"
 
 #include <string.h>
-
-/* ------------------------------------------------------------ */
-/* Constants and definitions for SHA-1                          */
-/* ------------------------------------------------------------ */
-#define SECAPI_HSH_SHA_BLOCK_BYTE_LEN 64
-#define SECAPI_HSH_SHA_DIGEST_SIZE 20
-
-typedef union
-{
-   uint64_t l[16];
-   uint8_t c[64];
-
-} CHAR64LONG16;
-
-void our_memset(void* ptr, uint8_t val, uint32_t size)
-{
-   uint32_t count = 0;
-   uint8_t* tmp_ptr = (uint8_t*)ptr;
-   for(count = 0; count < size; count++)
-   {
-      *tmp_ptr = val;
-      tmp_ptr++;
-   }
-}
-/* Optimizations */
-uint64_t rol30(uint64_t value)
-{
-   return (value << 30) | ((value >> 2) & 0x3fffffff);
-}
-
-uint64_t rol24(uint64_t value)
-{
-   return (value << 24) | ((value >> 8) & 0x00ffffff);
-}
-
-uint64_t rol8(uint64_t value)
-{
-   return (value << 8) | ((value >> 24) & 0x000000ff);
-}
-
-uint64_t rol5(uint64_t value)
-{
-   return (value << 5) | ((value >> 27) & 0x0000001f);
-}
-
-uint64_t rol1(uint64_t value)
-{
-   return (value << 1) | ((value >> 31) & 0x00000001);
-}
-
-
-/* blk0() and blk() perform the initial expand */
-
-// #if defined(__BIG_ENDIAN)
-// #define blk0(block, i)      (block->l[i])
-// #else
-#define blk0(block, i) (block->l[i] = (rol24(block->l[i]) & 0xff00ff00) | (rol8(block->l[i]) & 0x00ff00ff))
-// #endif //
-#define blk(block, i)                                                                                                   \
-   (block->l[i & 0x0f] =                                                                                                \
-       rol1(block->l[(i + 13) & 0x0f] ^ block->l[(i + 8) & 0x0f] ^ block->l[(i + 2) & 0x0f] ^ block->l[(i + 0) & 0x0f]) \
-   )
-
 
 /* ------------------------------------------------------------ */
 /* Constants and definitions for SHA-256                          */
@@ -139,15 +21,6 @@ uint64_t rol1(uint64_t value)
    do                                                                                                                  \
    {                                                                                                                   \
       (dst) = (uint32_t)(cp)[3] | ((uint32_t)(cp)[2] << 8) | ((uint32_t)(cp)[1] << 16) | ((uint32_t)(cp)[0] << 24);    \
-   } while(0)
-
-#define BE_8_TO_64(dst, cp)                                                                                            \
-   do                                                                                                                  \
-   {                                                                                                                   \
-      (dst) =                                                                                                          \
-         (uint64_t)(cp)[7] | ((uint64_t)(cp)[6] << 8) | ((uint64_t)(cp)[5] << 16) | ((uint64_t)(cp)[4] << 24) |        \
-         ((uint64_t)(cp)[3] << 32) | ((uint64_t)(cp)[2] << 40) | ((uint64_t)(cp)[1] << 48) |                           \
-         ((uint64_t)(cp)[0] << 56);                                                                                    \
    } while(0)
 
 #define BE_64_TO_8(cp, src)                                                                                            \
@@ -172,21 +45,6 @@ uint64_t rol1(uint64_t value)
       (cp)[3] = (uint8_t)((src));                                                                                      \
    } while(0)
 
-/*
- * Macro for incrementally adding the unsigned 64-bit integer n to the
- * unsigned 128-bit integer (represented using a two-element array of
- * 64-bit words):
- */
-#define ADDINC128(w, n)                                                                                                \
-   do                                                                                                                  \
-   {                                                                                                                   \
-      (w)[0] += (uint64_t)(n);                                                                                         \
-      if((w)[0] < (n))                                                                                                 \
-      {                                                                                                                \
-         (w)[1]++;                                                                                                     \
-      }                                                                                                                \
-   } while(0)
-
 /** THE SIX LOGICAL FUNCTIONS ****************************************/
 /*
  * Bit shifting and rotation (used by the six SHA-XYZ logical functions:
@@ -200,9 +58,6 @@ uint64_t rol1(uint64_t value)
 #define R(b, x) ((x) >> (b))
 /* 32-bit Rotate-right (used in SHA-256): */
 #define SHA_S32(b, x) (((x) >> (b)) | ((x) << (32 - (b))))
-/* 64-bit Rotate-right (used in SHA-384 and SHA-512): */
-#define SHA_S64(b, x) (((x) >> (b)) | ((x) << (64 - (b))))
-
 /* Two of six logical functions used in SHA-256, SHA-384, and SHA-512: */
 #define Ch(x, y, z) (((x) & (y)) ^ ((~(x)) & (z)))
 #define Maj(x, y, z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))

@@ -499,11 +499,6 @@ bool FileSystem::hasExtension(const std::string& path, const std::string& extens
    return false;
 }
 
-void FileSystem::sleepMs(int milliseconds)
-{
-   std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
-}
-
 bool FileSystem::createDirectoryWithPermissions(const std::string& path)
 {
    if(!isDirectory(path))
@@ -762,35 +757,6 @@ std::string FileSystem::createTempDirectory(const std::string& baseName)
 
    // If all attempts failed, return empty string
    return "";
-}
-
-bool FileSystem::hasFileExtension(const std::string& path, const std::string& extension)
-{
-   // Handle empty extension case
-   if(extension.empty()) return false;
-
-   // Extract base filename (remove directory path)
-   size_t pos = path.find_last_of("/\\");
-   std::string filename = (pos == std::string::npos) ? path : path.substr(pos + 1);
-
-   // Find extension dot in filename
-   pos = filename.rfind('.');
-   if(pos == std::string::npos || pos == filename.size() - 1)
-   {
-      return false; // No extension or trailing dot
-   }
-
-   // Extract and normalize extension
-   std::string actualExt = filename.substr(pos + 1);
-   auto toLower = [](unsigned char c) { return std::tolower(c); };
-
-   std::string normalizedActual = actualExt;
-   std::string normalizedTarget = extension;
-
-   std::transform(normalizedActual.begin(), normalizedActual.end(), normalizedActual.begin(), toLower);
-   std::transform(normalizedTarget.begin(), normalizedTarget.end(), normalizedTarget.begin(), toLower);
-
-   return normalizedActual == normalizedTarget;
 }
 
 std::string FileSystem::getDirectoryPath(const std::string& filePath)

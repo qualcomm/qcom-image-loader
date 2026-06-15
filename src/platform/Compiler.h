@@ -13,16 +13,6 @@
 #error Unknown Compiler
 #endif
 
-#if defined _lint
-#define TOOLS_COMPILER_LINT
-#endif
-
 #if defined _DEBUG
 #define TOOLS_MODE_DEBUG
-#else
-#define TOOLS_MODE_RELEASE
-#endif
-
-#if defined _UNICODE
-#define TOOLS_UNICODE
 #endif

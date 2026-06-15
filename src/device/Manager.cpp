@@ -34,13 +34,6 @@
 #endif
 
 
-#ifdef TOOLS_TARGET_WINDOWS
-const std::string DPL_STREAM = ("\\DPL");
-const std::string QDSS_TRACE_STREAM = ("\\TRACE");
-#else
-const std::string DPL_STREAM = ("");
-const std::string QDSS_TRACE_STREAM = ("");
-#endif
 namespace Device {
 
 static const DeviceHandle DEVICE_HANDLE_INCREMENT = TOOLS_I64(0x0001000000000000);
@@ -50,7 +43,6 @@ static constexpr auto DISCOVERY_WAIT_PERIOD = std::chrono::milliseconds(50);
 static constexpr auto SIBLING_PROTOCOL_WAIT = std::chrono::milliseconds(5000);
 static constexpr auto REVERSED_DEPARTURE_ARRIVAL_WAIT = std::chrono::milliseconds(5000);
 static constexpr auto SAHARA_OTHER_PROTOCOL_WAIT = std::chrono::milliseconds(30000);
-static constexpr auto QMI_READY_WAIT = std::chrono::milliseconds(120000);
 
 static constexpr auto STATUS_CHECK_PERIOD = std::chrono::seconds(10);
 static const std::string DUMMY_ADB_SERIAL_NUMBER = ("1234567");
@@ -59,12 +51,9 @@ static const std::string DUMMY_ADB_SERIAL_NUMBER = ("1234567");
 static const std::string STRING_PATTERN_SAHARA = ".*?SAHARA";
 static const std::string STRING_PATTERN_FIREHOSE = ".*?FIREHOSE";
 
-std::recursive_mutex g_managerMutex;
 static bool g_bFirstCallback = true;
 typedef std::set<std::shared_ptr<Device::Communication::CommonIo>> ComSet;
 ComSet g_forcedDisconnects;
-
-static const char HWID_DELIM = 0x000026; // UCS_AMPERSAND
 
 static const std::string USB_MATCH = "USB\\";
 static const std::string USB_VID = "VID";
@@ -455,6 +444,10 @@ public:
       {
          switch(KL::Level(level))
          {
+            case KL::Level::Data:
+               PTRACE_LOG(("QDS: " + std::string(pMessage)).c_str());
+               break;
+
             case KL::Level::Debug:
                FLOG_DEBUG(("QDS: " + std::string(pMessage)).c_str());
                break;
@@ -2355,18 +2348,6 @@ void Manager::shutDown()
 }
 
 // ----------------------------------------------------------------------------
-// getAppName
-//
-/// @returns The name of the application running the device manager
-/// @returns The name of the application running the device manager
-// ----------------------------------------------------------------------------
-std::string Manager::getAppName()
-{
-   TOOLS_ASSERT(!m_appName.empty());
-   return m_appName;
-}
-
-// ----------------------------------------------------------------------------
 // getAppMajorVersion
 //
 /// @returns The major app version of the application running the device manager
@@ -2397,16 +2378,6 @@ std::string Manager::getAppBuildId()
 }
 
 // ----------------------------------------------------------------------------
-// filterInternal
-//
-/// @returns True if internal data should not be exposed
-// ----------------------------------------------------------------------------
-bool Manager::filterInternal()
-{
-   return false;
-}
-
-// ----------------------------------------------------------------------------
 // getProgramDataDirectory
 //
 /// @returns The path for storing app cache info
@@ -2424,28 +2395,6 @@ std::filesystem::path Manager::getProgramDataDirectory()
 std::filesystem::path Manager::getTempDirectory()
 {
    return m_tempLogFolder;
-}
-
-// ----------------------------------------------------------------------------
-// getPlugInConfigLocation
-//
-/// @returns The folder where plug in config files are to be placed
-// ----------------------------------------------------------------------------
-std::filesystem::path Manager::getPlugInConfigLocation()
-{
-   return getProgramDataDirectory() /*+ ("PluginConfig")*/;
-}
-
-// ----------------------------------------------------------------------------
-// getDeviceCount
-//
-/// @returns The number of active devices
-// ----------------------------------------------------------------------------
-size_t Manager::getDeviceCount() const
-{
-   waitForInitialDeviceList();
-   std::lock_guard<std::recursive_mutex> lock(m_deviceManagerMutex);
-   return m_devices.size();
 }
 
 // ----------------------------------------------------------------------------
@@ -2473,121 +2422,6 @@ void Manager::addDevice(const ImplPtr& pDevice)
 
 
 // ----------------------------------------------------------------------------
-// getDeviceList
-//
-/// @returns The complete list of currently available devices
-// ----------------------------------------------------------------------------
-Manager::DeviceList Manager::getDisconnectedDeviceList() const
-{
-   std::lock_guard<std::recursive_mutex> lock(m_deviceManagerMutex);
-   return m_disconnectedDevices;
-}
-
-// ----------------------------------------------------------------------------
-// mergeDevice
-//
-/// Move all protocols from one device to another
-// ----------------------------------------------------------------------------
-void Manager::mergeDevice(DeviceHandle sourceHandle, DeviceHandle destinationHandle)
-{
-   bool bSrcConnected = false;
-   bool bDestConnected = false;
-   bool bConnectedProtocolMerged = false;
-
-   std::lock_guard<std::recursive_mutex> lock(m_deviceManagerMutex);
-   DeviceList::iterator src = m_devices.find(sourceHandle);
-   if(m_devices.end() == src)
-   {
-      src = m_disconnectedDevices.find(sourceHandle);
-      TOOLS_ASSERT_OR_THROW(
-         m_disconnectedDevices.end() != src,
-         Device::Exception(
-            Device::Exception::DEVICE_INVALID_DEVICE_HANDLE,
-            "Could not find source device handle: " + std::to_string(sourceHandle)
-         )
-      );
-   }
-   else
-   {
-      bSrcConnected = true;
-   }
-
-   DeviceList::iterator dest = m_devices.find(destinationHandle);
-   if(m_devices.end() == dest)
-   {
-      dest = m_disconnectedDevices.find(destinationHandle);
-      TOOLS_ASSERT_OR_THROW(
-         m_disconnectedDevices.end() != dest,
-         Device::Exception(
-            Device::Exception::DEVICE_INVALID_DEVICE_HANDLE,
-            "Could not find destination device handle: " + std::to_string(destinationHandle)
-         )
-      );
-   }
-   else
-   {
-      bDestConnected = true;
-   }
-
-   Device::Impl::ProtocolList::const_iterator itP = src->second->m_protocols.begin();
-   Device::Impl::ProtocolList::const_iterator endP = src->second->m_protocols.end();
-   for(; itP != endP; ++itP)
-   {
-      bConnectedProtocolMerged = true;
-      src->second->moveProtocolOut(*itP, true);
-      dest->second->moveProtocolIn(*itP, true);
-   }
-
-   itP = src->second->m_unavailableProtocols.begin();
-   endP = src->second->m_unavailableProtocols.end();
-   for(; itP != endP; ++itP)
-   {
-      src->second->moveProtocolOut(*itP, false);
-      dest->second->moveProtocolIn(*itP, false);
-   }
-
-   if(bSrcConnected)
-   {
-      m_devices.erase(src);
-      FLOG_INFO(("<<<<==-== Deleted device " + std::to_string(src->second->getHandle()) +
-                 " : "
-                 "uniqueIdentifier: " +
-                 src->second->getUniqueIdentifier() +
-                 " : "
-                 "parentDescription: " +
-                 src->second->getDescription())
-                   .c_str());
-      notifyAsync(std::make_shared<DeviceDisconnectEvent>(src->second));
-   }
-   else
-   {
-      m_disconnectedDevices.erase(src);
-   }
-
-   if(!bDestConnected && bConnectedProtocolMerged)
-   {
-      notifyAsync(std::make_shared<DeviceConnectEvent>(dest->second));
-      FLOG_INFO(("==-==>>>> Device reconnect " + std::to_string(dest->second->getHandle()) +
-                 " : "
-                 "uniqueIdentifier: " +
-                 dest->second->getUniqueIdentifier() +
-                 " : "
-                 "parentDescription: " +
-                 dest->second->getDescription() +
-                 " : "
-                 "devicePath: " +
-                 dest->second->getDevicePath() +
-                 " : "
-                 "serialNumberMsm: " +
-                 dest->second->getSerialNumberMsm() +
-                 " : "
-                 "serialNumberAdb: " +
-                 dest->second->getSerialNumberAdb())
-                   .c_str());
-   }
-}
-
-// ----------------------------------------------------------------------------
 // getDeviceByHandle
 //
 /// @returns The device object for the corresponding handle
@@ -2612,155 +2446,6 @@ ImplPtr Manager::getDeviceByHandle(DeviceHandle handle)
    }
 
    return it->second;
-}
-
-// ----------------------------------------------------------------------------
-// getDeviceBySerialNumber
-//
-/// @returns The device object with identical serial number
-// ----------------------------------------------------------------------------
-ImplPtr Manager::getDeviceBySerialNumber(const std::string& serialNumberMsm, const std::string& serialNumberAdb)
-{
-   waitForInitialDeviceList();
-   std::lock_guard<std::recursive_mutex> lock(m_deviceManagerMutex);
-   DeviceList::iterator it = m_devices.begin();
-   DeviceList::iterator end = m_devices.end();
-
-   for(; it != end; ++it)
-   {
-      if(MatchType::MATCH_SUCCESS == isSerialNumberMatched(it->second, serialNumberMsm, serialNumberAdb))
-      {
-         return it->second;
-      }
-   }
-
-   it = m_disconnectedDevices.begin();
-   end = m_disconnectedDevices.end();
-
-   for(; it != end; ++it)
-   {
-      if(MatchType::MATCH_SUCCESS == isSerialNumberMatched(it->second, serialNumberMsm, serialNumberAdb))
-      {
-         return it->second;
-      }
-   }
-
-   return NULL;
-}
-
-// ----------------------------------------------------------------------------
-// getTcpDeviceByDevicePath
-//
-/// @returns The TCP device object with identical TCP device Path only.
-/// This function is limited for TCP device pairing use case only
-/// Do not enhance this function for I/O type of devices
-// ----------------------------------------------------------------------------
-ImplPtr Manager::getTcpDeviceByDevicePath(const std::string& devicePath)
-{
-   if(devicePath.empty())
-   {
-      // FLOG_WARNING( "Device Path is not set.");
-      return nullptr;
-   }
-
-   waitForInitialDeviceList();
-   std::lock_guard<std::recursive_mutex> lock(m_deviceManagerMutex);
-   DeviceList::iterator it = m_devices.begin();
-   DeviceList::iterator end = m_devices.end();
-
-   for(; it != end; ++it)
-   {
-      // if the device has adb and msm serial number skip the IP based grouping
-      // as this
-      if(it->second->getSerialNumberAdb().empty() && it->second->getSerialNumberMsm().empty())
-      {
-         if(isDevicePathMatched(it->second, devicePath))
-         {
-            return it->second;
-         }
-      }
-   }
-   it = m_disconnectedDevices.begin();
-   end = m_disconnectedDevices.end();
-
-   for(; it != end; ++it)
-   {
-      if(it->second->getSerialNumberAdb().empty() && it->second->getSerialNumberMsm().empty())
-      {
-         if(isDevicePathMatched(it->second, devicePath))
-         {
-            return it->second;
-         }
-      }
-   }
-   // FLOG_WARNING( "No matching device found for Device Path = " + devicePath);
-   return nullptr;
-}
-
-// ----------------------------------------------------------------------------
-// getProtocolByDescription
-//
-/// @returns Return protocol from the protocol description
-// ----------------------------------------------------------------------------
-Protocol::BasePtr Manager::getProtocolByDescription(const std::string& protocolDescription)
-{
-   std::lock_guard<std::recursive_mutex> lock(m_deviceManagerMutex);
-   DeviceList::iterator it = m_devices.begin();
-   DeviceList::iterator end = m_devices.end();
-
-   for(; it != end; ++it)
-   {
-      Device::Impl::ProtocolList::const_iterator itP = it->second->m_protocols.begin();
-      Device::Impl::ProtocolList::const_iterator endP = it->second->m_protocols.end();
-      for(; itP != endP; ++itP)
-      {
-         if((*itP)->getDescription() == protocolDescription)
-         {
-            return *itP;
-         }
-      }
-
-      itP = it->second->m_unavailableProtocols.begin();
-      endP = it->second->m_unavailableProtocols.end();
-      for(; itP != endP; ++itP)
-      {
-         if((*itP)->getDescription() == protocolDescription)
-         {
-            return *itP;
-         }
-      }
-   }
-
-   it = m_disconnectedDevices.begin();
-   end = m_disconnectedDevices.end();
-
-   for(; it != end; ++it)
-   {
-      Device::Impl::ProtocolList::const_iterator itP = it->second->m_protocols.begin();
-      Device::Impl::ProtocolList::const_iterator endP = it->second->m_protocols.end();
-      for(; itP != endP; ++itP)
-      {
-         if((*itP)->getDescription() == protocolDescription)
-         {
-            return *itP;
-         }
-      }
-
-      itP = it->second->m_unavailableProtocols.begin();
-      endP = it->second->m_unavailableProtocols.end();
-      for(; itP != endP; ++itP)
-      {
-         if((*itP)->getDescription() == protocolDescription)
-         {
-            return *itP;
-         }
-      }
-   }
-
-   TOOLS_THROW(Device::Exception(
-      Device::Exception::DEVICE_INVALID_PROTOCOL_HANDLE,
-      "Could not find protocol handle: " + protocolDescription
-   ));
 }
 
 // ----------------------------------------------------------------------------
@@ -2830,32 +2515,6 @@ Protocol::BasePtr Manager::getProtocolByHandle(Protocol::Handle handle)
 }
 
 // ----------------------------------------------------------------------------
-// getProtocolsByTypes
-//
-/// @returns list of protocols of certain types
-// ----------------------------------------------------------------------------
-std::vector<Protocol::BasePtr> Manager::getProtocolsByTypes(const std::vector<Device::ProtocolType>& protocolTypes)
-{
-   std::vector<Protocol::BasePtr> protocols;
-   std::lock_guard<std::recursive_mutex> lock(m_deviceManagerMutex);
-   for(DeviceList::iterator it = m_devices.begin(); it != m_devices.end(); ++it)
-   {
-      Impl::ProtocolList::const_iterator itP = it->second->m_protocols.begin();
-      Impl::ProtocolList::const_iterator endP = it->second->m_protocols.end();
-
-      for(; itP != endP; ++itP)
-      {
-         if(protocolTypes.end() != std::find(protocolTypes.begin(), protocolTypes.end(), getProtocolType(*itP)))
-         {
-            protocols.push_back(*itP);
-         }
-      }
-   }
-
-   return protocols;
-}
-
-// ----------------------------------------------------------------------------
 // getProtocolType
 //
 /// @returns The type of protocol assigned to the given handle
@@ -2890,115 +2549,6 @@ ProtocolType Manager::getProtocolType(const Protocol::BasePtr& pProt)
    {
       return ProtocolType::PROT_UNKNOWN;
    }
-}
-
-// ----------------------------------------------------------------------------
-// getConnectionType
-//
-/// @returns The tye of connection used by the given protocol
-// ----------------------------------------------------------------------------
-ConnectionType Manager::getConnectionType(Protocol::Handle handle)
-{
-   Protocol::BasePtr pProtocol = getProtocolByHandle(handle);
-   TOOLS_ASSERT_OR_RETURN(pProtocol != nullptr, ConnectionType::CONNECT_UNKNOWN);
-
-   Communication::CommonIoPtr pComm = pProtocol->getCommonIo();
-   TOOLS_ASSERT_OR_RETURN(pComm != nullptr, ConnectionType::CONNECT_UNKNOWN);
-
-   if(std::static_pointer_cast<Communication::Usb>(pComm) != nullptr)
-   {
-      return ConnectionType::CONNECT_USB;
-   }
-//   else if (std::static_pointer_cast<Communication::QmiIo>(pComm) != nullptr)
-//   {
-//      return ConnectionType::CONNECT_USB;
-//   }
-// else if (std::static_pointer_cast<Communication::CommandIo>(pComm) !=
-// nullptr)
-//{
-//   return ConnectionType::CONNECT_USB;
-//}
-// else if (std::static_pointer_cast<Communication::Tcp>(pComm) != nullptr)
-//{
-//   return ConnectionType::CONNECT_TCP;
-//}
-//   else if (std::static_pointer_cast<Communication::Ethernet>(pComm) !=
-//   nullptr)
-//   {
-//      return ConnectionType::CONNECT_ETHERNET;
-//   }
-#if defined(FEATURE_PROFILING_TCP) || defined(FEATURE_PROFILING_HOST)
-   else if(std::static_pointer_cast<Communication::QspsDllApi>(pComm) != nullptr)
-   {
-      return ConnectionType::CONNECT_TCP;
-   }
-#endif
-   else
-   {
-      return ConnectionType::CONNECT_UNKNOWN;
-   }
-}
-
-// ----------------------------------------------------------------------------
-// getProtocolConnectionStatus
-//
-/// @returns The how the given protocol is opened
-// ----------------------------------------------------------------------------
-Protocol::Base::Access Manager::getProtocolConnectionStatus(Protocol::Handle handle)
-{
-   Protocol::BasePtr pProtocol = getProtocolByHandle(handle);
-   TOOLS_ASSERT_OR_THROW(
-      pProtocol != nullptr,
-      Device::Exception(
-         Device::Exception::DEVICE_INVALID_PROTOCOL_HANDLE,
-         "Could not find protocol handle: " + std::to_string(handle)
-      )
-   );
-
-   Protocol::Base::Access access = Protocol::Base::Access::NONE;
-   std::lock_guard<std::recursive_mutex> lock(m_deviceManagerMutex);
-   ConnectionList::const_iterator it = m_connections.begin();
-   ConnectionList::const_iterator end = m_connections.end();
-   for(; it != end; ++it)
-   {
-      if(it->second.m_pConnection->getProtocol()->getHandle() == handle)
-      {
-         access = static_cast<Protocol::Base::Access>(access | it->second.m_pConnection->getAccess());
-      }
-   }
-
-   return access;
-}
-
-// ----------------------------------------------------------------------------
-// getProtocolShareStatus
-//
-/// @returns how the given protocol is being shared by open connections
-// ----------------------------------------------------------------------------
-Protocol::Base::Access Manager::getProtocolShareStatus(Protocol::Handle handle)
-{
-   Protocol::BasePtr pProtocol = getProtocolByHandle(handle);
-   TOOLS_ASSERT_OR_THROW(
-      pProtocol != nullptr,
-      Device::Exception(
-         Device::Exception::DEVICE_INVALID_PROTOCOL_HANDLE,
-         "Could not find protocol handle: " + std::to_string(handle)
-      )
-   );
-
-   Protocol::Base::Access access = Protocol::Base::Access::READ_WRITE;
-   std::lock_guard<std::recursive_mutex> lock(m_deviceManagerMutex);
-   ConnectionList::const_iterator it = m_connections.begin();
-   ConnectionList::const_iterator end = m_connections.end();
-   for(; it != end; ++it)
-   {
-      if(it->second.m_pConnection->getProtocol()->getHandle() == handle)
-      {
-         access = static_cast<Protocol::Base::Access>(access & it->second.m_pConnection->getShare());
-      }
-   }
-
-   return access;
 }
 
 // ----------------------------------------------------------------------------
@@ -3203,38 +2753,6 @@ void Manager::reportCriticalEvent(const CriticalEventId id, const std::string& l
 void Manager::onProtocolStateChange(Protocol::StateChangeEvent* pEvent)
 {
    notifyAsync(std::shared_ptr<Protocol::StateChangeEvent>(pEvent, [](Protocol::StateChangeEvent*) {}));
-}
-
-// ----------------------------------------------------------------------------
-// onClientCloseRequest
-//
-/// Notifies client to plan to release client object
-// ----------------------------------------------------------------------------
-void Manager::onClientCloseRequest(Device::ClientCloseRequestEvent* pEvent)
-{
-   notifyAsync(std::shared_ptr<Device::ClientCloseRequestEvent>(pEvent, [](Device::ClientCloseRequestEvent*) {}));
-}
-
-
-// ----------------------------------------------------------------------------
-// onImageManagementServiceEvent
-//
-/// Notifies client that an event has occurred
-// ----------------------------------------------------------------------------
-void Manager::onImageManagementServiceEvent(Device::ImageManagementServiceEvent* pEvent)
-{
-   notifyAsync(std::shared_ptr<Device::ImageManagementServiceEvent>(pEvent, [](Device::ImageManagementServiceEvent*) {})
-   );
-}
-
-// ----------------------------------------------------------------------------
-// onDeviceConfigServiceEvent
-//
-/// Notifies client that an event has occurred
-// ----------------------------------------------------------------------------
-void Manager::onDeviceConfigServiceEvent(Device::DeviceConfigServiceEvent* pEvent)
-{
-   notifyAsync(std::shared_ptr<Device::DeviceConfigServiceEvent>(pEvent, [](Device::DeviceConfigServiceEvent*) {}));
 }
 
 // ----------------------------------------------------------------------------
@@ -3504,75 +3022,6 @@ void Manager::finalize()
 
 
 // ----------------------------------------------------------------------------
-// addClientFilePath
-//
-/// Adds the filePath to corresponding client
-// ----------------------------------------------------------------------------
-void Manager::addClientFilePath(const int32_t clientId, const std::filesystem::path& filePath)
-{
-   std::lock_guard<std::recursive_mutex> lock(m_clientFilePathMutex);
-   if(Protocol::Base::NO_CLIENT_ID != clientId)
-   {
-      m_clientFilePath[clientId].insert(filePath);
-   }
-}
-
-// ----------------------------------------------------------------------------
-// checkFilePathForClient
-//
-/// Check if the filePath belongs to any of the inactiveClientsList client.
-// ----------------------------------------------------------------------------
-bool Manager::
-   checkFilePathForClient(const std::vector<int32_t>& inactiveClientList, const std::filesystem::path& filePath)
-{
-   std::lock_guard<std::recursive_mutex> lock(m_clientFilePathMutex);
-   if(m_clientFilePath.empty())
-   {
-      return false;
-   }
-
-   for(std::vector<int32_t>::const_iterator it = inactiveClientList.begin(); it != inactiveClientList.end(); ++it)
-   {
-      FilePathSet::iterator fileIt = m_clientFilePath[*it].find(filePath);
-      if(fileIt != m_clientFilePath[*it].end())
-      {
-         return true;
-      }
-   }
-   return false;
-}
-
-// ----------------------------------------------------------------------------
-// removeClientFilePaths
-//
-/// Removes the inactive clients from m_clientFilePath.
-// ----------------------------------------------------------------------------
-void Manager::removeClientFilePaths(const std::vector<int32_t>& inactiveClientList)
-{
-   std::lock_guard<std::recursive_mutex> lock(m_clientFilePathMutex);
-   if(m_clientFilePath.empty())
-   {
-      return;
-   }
-
-   for(std::vector<int32_t>::const_iterator it = inactiveClientList.begin(); it != inactiveClientList.end(); ++it)
-   {
-      m_clientFilePath.erase(*it);
-   }
-}
-
-// ----------------------------------------------------------------------------
-// removeAllClientFilePaths
-//
-/// Removes all clients from m_clientFilePath.
-// ----------------------------------------------------------------------------
-void Manager::removeAllClientFilePaths()
-{
-   std::lock_guard<std::recursive_mutex> lock(m_clientFilePathMutex);
-   m_clientFilePath.clear();
-}
-
-// ----------------------------------------------------------------------------
 // mhiForceEdl
 //
 /// MHI kick start
@@ -3625,42 +3074,6 @@ void Manager::removeConnectedDevice(const DeviceHandle deviceHandle)
 
    m_devices.erase(it);
    FLOG_INFO("Removed from connected devices list");
-}
-
-// ----------------------------------------------------------------------------
-// removeDeviceEntry
-//
-/// cleanup entry for given device handle from the disconnected devices list
-// ----------------------------------------------------------------------------
-void Manager::removeDeviceEntry(const DeviceHandle deviceHandle)
-{
-   FLOG_INFO("Started cleanup for device Handle: " + std::to_string(deviceHandle));
-   std::lock_guard<std::recursive_mutex> lock(m_deviceManagerMutex);
-
-   Manager::DeviceList::const_iterator it;
-   it = m_devices.find(deviceHandle);
-   TOOLS_ASSERT_OR_THROW(
-      m_devices.end() == it,
-      Device::Exception(
-         Device::Exception::DEVICE_INVALID_DEVICE_HANDLE,
-         "Device in connected devices list: " + std::to_string(deviceHandle)
-      )
-   );
-
-   it = m_disconnectedDevices.find(deviceHandle);
-   TOOLS_ASSERT_OR_THROW(
-      m_disconnectedDevices.end() != it,
-      Device::Exception(
-         Device::Exception::DEVICE_INVALID_DEVICE_HANDLE,
-         "No entry for given device handle "
-         "in disconnected devices list: " +
-            std::to_string(deviceHandle)
-      )
-   );
-   m_disconnectedDevices.erase(it);
-   FLOG_INFO("Removed from disconnected devices list");
-
-   return;
 }
 
 } // namespace Device

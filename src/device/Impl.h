@@ -36,7 +36,6 @@ public:
    Impl(DeviceHandle handle, const std::string& description, const std::string& uniqueIdentifier);
    virtual ~Impl();
 
-   std::string getHwId() const;
    void setHwId(const std::string& hwId);
    std::string getDescription() const;
    void setDescription(const std::string& description);

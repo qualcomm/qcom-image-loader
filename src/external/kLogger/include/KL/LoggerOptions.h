@@ -7,7 +7,8 @@ namespace KL {
 enum class LogOption : std::uint32_t
 {
    None = 0,
-   DebugToFile = 1u << 0, // write DEBUG messages to the file sink
+   DebugToFile = 1u << 0,  // write DEBUG messages to the file sink
+   PtraceToFile = 1u << 1, // write PTRACE messages to the ptrace file sink
 };
 
 inline LogOption operator|(LogOption lhs, LogOption rhs) noexcept

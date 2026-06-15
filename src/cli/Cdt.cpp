@@ -161,59 +161,6 @@ bool Cdt::containsCdtEntry(const std::string& xmlPath)
    return found;
 }
 
-std::string Cdt::getCdtInfo(const std::vector<std::string>& rawXmlList)
-{
-   std::ostringstream info;
-   info << "CDT Information:\n";
-
-   for(const std::string& xmlPath: rawXmlList)
-   {
-      if(!FileSystem::fileExists(xmlPath)) continue;
-
-      xmlDocPtr doc = xmlReadFile(xmlPath.c_str(), nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
-      if(!doc) continue;
-
-      xmlNodePtr root = xmlDocGetRootElement(doc);
-      for(xmlNodePtr node = root ? root->children : nullptr; node; node = node->next)
-      {
-         if(node->type != XML_ELEMENT_NODE) continue;
-
-         xmlChar* label = xmlGetProp(node, BAD_CAST "label");
-         if(!label) continue;
-
-         std::string labelStr = reinterpret_cast<char*>(label);
-         xmlFree(label);
-         std::string labelLower = labelStr;
-         std::transform(labelLower.begin(), labelLower.end(), labelLower.begin(), ::tolower);
-         if(labelLower.find("cdt") == std::string::npos) continue;
-
-         std::string filename;
-         xmlChar* fn = xmlGetProp(node, BAD_CAST "filename");
-         if(fn)
-         {
-            filename = reinterpret_cast<char*>(fn);
-            xmlFree(fn);
-         }
-
-         std::string partition;
-         xmlChar* pp = xmlGetProp(node, BAD_CAST "physical_partition_number");
-         if(pp)
-         {
-            partition = reinterpret_cast<char*>(pp);
-            xmlFree(pp);
-         }
-
-         info << "  File: " << FileSystem::getFilename(xmlPath) << "\n";
-         info << "    Label: " << labelStr << "\n";
-         info << "    Filename: " << filename << "\n";
-         info << "    Physical Partition: " << partition << "\n";
-      }
-      xmlFreeDoc(doc);
-   }
-
-   return info.str();
-}
-
 std::string Cdt::generateTempXmlPath(const std::string& originalXmlPath)
 {
    // Use cross-platform temporary directory creation

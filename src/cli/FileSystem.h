@@ -248,22 +248,6 @@ public:
     */
    static std::string createTempDirectory(const std::string& baseName);
 
-   /**
-    * @brief Check if a file has a specific file extension
-    * @param path File path of file to check
-    * @param extension Extension to check against
-    * @return True if path has extension, false otherwise
-    */
-   static bool hasFileExtension(const std::string& path, const std::string& extension);
-
-   // ========== Cross-Platform Threading Utilities ==========
-
-   /**
-    * @brief Sleep for specified milliseconds
-    * @param milliseconds Time to sleep
-    */
-   static void sleepMs(int milliseconds);
-
 private:
    /**
     * @brief Extract numeric suffix from filename for sorting

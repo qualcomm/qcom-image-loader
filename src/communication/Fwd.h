@@ -15,11 +15,9 @@ namespace Communication {
 
 class CommonIo;
 typedef std::shared_ptr<CommonIo> CommonIoPtr;
-typedef std::shared_ptr<const CommonIo> const_CommonIoPtr;
 
 class Usb;
 typedef std::shared_ptr<Usb> UsbPtr;
-typedef std::shared_ptr<const Usb> const_UsbPtr;
 
 } // namespace Communication
 } // namespace Device

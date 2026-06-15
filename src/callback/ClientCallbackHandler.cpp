@@ -13,11 +13,6 @@
 
 namespace QC {
 
-// ----------------------------------------------------------------------
-// Global static mutex used for the lazy‑singleton
-// ----------------------------------------------------------------------
-std::recursive_mutex ClientCallbackHandler::g_callbackMutex;
-
 // ----------------------------------------------------------------------------
 // ClientCallbackHandler
 //
@@ -116,7 +111,7 @@ void ClientCallbackHandler::finalize()
 // subscribeForServiceAsyncEvents
 //
 // ----------------------------------------------------------------------------
-void ClientCallbackHandler::subscribeForServiceAsyncEvents(const Util::CheckedPointer<Rpc::ServiceHandlerBase> pService)
+void ClientCallbackHandler::subscribeForServiceAsyncEvents(const Util::CheckedPointer<Service::ServiceHandlerBase> pService)
 {
    TOOLS_ASSUMING(pService->subscribeForAsyncEvents(this, &QC::ClientCallbackHandler::onServiceEvent));
 }
@@ -124,7 +119,7 @@ void ClientCallbackHandler::subscribeForServiceAsyncEvents(const Util::CheckedPo
 // subscribeForServiceAsyncEvents
 //
 // ----------------------------------------------------------------------------
-void ClientCallbackHandler::unsubscribeServiceAsyncEvents(const Util::CheckedPointer<Rpc::ServiceHandlerBase> pService)
+void ClientCallbackHandler::unsubscribeServiceAsyncEvents(const Util::CheckedPointer<Service::ServiceHandlerBase> pService)
 {
    TOOLS_IGNORE_EXCEPTIONS(pService->unsubscribeAsyncEvents(this, &QC::ClientCallbackHandler::onServiceEvent));
    FLOG_INFO("ClientCallbackHandler shutting the "

@@ -72,8 +72,14 @@ public:
 
 private:
    // Static callback function for service events
+   // Must match ServiceEventCallback calling convention (__stdcall on Windows x86)
+#ifdef TOOLS_TARGET_WINDOWS
+   static void __stdcall
+   serviceEventCallback(const std::string& serviceName, int64_t eventId, const std::string& eventDescription);
+#else
    static void
    serviceEventCallback(const std::string& serviceName, int64_t eventId, const std::string& eventDescription);
+#endif
 
    void startProgress();
    void stopProgress();

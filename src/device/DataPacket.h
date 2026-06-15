@@ -42,36 +42,16 @@ public:
 
    virtual ~DataPacket();
 
-   virtual Device::SharedByteBufferPtr getPayload() const;
-   virtual size_t getPayloadSize() const;
-   virtual std::chrono::system_clock::time_point getReceiveTime() const;
    virtual Device::DataPacket::Direction getDirection() const;
-   virtual size_t getTimeSortedIndex() const;
-
 
    virtual uint64_t getId() const
    {
       return m_id;
    }
 
-   inline size_t getProtocolIndex() const
-   {
-      return m_index;
-   }
-
-   inline size_t getGlobalIndex() const
-   {
-      return m_globalIndex;
-   }
-
    inline Protocol::Handle getProtocolHandle() const
    {
       return m_protocolHandle;
-   }
-
-   inline ProtocolType getProtocolType() const
-   {
-      return m_protocolType;
    }
 
    inline void setTransactionId(uint64_t transactionId, bool bFinalResponse = true)

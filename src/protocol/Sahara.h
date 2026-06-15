@@ -283,30 +283,6 @@ public:
    TOOLS_STATIC_ASSERT(8 == TOOLS_SIZEOF(Reset));
 
    // -------------------------------------------------------------------------
-   // ResetResponse
-   //
-   // Payload for SAHARA_RESET_RESP (Command 0x08)
-   // -------------------------------------------------------------------------
-   struct ResetResponse
-   {
-      Sahara::FrameHeader m_header;
-   };
-   TOOLS_STATIC_ASSERT(8 == TOOLS_SIZEOF(ResetResponse));
-
-   // -------------------------------------------------------------------------
-   // MemoryDebug
-   //
-   // Payload for SAHARA_MEMORY_DEBUG (Command 0x09)
-   // -------------------------------------------------------------------------
-   struct MemoryDebug
-   {
-      Sahara::FrameHeader m_header;
-      uint32_t m_memoryTableAddress;
-      uint32_t m_memoryTableLength;
-   };
-   TOOLS_STATIC_ASSERT(16 == TOOLS_SIZEOF(MemoryDebug));
-
-   // -------------------------------------------------------------------------
    // MemoryRead
    //
    // Payload for SAHARA_MEMORY_READ (Command 0x0A)
@@ -318,17 +294,6 @@ public:
       uint32_t m_memoryLength;
    };
    TOOLS_STATIC_ASSERT(16 == TOOLS_SIZEOF(MemoryRead));
-
-   // -------------------------------------------------------------------------
-   // CommandReady
-   //
-   // Payload for SAHARA_COMMAND_READY (Command 0x0B)
-   // -------------------------------------------------------------------------
-   struct CommandReady
-   {
-      Sahara::FrameHeader m_header;
-   };
-   TOOLS_STATIC_ASSERT(8 == TOOLS_SIZEOF(CommandReady));
 
    // -------------------------------------------------------------------------
    // CommandSwitchMode
@@ -378,19 +343,6 @@ public:
       uint32_t m_clientCommand;
    };
    TOOLS_STATIC_ASSERT(12 == TOOLS_SIZEOF(CommandExecuteData));
-
-   // -------------------------------------------------------------------------
-   // MemoryDebug64Bit
-   //
-   // Payload for SAHARA_64_BIT_MEMORY_DEBUG (Command 0x10)
-   // -------------------------------------------------------------------------
-   struct MemoryDebug64Bit
-   {
-      Sahara::FrameHeader m_header;
-      uint64_t m_memoryTableAddress;
-      uint64_t m_memoryTableLength;
-   };
-   TOOLS_STATIC_ASSERT(24 == TOOLS_SIZEOF(MemoryDebug64Bit));
 
    // -------------------------------------------------------------------------
    // MemoryRead64Bit

@@ -151,7 +151,6 @@ private:
 };
 
 using MessagePtr = std::shared_ptr<Message>;
-using const_MessagePtr = std::shared_ptr<const Message>;
 
 class IMessagePublisher
 {

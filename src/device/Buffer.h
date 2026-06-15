@@ -4,6 +4,9 @@
 #include "device/Exception.h"
 #include "device/Fwd.h"
 
+#include <iomanip>
+#include <sstream>
+
 // #define ENABLE_BUFFER_POOL    // Whether to have the buffer pool or not
 
 namespace Device {
@@ -382,6 +385,38 @@ inline _OutT buffer_cast(const Device::SharedByteBufferPtr& pBuffer ///< SharedB
    }
 
    return buffer_cast<_OutT>(const_cast<uint8_t*>(pBuffer->begin()), pBuffer->size());
+}
+
+// ----------------------------------------------------------------------------
+// bufferToHex
+//
+/// Converts buffer contents to a hex string for logging
+/// @param pBuffer The buffer to convert
+/// @param maxBytes Maximum number of bytes to include (0 = unlimited)
+/// @returns Hex string representation of the buffer contents
+// ----------------------------------------------------------------------------
+inline std::string bufferToHex(const Device::SharedByteBufferPtr& pBuffer, size_t maxBytes = 64)
+{
+   if (pBuffer == nullptr || pBuffer->empty())
+   {
+      return "";
+   }
+
+   std::ostringstream oss;
+   size_t len = (maxBytes == 0) ? pBuffer->size() : std::min(pBuffer->size(), maxBytes);
+
+   for (size_t i = 0; i < len; ++i)
+   {
+      oss << std::uppercase << std::hex << std::setw(2) << std::setfill('0')
+          << static_cast<int>(pBuffer->at(i)) << ' ';
+   }
+
+   if (maxBytes > 0 && pBuffer->size() > maxBytes)
+   {
+      oss << "...";
+   }
+
+   return oss.str();
 }
 
 } // namespace Util

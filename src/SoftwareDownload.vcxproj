@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -53,6 +61,19 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -68,6 +89,12 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -87,6 +114,16 @@
     <OutDir>$(SolutionDir)Builds\$(Platform)\$(Configuration)\bin\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IntDir>$(SolutionDir)Builds\$(Platform)\$(Configuration)\obj\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)Builds\$(Platform)\$(Configuration)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IntDir>$(SolutionDir)Builds\$(Platform)\$(Configuration)\obj\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)Builds\$(Platform)\$(Configuration)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(SolutionDir)Builds\$(Platform)\$(Configuration)\obj\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)Builds\$(Platform)\$(Configuration)\bin\</OutDir>
@@ -209,6 +246,65 @@
       <Command>xcopy "exports\*.h" "$(OutputPath)..\inc" /E /H /C /I /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>
+      </SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_HAS_STD_BYTE=0;WIN32_LEAN_AND_MEAN;NOMINMAX;NOGDI;TOOLS_TARGET_WINDOWS;LIBXML_STATIC;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>false</ConformanceMode>
+      <AdditionalIncludeDirectories>exports;external\kLogger\include;qds\qds_win;external\libxml2-win-build\include;external\libiconv-win-build\include;.</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>QcDevice.lib;Rpcrt4.lib;setupapi.lib;Shlwapi.lib;libxml2-static.lib;libiconv-static.lib;libz-static.lib;liblzma-static.lib;ws2_32.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Builds\$(Platform)\$(Configuration)\lib\;$(SolutionDir)src\external\libxml2-win-build\build\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>/IGNORE:4006</AdditionalOptions>
+    </Lib>
+    <PostBuildEvent>
+      <Command>xcopy "exports\*.h" "$(OutputPath)..\inc" /E /H /C /I /Y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>
+      </SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_HAS_STD_BYTE=0;WIN32_LEAN_AND_MEAN;NOMINMAX;NOGDI;TOOLS_TARGET_WINDOWS;LIBXML_STATIC;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>false</ConformanceMode>
+      <AdditionalIncludeDirectories>exports;external\kLogger\include;qds\qds_win;external\libxml2-win-build\include;external\libiconv-win-build\include;.</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>QcDevice.lib;Rpcrt4.lib;setupapi.lib;Shlwapi.lib;libxml2-static.lib;libiconv-static.lib;libz-static.lib;liblzma-static.lib;ws2_32.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Builds\$(Platform)\$(Configuration)\lib\;$(SolutionDir)src\external\libxml2-win-build\build\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <LinkTimeCodeGeneration>false</LinkTimeCodeGeneration>
+      <AdditionalOptions>/IGNORE:4006</AdditionalOptions>
+    </Lib>
+    <PostBuildEvent>
+      <Command>xcopy "exports\*.h" "$(OutputPath)..\inc" /E /H /C /I /Y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="callback\ClientCallbackHandler.cpp" />
     <ClCompile Include="communication\Usb.cpp" />
@@ -229,10 +325,10 @@
     <ClCompile Include="report\DataContainer.cpp" />
     <ClCompile Include="report\StatusManager.cpp" />
     <ClCompile Include="report\Thread.cpp" />
-    <ClCompile Include="rpc\DeviceManagerHandler.cpp" />
-    <ClCompile Include="rpc\ImageManagementServiceHandler.cpp" />
-    <ClCompile Include="rpc\ImageManagementServiceTypes.cpp" />
-    <ClCompile Include="rpc\UtilityServiceHandler.cpp" />
+    <ClCompile Include="service\DeviceManagerHandler.cpp" />
+    <ClCompile Include="service\ImageManagementServiceHandler.cpp" />
+    <ClCompile Include="service\ImageManagementServiceTypes.cpp" />
+    <ClCompile Include="service\UtilityServiceHandler.cpp" />
     <ClCompile Include="tracker\FunctionTracker.cpp" />
     <ClCompile Include="SoftwareDownload.cpp" />
     <ClCompile Include="SoftwareDownloadUtility.cpp" />
@@ -265,8 +361,6 @@
     <ClInclude Include="platform\LangMacros.h" />
     <ClInclude Include="platform\Target.h" />
     <ClInclude Include="protocol\Base.h" />
-    <ClInclude Include="protocol\DeviceConfigLibrary.h" />
-    <ClInclude Include="protocol\DeviceConfigLibraryConstants.h" />
     <ClInclude Include="protocol\Firehose.h" />
     <ClInclude Include="protocol\firehose-loader\FhLoaderSha.h" />
     <ClInclude Include="protocol\firehose-loader\FirehoseLoader.h" />
@@ -277,11 +371,11 @@
     <ClInclude Include="report\Fwd.h" />
     <ClInclude Include="report\StatusManager.h" />
     <ClInclude Include="report\Thread.h" />
-    <ClInclude Include="rpc\DeviceManagerHandler.h" />
-    <ClInclude Include="rpc\Fwd.h" />
-    <ClInclude Include="rpc\ImageManagementServiceHandler.h" />
-    <ClInclude Include="rpc\Service.h" />
-    <ClInclude Include="rpc\UtilityServiceHandler.h" />
+    <ClInclude Include="service\DeviceManagerHandler.h" />
+    <ClInclude Include="service\Fwd.h" />
+    <ClInclude Include="service\ImageManagementServiceHandler.h" />
+    <ClInclude Include="service\Service.h" />
+    <ClInclude Include="service\UtilityServiceHandler.h" />
     <ClInclude Include="tracker\FunctionTracker.h" />
     <ClInclude Include="exports\ImageManagementDefinitions.h" />
     <ClInclude Include="exports\SoftwareDownload.h" />

@@ -37,40 +37,6 @@
 #endif
 
 // --------------------------------------------------------------------------
-// TOOLS_ASSERT_OR_CONTINUE
-//
-/// In debug mode, asserts that the condition is true.
-/// If the condition is not true (in debug or release mode),
-///   execute a continue statement.
-// --------------------------------------------------------------------------
-#define TOOLS_ASSERT_OR_CONTINUE(exp)                                                                                  \
-   if(!(exp))                                                                                                          \
-   {                                                                                                                   \
-      TOOLS_ASSERT_MESSAGE(#exp);                                                                                      \
-      continue;                                                                                                        \
-   }                                                                                                                   \
-   do                                                                                                                  \
-   {                                                                                                                   \
-   } while(TOOLS_FALSE())
-
-// --------------------------------------------------------------------------
-// TOOLS_ASSERT_OR_BREAK
-//
-/// In debug mode, asserts that the condition is true.
-/// If the condition is not true (in debug or release mode),
-///   execute a break statement.
-// --------------------------------------------------------------------------
-#define TOOLS_ASSERT_OR_BREAK(exp)                                                                                     \
-   if(!(exp))                                                                                                          \
-   {                                                                                                                   \
-      TOOLS_ASSERT_MESSAGE(#exp);                                                                                      \
-      break;                                                                                                           \
-   }                                                                                                                   \
-   do                                                                                                                  \
-   {                                                                                                                   \
-   } while(TOOLS_FALSE())
-
-// --------------------------------------------------------------------------
 // TOOLS_ASSERT_OR_RETURN
 //
 /// In debug mode, asserts that the condition is true.

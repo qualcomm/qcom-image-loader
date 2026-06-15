@@ -208,5 +208,78 @@ QC::DigestHeaderType::type CliParserUtil::parseDigestHeaderType(const std::strin
    return headerType;
 }
 
+std::vector<QC::PreservedPartitionInfo> CliParserUtil::parsePreservePartitionList(const std::string& value)
+{
+   std::vector<QC::PreservedPartitionInfo> result;
+   std::stringstream groupStream(value);
+   std::string group;
+
+   // Split by semicolons into index groups: "0:modem,fsc,fsg" ; "1:persist"
+   while(std::getline(groupStream, group, ';'))
+   {
+      // Trim whitespace
+      group.erase(0, group.find_first_not_of(" \t"));
+      group.erase(group.find_last_not_of(" \t") + 1);
+
+      if(group.empty())
+      {
+         continue;
+      }
+
+      auto colonPos = group.find(':');
+      if(colonPos == std::string::npos || colonPos == 0 || colonPos >= group.size() - 1)
+      {
+         QC_THROW_CMDLINE_ERROR(
+            QC::Common::Exception::INVALID_PARAMETERS,
+            "preserve-partitions",
+            "Invalid format: '" + group + "'. Expected <index>:<name1>,<name2>,..."
+         );
+      }
+
+      std::string indexStr = group.substr(0, colonPos);
+      std::string namesStr = group.substr(colonPos + 1);
+
+      // Validate index: must be 'x'/'X' (auto-find) or a natural number
+      std::string partitionIndex;
+      if(toUpper(indexStr) == "X")
+      {
+         partitionIndex = "X";
+      }
+      else
+      {
+         int index = parseNaturalNumber(indexStr);
+         partitionIndex = std::to_string(index);
+      }
+
+      // Split names by comma
+      std::stringstream nameStream(namesStr);
+      std::string name;
+      while(std::getline(nameStream, name, ','))
+      {
+         name.erase(0, name.find_first_not_of(" \t"));
+         name.erase(name.find_last_not_of(" \t") + 1);
+
+         if(!name.empty())
+         {
+            QC::PreservedPartitionInfo info;
+            info.partitionIndex = partitionIndex;
+            info.name = name;
+            result.push_back(info);
+         }
+      }
+   }
+
+   if(result.empty())
+   {
+      QC_THROW_CMDLINE_ERROR(
+         QC::Common::Exception::INVALID_PARAMETERS,
+         "preserve-partitions",
+         "Requires at least one partition entry"
+      );
+   }
+
+   return result;
+}
+
 } // namespace CLI
 } // namespace QC

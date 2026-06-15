@@ -218,12 +218,6 @@
     <ClInclude Include="Protocol\Base.h">
       <Filter>Header Files\Protocol</Filter>
     </ClInclude>
-    <ClInclude Include="Protocol\DeviceConfigLibrary.h">
-      <Filter>Header Files\Protocol</Filter>
-    </ClInclude>
-    <ClInclude Include="Protocol\DeviceConfigLibraryConstants.h">
-      <Filter>Header Files\Protocol</Filter>
-    </ClInclude>
     <ClInclude Include="Protocol\Firehose.h">
       <Filter>Header Files\Protocol</Filter>
     </ClInclude>

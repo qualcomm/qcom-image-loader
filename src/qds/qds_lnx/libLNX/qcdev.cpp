@@ -424,17 +424,46 @@ static bool extractDevInfo(struct udev_device *device, PDeviceCtx pdeviceCtx)
     struct udev_device *device_parent = device;
     const char *str;
     const char *value;
+    char vendorIdBuf[16] = {0};
+    char productIdBuf[16] = {0};
     char *vendorId = NULL;
+    char *productId = NULL;
 	struct udev_device *devp_tmp = NULL;
     std::unordered_map<std::string, std::string> devDetailsMP;
     if (qcdevCtx.mSetting && qcdevCtx.mSetting->VID)
     {
-        vendorId = qcdevCtx.mSetting->VID;
-        /* Assuming the format would be VID_05C6 */
-        if (vendorId = strrchr(vendorId, '_'))
+        char *ampersand = strchr(qcdevCtx.mSetting->VID, '&');
+        if (ampersand)
         {
-            /* Move to the next location */
-            vendorId++;
+            /* Assuming the format would be VID_05C6&PID_9008 */
+            char *vidStr = strchr(qcdevCtx.mSetting->VID, '_');
+            if (vidStr)
+            {
+                vidStr++;
+                int i = 0;
+                while (vidStr[i] && vidStr[i] != '&' && i < (int)sizeof(vendorIdBuf) - 1)
+                {
+                    vendorIdBuf[i] = vidStr[i];
+                    i++;
+                }
+                vendorIdBuf[i] = '\0';
+                vendorId = vendorIdBuf;
+            }
+            char *pidStr = strchr(ampersand, '_');
+            if (pidStr)
+            {
+                pidStr++;
+                productId = pidStr;
+            }
+        }
+        else
+        {
+            /* Assuming the format would be VID_05C6 */
+            vendorId = qcdevCtx.mSetting->VID;
+            if ((vendorId = strrchr(vendorId, '_')))
+            {
+                vendorId++;
+            }
         }
     }
 
@@ -449,8 +478,22 @@ static bool extractDevInfo(struct udev_device *device, PDeviceCtx pdeviceCtx)
             break;
 
         value = udev_device_get_sysattr_value(device_parent, "idVendor");
-        if (value && (!vendorId || !strcasecmp(vendorId, value)))
+        if (value)
+        {
+            if (vendorId && strcasecmp(vendorId, value) != 0)
+            {
+                return QCDEV_FALSE;
+            }
+            if (productId)
+            {
+                value = udev_device_get_sysattr_value(device_parent, "idProduct");
+                if (value && strcasecmp(productId, value) != 0)
+                {
+                    return QCDEV_FALSE;
+                }
+            }
             break;
+        }
 	if ((!strcasecmp(pdeviceCtx->mSubsystem, SUBSYSTEM_MHI)) ||
 	    (!strcasecmp(pdeviceCtx->mSubsystem, SUBSYSTEM_WWAN)))
 	{
@@ -1714,9 +1757,12 @@ static void clearDeviceCnxt(void)
     {
         traversal = qcdevCtx.mpDeviceCtx;
         qcdevCtx.mpDeviceCtx = qcdevCtx.mpDeviceCtx->mNext;
-        /* man free() : If ptr is NULL, no operation is performed.
-         * So avoiding the NULL check
-         */
+        /* Free the DevDetails map allocated with new in processAddDevice */
+        if (traversal->mDevParams.DevDetails)
+        {
+            delete traversal->mDevParams.DevDetails;
+            traversal->mDevParams.DevDetails = NULL;
+        }
         free(traversal);
     }
     return;

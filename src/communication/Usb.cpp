@@ -127,23 +127,16 @@ private:
          createCopy(pUsbBuffer->begin() + bufferOffset, std::min(BUFFER_PROCESS_SIZE, bytesRead - bufferOffset));
       if(bNewPacket)
       {
-         // FLOG_DATA(
-         //    "# Receive from USB handle " + std::to_string(m_pUsb->m_handle) +
-         //    " : " + m_pUsb->getDescription()
-         //       + " Size: " + std::to_string(bytesRead),
-         //    pBuffer,
-         //    DataType::Rx
-         // );
+         PTRACE_LOG("# Receive from USB handle " + std::to_string(m_pUsb->m_handle) +
+            " : " + m_pUsb->getDescription()
+               + " Size: " + std::to_string(bytesRead) + " data: " + Util::bufferToHex(pBuffer));
       }
       else
       {
-         // FLOG_DATA(
-         //    "  Receive from USB handle " + std::to_string(m_pUsb->m_handle) +
-         //    " : " + m_pUsb->getDescription()
-         //       + " Size: " + std::to_string(bytesRead),
-         //    pBuffer,
-         //    DataType::Rx
-         // );
+          PTRACE_LOG(
+            "  Receive from USB handle " + std::to_string(m_pUsb->m_handle) +
+            " : " + m_pUsb->getDescription()
+               + " Size: " + std::to_string(bytesRead) + " data: " + Util::bufferToHex(pBuffer));
       }
 
       if(m_pUsb.isAlive() && m_receiveCallback)
@@ -447,6 +440,10 @@ uint64_t Usb::sendSync(const Device::SharedByteBufferPtr& pBuffer)
       DWORD bytesSent = 0;
       bool bSendStatus = true;
 
+      PTRACE_LOG(
+         "Send to USB handle " + std::to_string(m_handle) + " : "
+            + getDescription() + " size: " + std::to_string(pBuffer->size()) + " data: " + Util::bufferToHex(pBuffer)
+      );
       // FLOG_DATA(
       //    "Send to USB handle " + std::to_string(m_handle) + " : "
       //       + getDescription() + " size: " + std::to_string(pBuffer->size()),

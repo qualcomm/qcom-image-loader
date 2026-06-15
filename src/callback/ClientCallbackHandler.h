@@ -6,8 +6,8 @@
 #include "Definitions.h"
 #include "device/Fwd.h"
 #include "device/Manager.h"
-#include "rpc/DeviceManagerHandler.h"
-#include "rpc/Service.h"
+#include "service/DeviceManagerHandler.h"
+#include "service/Service.h"
 #include "util/AppEvent.h"
 #include "util/AppMessage.h"
 #include "util/MemoryHelper.h"
@@ -80,8 +80,8 @@ public:
 
    void reportException(const ToolException& e);
 
-   void subscribeForServiceAsyncEvents(const Util::CheckedPointer<Rpc::ServiceHandlerBase> pService);
-   void unsubscribeServiceAsyncEvents(const Util::CheckedPointer<Rpc::ServiceHandlerBase> pService);
+   void subscribeForServiceAsyncEvents(const Util::CheckedPointer<Service::ServiceHandlerBase> pService);
+   void unsubscribeServiceAsyncEvents(const Util::CheckedPointer<Service::ServiceHandlerBase> pService);
 
 protected:
    ClientCallbackHandler();
@@ -101,8 +101,6 @@ private:
    // Store reference to Device::Manager to avoid singleton access during
    // destruction
    Device::ManagerPtr m_pDeviceManager;
-
-   static std::recursive_mutex g_callbackMutex;
 
    void onCriticalEvent(Device::CriticalEvent* pEvent);
 

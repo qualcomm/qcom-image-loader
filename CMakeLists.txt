@@ -35,6 +35,11 @@ if (WIN32)
         add_definitions(-DTOOLS_TARGET_WINDOWS -DQFS_IMGMGMT -DTOOLS_ARCH_ARM64
                         -DWIN32 -DNDEBUG -D_LIB -D_UNICODE -DUNICODE -DNOMINMAX)
         set(CMAKE_GENERATOR_PLATFORM "ARM64")
+    elseif(PLATFORM_NAME MATCHES "Win32")
+        message(STATUS "Configuring for Win32 (x86) architecture")
+        add_definitions(-DTOOLS_TARGET_WINDOWS -DQFS_IMGMGMT -DTOOLS_ARCH_32BIT
+                        -DWIN32 -DNDEBUG -D_LIB -D_UNICODE -DUNICODE -DNOMINMAX)
+        set(CMAKE_GENERATOR_PLATFORM "Win32")
     else()
         message(STATUS "Configuring for x64 architecture")
         add_definitions(-DTOOLS_TARGET_WINDOWS -DQFS_IMGMGMT -DTOOLS_ARCH_64BIT
@@ -78,9 +83,11 @@ elseif(WIN32)
 	# Use locally built libxml2 static library
 	set(LIBXML2_WIN_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/external/libxml2-win-build")
 
-	# Determine platform (x64 or ARM64)
+	# Determine platform (x64, ARM64, or Win32)
 	if(PLATFORM_NAME MATCHES "ARM64")
 		set(LIBXML2_LIB_DIR "${LIBXML2_WIN_BUILD_DIR}/build/ARM64")
+	elseif(PLATFORM_NAME MATCHES "Win32")
+		set(LIBXML2_LIB_DIR "${LIBXML2_WIN_BUILD_DIR}/build/Win32")
 	else()
 		set(LIBXML2_LIB_DIR "${LIBXML2_WIN_BUILD_DIR}/build/x64")
 	endif()
@@ -96,7 +103,7 @@ elseif(WIN32)
 		"${LIBXML2_LIB_DIR}/libxml2-static.lib"
 		"${LIBXML2_LIB_DIR}/libiconv-static.lib"
 		"${LIBXML2_LIB_DIR}/liblzma-static.lib"
-		"${LIBXML2_LIB_DIR}/libz-static.lib"
+#		"${LIBXML2_LIB_DIR}/libz-static.lib"
 	)
     set(LIBXML2_INCLUDE_DIR "${LIBXML2_INCLUDE_DIRS}")
     set(LIBXML2_LIBRARY "${LIBXML2_LIBRARIES}")
@@ -146,7 +153,6 @@ set(SOFTWAREDOWNLOAD_LIB_INCLUDES
 # CLI executable includes (minimal restricted access)
 set(CLI_INCLUDES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/cli
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/exception
 	${LIBXML2_INCLUDE_DIRS}
 )
 

@@ -1,23 +1,5 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD 3-Clause Clear License
-/*===========================================================================
-
-                        EDIT HISTORY FOR MODULE
-
-  This section contains comments describing changes made to the module.
-  Notice that changes are listed in reverse chronological order.
-
-  $Header:
-//source/qcom/qct/core/storage/tools/fh_loader/vs2013/fh_loader/fh_loader_sha.h#1
-$ $DateTime: 2016/01/15 16:34:27 $ $Author: wkimberl $
-
-when         who   what, where, why
-----------   ---   ---------------------------------------------------------
-2016-01-14   wek   Create. Move SHA functions from security to a new file.
-
-===========================================================================*/
-
-
 #ifndef __DEVICEPROGRAMMER_SHA_H__
 #define __DEVICEPROGRAMMER_SHA_H__
 #include <stdint.h>

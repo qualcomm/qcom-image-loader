@@ -122,13 +122,13 @@
    } while(0)
 
 
-#ifdef TOOLS_TARGET_WINDOWS
-#define LOG_DIR "C:\\ProgramData\\QFS\\QIL\\Logs\\"
-#define TMP_DIR "C:\\ProgramData\\QFS\\QIL\\Temp\\"
-#else
-#define LOG_DIR "/var/tmp/QFS/QIL/Logs/"
-#define TMP_DIR "/var/tmp/QFS/QIL/Temp/"
+/**
+ * @brief Logs a raw ptrace message to the ptrace file only.
+ * @param msg The message string (std::string compatible) - typically CSV formatted data.
+ *
+ * This macro writes directly to the ptrace log file without any formatting.
+ * The message is written as-is, should be input with formatted msg.
+ */
+#define PTRACE_LOG(msg) KL::Logger::get_instance().log(KL::Level::Info, msg, KL::Sink::PtraceOnly, __FILE__, __LINE__, false)
 
-
-#endif
 #endif // MACROS_H

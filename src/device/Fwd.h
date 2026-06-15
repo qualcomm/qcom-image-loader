@@ -32,8 +32,6 @@ typedef QC::ConnectionType ConnectionType;
 class DataPacket;
 typedef std::shared_ptr<DataPacket> DataPacketPtr;
 
-typedef int64_t InterfaceHandle;
-
 class Impl;
 typedef std::shared_ptr<Impl> ImplPtr;
 

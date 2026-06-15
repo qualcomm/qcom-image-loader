@@ -349,23 +349,10 @@ private:
 };
 
 // #TODO: tobe finished
-inline void generateCallStack(std::ostringstream& os)
-{
-   (void)os; // Suppress unused parameter warning
-   return;
-}
-
-// #TODO: tobe finished
 template <typename _ExceptionT>
 inline const _ExceptionT& throwHelper(const _ExceptionT& e, const char* location)
 {
    const_cast<_ExceptionT&>(e).where(location);
-
-#if defined GENERATE_CALLSTACK || defined TOOLS_MODE_DEBUG
-   std::ostringstream os;
-   TOOLS_IGNORE_EXCEPTIONS(generateCallStack(os));
-   // const_cast<_ExceptionT&>(e).callStack(os.str());
-#endif
 
    return e;
 }

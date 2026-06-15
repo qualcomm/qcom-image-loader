@@ -9,9 +9,6 @@
 #define TOOLS_TARGET_LINUX
 #endif
 
-#if __ANDROID__
-#define TOOLS_TARGET_ANDROID
-#endif
 
 // Check for 64-bit architecture using multiple common defines
 #if defined(__x86_64__) || defined(__X86_64__) || defined(__amd64__) || defined(__aarch64__) || defined(__LP64__) ||   \
@@ -27,9 +24,6 @@
 #endif
 #define TOOLS_ARCH_64BIT
 
-#ifdef __OBJC__
-#define TOOLS_COMPILER_OBJC
-#endif
 
 #elif defined _M_X64
 
@@ -58,8 +52,9 @@
           // Windows.
 #endif
 
-
+#ifndef TOOLS_ARCH_64BIT
 #define TOOLS_ARCH_64BIT
+#endif
 
 #elif defined _WIN32 // _Win32 is ALWAYS define, even on 64 bit, so test for 64
                      // bit first
@@ -105,13 +100,11 @@
           // IE.
 #endif
 
+#ifndef TOOLS_ARCH_32BIT
 #define TOOLS_ARCH_32BIT
+#endif
 
 #else
 #error Unknown Target
 #endif
 
-// What is the target system Char-type?
-#if defined _UNICODE
-#define TOOLS_UNICODE
-#endif

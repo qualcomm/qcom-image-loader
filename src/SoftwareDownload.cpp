@@ -3,11 +3,11 @@
 #include "SoftwareDownload.h"
 
 #include "Globals.h"
-#include "rpc/ImageManagementServiceHandler.h"
+#include "service/ImageManagementServiceHandler.h"
 #include "tracker/FunctionTracker.h"
 
-typedef std::pair<uint64_t, std::shared_ptr<Rpc::ImageManagementServiceHandler>> GLOBAL_HANDLER;
-typedef std::unordered_map<uint64_t, std::shared_ptr<Rpc::ImageManagementServiceHandler>> GLOBAL_HANDLER_MAP;
+typedef std::pair<uint64_t, std::shared_ptr<Service::ImageManagementServiceHandler>> GLOBAL_HANDLER;
+typedef std::unordered_map<uint64_t, std::shared_ptr<Service::ImageManagementServiceHandler>> GLOBAL_HANDLER_MAP;
 static GLOBAL_HANDLER_MAP g_handlers;
 
 namespace QC {
@@ -26,7 +26,7 @@ SoftwareDownload::SoftwareDownload(DeviceInfo deviceInfo)
       m_deviceHandle = deviceInfo.deviceHandle;
       std::string serviceName = "SoftwareDownload_" + std::to_string(m_deviceHandle);
       g_handlers.insert(
-         GLOBAL_HANDLER(deviceInfo.deviceHandle, std::make_shared<Rpc::ImageManagementServiceHandler>(serviceName))
+         GLOBAL_HANDLER(deviceInfo.deviceHandle, std::make_shared<Service::ImageManagementServiceHandler>(serviceName))
       );
    }
 }
@@ -42,7 +42,7 @@ ErrorType SoftwareDownload::initializeService()
    {
       QFS_PRINT_FUNCTION
       result.errorCode =
-         Rpc::DeviceManagerHandler::getInstance()->attachService(m_deviceHandle, g_handlers[m_deviceHandle]);
+         Service::DeviceManagerHandler::getInstance()->attachService(m_deviceHandle, g_handlers[m_deviceHandle]);
    }
    LIB_CATCH
    return result;

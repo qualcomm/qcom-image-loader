@@ -20,7 +20,6 @@ class DataContainer;
 
 class StatusManager;
 typedef std::shared_ptr<StatusManager> StatusManagerPtr;
-typedef std::shared_ptr<const StatusManager> const_StatusManagerPtr;
 
 namespace Thread {
 class Work;

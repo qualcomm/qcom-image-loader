@@ -51,14 +51,6 @@ public:
     */
    static bool containsCdtEntry(const std::string& xmlPath);
 
-   /**
-    * @brief Extract CDT information from rawprogram XML files
-    *
-    * @param rawXmlList List of rawprogram XML files
-    * @return Information about CDT partitions found
-    */
-   static std::string getCdtInfo(const std::vector<std::string>& rawXmlList);
-
 private:
    /**
     * @brief Generate a unique temporary XML filename

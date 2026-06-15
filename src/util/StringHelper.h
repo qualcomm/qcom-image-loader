@@ -108,18 +108,6 @@ inline size_t getStringLength(const char* str)
    return str ? std::strlen(str) : 0;
 }
 
-inline size_t getStringLength(const char16_t* str)
-{
-   if(!str) return 0;
-   return std::char_traits<char16_t>::length(str);
-}
-
-inline size_t getStringLength(const char32_t* str)
-{
-   if(!str) return 0;
-   return std::char_traits<char32_t>::length(str);
-}
-
 // Helper function to wrap string in quotes
 inline std::string quote(const std::string& str)
 {

@@ -15,9 +15,6 @@ public:
    Spinner();
    ~Spinner();
 
-   // Update the spinner with a new percentage (0-100)
-   void update(int percentage);
-
    // Update with percentage and custom message
    void update(int percentage, const std::string& message);
 
@@ -29,9 +26,6 @@ public:
 
    // Finish with a success message
    void finish(const std::string& message = "Done");
-
-   // Finish with an error message
-   void error(const std::string& message = "Error");
 
    // Update spinner only (no progress bar)
    void updateSpinnerOnly(const std::string& message);

@@ -131,31 +131,6 @@ private:
 
 
 // ----------------------------------------------------------------------------
-// ClientCloseRequestEvent
-//
-/// Event for ClientCloseRequest
-// ----------------------------------------------------------------------------
-class ClientCloseRequestEvent : public Util::AsyncEvent
-{
-   TOOLS_FORBID_COPY(ClientCloseRequestEvent);
-
-public:
-   ClientCloseRequestEvent(const std::string& purpose)
-   : Util::AsyncEvent()
-   , m_purpose(purpose)
-   {
-   }
-
-   std::string getPurpose() const
-   {
-      return m_purpose;
-   }
-
-private:
-   std::string m_purpose; ///< purpose for which the client needs to close
-};
-
-// ----------------------------------------------------------------------------
 // GlobalServiceEvent
 //
 /// service Event
@@ -216,7 +191,6 @@ private:
 };
 
 typedef GlobalServiceEvent<0> ImageManagementServiceEvent;
-typedef GlobalServiceEvent<1> DeviceConfigServiceEvent;
 
 
 // ----------------------------------------------------------------------------
@@ -396,32 +370,19 @@ public:
 
    void shutDown();
 
-   std::string getAppName();
    uint16_t getAppMajorVersion();
    uint16_t getAppMinorVersion();
    std::string getAppBuildId();
-   bool filterInternal();
 
    std::filesystem::path getProgramDataDirectory();
    std::filesystem::path getTempDirectory();
-   std::filesystem::path getPlugInConfigLocation();
 
-   size_t getDeviceCount() const;
    DeviceList getDeviceList() const;
-   DeviceList getDisconnectedDeviceList() const;
-   void mergeDevice(DeviceHandle srcHandle, DeviceHandle destHandle);
 
    ImplPtr getDeviceByHandle(DeviceHandle handle);
-   ImplPtr getDeviceBySerialNumber(const std::string& serialNumberMsm, const std::string& serialNumberAdb);
-   ImplPtr getTcpDeviceByDevicePath(const std::string& devicePath);
    Protocol::BasePtr getProtocolByHandle(Protocol::Handle handle);
-   Protocol::BasePtr getProtocolByDescription(const std::string& protocolDescription);
-   std::vector<Protocol::BasePtr> getProtocolsByTypes(const std::vector<Device::ProtocolType>& protocolTypes);
    ProtocolType getProtocolType(Protocol::Handle handle);
    ProtocolType getProtocolType(const Protocol::BasePtr& pProtocol);
-   ConnectionType getConnectionType(Protocol::Handle handle);
-   Protocol::Base::Access getProtocolConnectionStatus(Protocol::Handle handle);
-   Protocol::Base::Access getProtocolShareStatus(Protocol::Handle handle);
    ConnectionPtr openConnection(
       const Protocol::BasePtr& pProtocol,
       const Protocol::Base::Access& access,
@@ -445,10 +406,6 @@ public:
    void reportCriticalEvent(const CriticalEventId id, const std::string& location);
 
    void onProtocolStateChange(Protocol::StateChangeEvent* pEvent);
-   void onClientCloseRequest(Device::ClientCloseRequestEvent* pEvent);
-
-   void onImageManagementServiceEvent(Device::ImageManagementServiceEvent* pEvent);
-   void onDeviceConfigServiceEvent(Device::DeviceConfigServiceEvent* pEvent);
 
    void onCriticalEvent(Device::CriticalEvent* pEvent);
 
@@ -465,16 +422,10 @@ public:
       const bool bKeepSourceFile = false
    );
 
-   void addClientFilePath(const int32_t clientId, const std::filesystem::path& filePath);
-   bool checkFilePathForClient(const std::vector<int32_t>& inactiveClientList, const std::filesystem::path& filePath);
-   void removeClientFilePaths(const std::vector<int32_t>& inactiveClientList);
-   void removeAllClientFilePaths();
-
    void mhiForceEdl(int32_t instance, const std::string& programmerPath);
 
    bool isMemoryUsageCritical();
    bool isCpuUsageCritical();
-   void removeDeviceEntry(const DeviceHandle deviceHandle);
    void removeConnectedDevice(const DeviceHandle deviceHandle);
    void addDevice(const ImplPtr& pDevice);
 

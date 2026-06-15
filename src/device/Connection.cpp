@@ -438,17 +438,6 @@ void Connection::elevateAccess(const Protocol::Base::Access& access, const Proto
 }
 
 // ----------------------------------------------------------------------------
-// hasReadAccess
-//
-/// @returns True when the connection was opened with read (receive) access
-/// rights
-// ----------------------------------------------------------------------------
-bool Connection::hasReadAccess() const
-{
-   return Protocol::Base::Access::READ == (m_access & Protocol::Base::Access::READ);
-}
-
-// ----------------------------------------------------------------------------
 // hasWriteAccess
 //
 /// @returns True when the connection was opened with write (transmit) access
@@ -526,19 +515,19 @@ void Connection::
    if(pResponseData != nullptr)
    {
       notify(std::make_shared<AsyncResponseEvent>((ConnectionPtr)shared_from_this(), transactionId));
-      // FLOG_TRACE(
-      //    "Connection::onReceiveAsync: notify,  transid = " +
-      //    toString(transactionId) + ", bFinalResponse = " +
-      //    toString((uint32_t)bFinalResponse)
-      // );
+      FLOG_DEBUG(
+         "Connection::onReceiveAsync: notify,  transid = " +
+         toString(transactionId) + ", bFinalResponse = " +
+         toString((uint32_t)bFinalResponse)
+      );
    }
    else
    {
-      // FLOG_TRACE(
-      //    "Connection::onReceiveAsync: pResponseData == NULL, transid = " +
-      //    toString(transactionId) + ", bFinalResponse = " +
-      //    toString((uint32_t)bFinalResponse)
-      // );
+      FLOG_DEBUG(
+         "Connection::onReceiveAsync: pResponseData == NULL, transid = " +
+         toString(transactionId) + ", bFinalResponse = " +
+         toString((uint32_t)bFinalResponse)
+      );
    }
 }
 

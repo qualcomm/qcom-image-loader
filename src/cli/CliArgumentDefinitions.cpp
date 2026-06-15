@@ -468,6 +468,28 @@ void CliArgumentDefinitions::initialize()
       }
    };
 
+   argumentDefinitions["preserve-partitions"] = {
+      "preserve-partitions",
+      "Partitions to preserve (backup and restore) during flash. "
+      "Format: <index>:<name1>,<name2>,...;<index>:<name1>,<name2>,... "
+      "Use 'x' as index to auto-find the partition LUN",
+      ArgumentType::STRING_LIST,
+      ArgumentCategory::DOWNLOAD_OPTIONS,
+      "",
+      {},
+      false,
+      "qil --flash-build --device=12345 --build=/path/to/build "
+      "--memory-type=UFS --reset=true --preserve-partitions=x:modem,fsc,fsg;1:persist",
+      "Partitions are backed up before flash and restored after. "
+      "Not supported with VIP or single-image mode.",
+      [](QC::CLI::CliOptions& options, const std::string& value) {
+         auto preservedPartitions = CliParserUtil::parsePreservePartitionList(value);
+         QC::PreservationOption preservationOption(QC::PreservationMode::PRESERVATION_BACKUP_RESTORE);
+         preservationOption.__set_preservedPartitions(preservedPartitions);
+         options.downloadBuildOptions.__set_preservationOption(preservationOption);
+      }
+   };
+
    argumentDefinitions["skip-sahara"] = {
       "skip-sahara",
       "While device already in firehose mode. Enable skipping the transfer of "
@@ -758,6 +780,24 @@ void CliArgumentDefinitions::initialize()
       }
    };
 
+   argumentDefinitions["port-trace"] = {
+      "port-trace",
+      "Enable port trace logging output",
+      ArgumentType::FLAG,
+      ArgumentCategory::LOGGING,
+      "",
+      {},
+      false,
+      "qil --devices --port-trace",
+      "Shows detailed operation logs and debug information",
+      [](QC::CLI::CliOptions& options, const std::string& value) {
+         options.portTrace = true;
+         options.logOptions |= KL::LogOption::PtraceToFile;;
+         KL::Logger::get_instance().setOptions(options.logOptions);
+         KL::Logger::get_instance().setLevel(KL::Level::Data);
+      }
+   };
+
    // Command definitions
    // NOTE: Some optional arguments depend on the build argument and must appear
    // after it. Specifically, device-programmer, raw-program, and patch-program
@@ -783,6 +823,7 @@ void CliArgumentDefinitions::initialize()
           argumentDefinitions["digest-header-type"],
           argumentDefinitions["zlp-aware-host"],
           argumentDefinitions["verbose"],
+          argumentDefinitions["port-trace"]
        },
        "qil --create-flash-build-vip-digest --build=/path/to/build "
        "--memory-type=UFS --out=/output/path --erase --reset=true",
@@ -799,7 +840,8 @@ void CliArgumentDefinitions::initialize()
        {argumentDefinitions["slot"],
         argumentDefinitions["digest-header-type"],
         argumentDefinitions["zlp-aware-host"],
-        argumentDefinitions["verbose"]},
+        argumentDefinitions["verbose"],
+        argumentDefinitions["port-trace"]},
        "qil --create-ufs-provision-vip-digest --ufs-provision-xml=/path/to/xml "
        "--out=/output/path",
        CliOptions::CommandType::CREATE_VIP_DIGEST,
@@ -812,7 +854,10 @@ void CliArgumentDefinitions::initialize()
           argumentDefinitions["out"],
 
        },
-       {argumentDefinitions["raw-program"], argumentDefinitions["zlp-aware-host"], argumentDefinitions["verbose"]},
+       {argumentDefinitions["raw-program"], 
+        argumentDefinitions["zlp-aware-host"], 
+        argumentDefinitions["verbose"],
+        argumentDefinitions["port-trace"]},
        "qil --create-validation-digest --build=/path/to/build "
        "--memory-type=UFS --out=/output/path",
        CliOptions::CommandType::CREATE_VALIDATION_DIGEST,
@@ -820,7 +865,8 @@ void CliArgumentDefinitions::initialize()
       {"devices",
        "List all available device identifiers",
        {},
-       {argumentDefinitions["verbose"]},
+       {argumentDefinitions["verbose"],
+        argumentDefinitions["port-trace"]},
        "qil --devices",
        CliOptions::CommandType::LIST_DEVICES,
        nullptr},
@@ -840,7 +886,7 @@ void CliArgumentDefinitions::initialize()
         argumentDefinitions["firehose-init-time"],
         argumentDefinitions["firehose-rx-timeout"],
         argumentDefinitions["zlp-aware-host"],
-        argumentDefinitions["verbose"]},
+        argumentDefinitions["port-trace"]},
        "qil --erase-partitions --device=12345 --memory-type=UFS, "
        "--device-programmer=/path/to/programmer --partition-index='0,1,2,4,5'",
        CliOptions::CommandType::ERASE_FLASH,
@@ -864,15 +910,19 @@ void CliArgumentDefinitions::initialize()
           argumentDefinitions["raw-program"],
           argumentDefinitions["partition-index"],
           argumentDefinitions["patch-program"],
+          argumentDefinitions["preserve-partitions"],
           argumentDefinitions["skip-sahara"],
           argumentDefinitions["firehose-init-time"],
           argumentDefinitions["firehose-rx-timeout"],
           argumentDefinitions["validate-image-size"],
           argumentDefinitions["zlp-aware-host"],
           argumentDefinitions["verbose"],
+          argumentDefinitions["port-trace"]
        },
        "qil --flash-build --device=12345 --build=/path/to/build "
        "--memory-type=UFS --erase --reset=true\n"
+       "qil --flash-build --device=12345 --build=/path/to/build "
+       "--memory-type=UFS --reset=true --preserve-partitions=x:modem,fsc,fsg\n"
        "qil --flash-build --device=12345 --build=/path/to/build "
        "--memory-type=UFS --validation-mode=1 --read-image-path=/validation_output --reset=true",
        CliOptions::CommandType::DOWNLOAD_BUILD,
@@ -890,7 +940,8 @@ void CliArgumentDefinitions::initialize()
         argumentDefinitions["firehose-init-time"],
         argumentDefinitions["firehose-rx-timeout"],
         argumentDefinitions["zlp-aware-host"],
-        argumentDefinitions["verbose"]},
+        argumentDefinitions["verbose"],
+        argumentDefinitions["port-trace"]},
        "qil --get-flash-info --device=12345 --memory-type=UFS "
        "--device-programmer=/path/to/programmer --reset=true",
        CliOptions::CommandType::GET_FLASH_INFO,
@@ -912,7 +963,8 @@ void CliArgumentDefinitions::initialize()
         argumentDefinitions["firehose-init-time"],
         argumentDefinitions["firehose-rx-timeout"],
         argumentDefinitions["zlp-aware-host"],
-        argumentDefinitions["verbose"]},
+        argumentDefinitions["verbose"],
+        argumentDefinitions["port-trace"]},
        "qil --read-images --device=12345 --build=/path/to/build "
        "--memory-type=UFS --read-image-path=/output --reset=true",
        CliOptions::CommandType::READ_IMAGES,
@@ -923,7 +975,9 @@ void CliArgumentDefinitions::initialize()
        {
           argumentDefinitions["device"],
        },
-       {argumentDefinitions["zlp-aware-host"], argumentDefinitions["verbose"]},
+       {argumentDefinitions["zlp-aware-host"], 
+        argumentDefinitions["verbose"],
+        argumentDefinitions["port-trace"]},
        "qil --reset-device --device=12345",
        CliOptions::CommandType::RESET_DEVICE,
        nullptr},
@@ -942,6 +996,7 @@ void CliArgumentDefinitions::initialize()
           argumentDefinitions["firehose-rx-timeout"],
           argumentDefinitions["zlp-aware-host"],
           argumentDefinitions["verbose"],
+          argumentDefinitions["port-trace"]
        },
        "qil --send-xml --device=12345 --memory-type=UFS "
        "--device-programmer=/path/to/programmer --xml-path=/path/to/xml "
@@ -965,6 +1020,7 @@ void CliArgumentDefinitions::initialize()
           argumentDefinitions["firehose-rx-timeout"],
           argumentDefinitions["zlp-aware-host"],
           argumentDefinitions["verbose"],
+          argumentDefinitions["port-trace"]
        },
        "qil --send-image --device=12345 --memory-type=UFS "
        "--device-programmer=/path/to/programmer --image-path=/path/to/image "
@@ -989,6 +1045,7 @@ void CliArgumentDefinitions::initialize()
           argumentDefinitions["firehose-rx-timeout"],
           argumentDefinitions["zlp-aware-host"],
           argumentDefinitions["verbose"],
+          argumentDefinitions["port-trace"]
        },
        "qil --ufs-provision --device=12345 "
        "--device-programmer=/path/to/programmer "

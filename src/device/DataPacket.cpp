@@ -46,36 +46,6 @@ DataPacket::~DataPacket()
 }
 
 // ----------------------------------------------------------------------------
-// getPayload
-//
-/// @returns The payload of the packet
-// ----------------------------------------------------------------------------
-Device::SharedByteBufferPtr DataPacket::getPayload() const
-{
-   return m_pPayload;
-}
-
-// ----------------------------------------------------------------------------
-// getPayloadSize
-//
-/// @returns The size of the payload of the packet
-// ----------------------------------------------------------------------------
-size_t DataPacket::getPayloadSize() const
-{
-   return getPayload()->size();
-}
-
-// ----------------------------------------------------------------------------
-// getReceiveTime
-//
-/// @returns The time when the packet was received on the PC
-// ----------------------------------------------------------------------------
-std::chrono::system_clock::time_point DataPacket::getReceiveTime() const
-{
-   return m_receiveTime;
-}
-
-// ----------------------------------------------------------------------------
 // getDirection
 //
 /// @returns Tx or Rx
@@ -83,17 +53,6 @@ std::chrono::system_clock::time_point DataPacket::getReceiveTime() const
 Device::DataPacket::Direction DataPacket::getDirection() const
 {
    return m_direction;
-}
-
-// ----------------------------------------------------------------------------
-// getTimeSortedIndex
-//
-/// @returns The time sorted index for this packet
-// ----------------------------------------------------------------------------
-size_t DataPacket::getTimeSortedIndex() const
-{
-   // Most protocols don't support time sorting, just return the default order
-   return getProtocolIndex();
 }
 
 } // namespace Device

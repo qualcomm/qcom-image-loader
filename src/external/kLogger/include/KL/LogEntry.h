@@ -12,7 +12,8 @@ enum class Sink
 {
    ConsoleOnly,
    FileAndConsole,
-   FileOnly
+   FileOnly,
+   PtraceOnly
 };
 
 struct LogEntry

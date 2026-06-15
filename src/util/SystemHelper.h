@@ -180,56 +180,6 @@ inline int32_t getPid()
 }
 
 // ----------------------------------------------------------------------------
-// getComputerName
-//
-///
-/// @returns the computer name
-// ----------------------------------------------------------------------------
-inline std::string getComputerName()
-{
-   const uint32_t MAX_COMPUTER_NAME = 256;
-#if defined TOOLS_TARGET_WINDOWS
-   DWORD ulBufferCharacterCount = MAX_COMPUTER_NAME;
-   WCHAR computerName[MAX_COMPUTER_NAME] = {0};
-   BOOL ret = GetComputerNameW(computerName, &ulBufferCharacterCount);
-   TOOLS_ASSERT_OR_RETURN(!!ret, std::string("No computer name found."));
-   return Util::fromWString(computerName);
-#elif defined TOOLS_TARGET_LINUX || defined TOOLS_TARGET_OSX
-   char hostname[MAX_COMPUTER_NAME] = {0};
-   int32_t ret = gethostname(hostname, sizeof(hostname));
-   TOOLS_ASSERT_OR_RETURN(ret == 0, std::string("No computer name found."));
-   hostname[sizeof(hostname) - 1] = '\0';
-   return std::string(hostname);
-#else
-   TOOLS_ASSERT_OR_RETURN(!"Implemented", std::string());
-#endif
-}
-
-// ----------------------------------------------------------------------------
-// getUserName
-//
-///
-/// @returns the User name
-// ----------------------------------------------------------------------------
-inline std::string getUserName()
-{
-#if defined TOOLS_TARGET_WINDOWS
-   DWORD ulBufferCharacterCount = MAX_PATH;
-   WCHAR userName[MAX_PATH] = {0};
-   BOOL ret = GetUserNameW(userName, &ulBufferCharacterCount);
-   TOOLS_ASSERT_OR_RETURN(!!ret, std::string("No username found."));
-   return Util::fromWString(userName);
-#elif defined TOOLS_TARGET_LINUX || defined TOOLS_TARGET_OSX
-   uid_t uid = geteuid();
-   struct passwd* pInfo = getpwuid(uid);
-   TOOLS_ASSERT_OR_RETURN(nullptr != pInfo, std::string("No username found."));
-   return std::string(pInfo->pw_name);
-#else
-   TOOLS_ASSERT_OR_RETURN(!"Implemented", std::string());
-#endif
-}
-
-// ----------------------------------------------------------------------------
 // getAvailableDiskBytes
 //
 ///

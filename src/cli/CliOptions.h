@@ -65,7 +65,7 @@ public:
    bool verbose = false; // --verbose
    KL::LogOption logOptions = KL::LogOption::None;
 
-
+   bool portTrace = false; // --verbose
    CliOptions()
    : downloadBuildOptions(QC::MemoryType::MEMORY_TYPE_UFS)
    {
@@ -92,22 +92,6 @@ public:
          }
       }
       throw std::invalid_argument("Duplicated command type.");
-   }
-
-   void determineCommand()
-   {
-      // Already set by flags
-      if(this->command != CliOptions::CommandType::NONE)
-      {
-         return;
-      }
-
-      // Determine from options
-      if(!buildPath.empty())
-      {
-         this->command = CliOptions::CommandType::DOWNLOAD_BUILD;
-         return;
-      }
    }
 
    /// <summary>
@@ -213,6 +197,26 @@ public:
             break;
 
          case CliOptions::CommandType::ERASE_FLASH:
+            if(!downloadBuildOptions.__isset.firehoseProgPath && !downloadBuildOptions.__isset.saharaImageList)
+            {
+               throw std::invalid_argument("Missing required parameter: "
+                                           "--device-programmer and can not "
+                                           "found programmer from: --build");
+            }
+            // Default partition index if not specified: UFS -> 0,1,2,4,5; others -> 0
+            if(!downloadBuildOptions.__isset.partitionIndexList)
+            {
+               if(downloadBuildOptions.memoryType == QC::MemoryType::MEMORY_TYPE_UFS)
+               {
+                  downloadBuildOptions.__set_partitionIndexList({0, 1, 2, 4, 5});
+               }
+               else
+               {
+                  downloadBuildOptions.__set_partitionIndexList({0});
+               }
+            }
+            break;
+
          case CliOptions::CommandType::GET_FLASH_INFO:
             if(!downloadBuildOptions.__isset.firehoseProgPath && !downloadBuildOptions.__isset.saharaImageList)
             {
