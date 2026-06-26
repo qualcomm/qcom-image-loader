@@ -34,15 +34,17 @@
 // -----------------------------------------------------------------------------
 
 #if defined(_WIN32) || defined(_WIN64)
-#define LOG_DIR "C:\\ProgramData\\QFS\\QIL\\Logs\\"
-#define PTRACE_DIR "C:\\ProgramData\\QFS\\QIL\\PTraceLogs\\"
-#define TMP_DIR "C:\\ProgramData\\QFS\\QIL\\Temp\\"
+#define BASE_DIR "C:\\ProgramData\\QFS\\QIL\\"
+#define LOG_DIR BASE_DIR "Logs\\"
+#define PTRACE_DIR BASE_DIR "PTraceLogs\\"
+#define TMP_DIR BASE_DIR "Temp\\"
 
 #else
 #include <unistd.h> // write, STDOUT_FILENO için
-#define LOG_DIR "/var/tmp/QFS/QIL/Logs/"
-#define PTRACE_DIR "/var/tmp/QFS/QIL/PTraceLogs/"
-#define TMP_DIR "/var/tmp/QFS/QIL/Temp/"
+#define BASE_DIR "/var/tmp/QFS/QIL/"
+#define LOG_DIR BASE_DIR "Logs/"
+#define PTRACE_DIR BASE_DIR "PTraceLogs/"
+#define TMP_DIR BASE_DIR "Temp/"
 #endif
 
 
@@ -370,15 +372,23 @@ private:
    }
 
    /// Sets appropriate permissions on a directory after creation
-   /// Linux: chmod 0777 (rwxrwxrwx)
+   /// Linux: chmod 0777 (rwxrwxrwx) - only if current user owns the directory
    /// Windows: no-op, uses default inherited permissions
    void set_directory_permissions(const std::filesystem::path& dir)
    {
 #ifndef _WIN32
-      // Linux/Unix: Set permissions to 0777 (rwxrwxrwx)
-      if(chmod(dir.c_str(), 0777) != 0)
+      // Linux/Unix: Only attempt chmod if we own the directory
+      struct stat info;
+      if(stat(dir.c_str(), &info) == 0)
       {
-         std::cerr << "[Logger] Failed to set permissions on " << dir << std::endl;
+         if(info.st_uid == getuid())
+         {
+            if(chmod(dir.c_str(), 0777) != 0)
+            {
+               std::cerr << "[Logger] Failed to set permissions on " << dir << std::endl;
+            }
+         }
+         // Silently skip if we don't own the directory - permissions were set by owner
       }
 #else
       // Windows: Use default inherited permissions (following QIL's approach)

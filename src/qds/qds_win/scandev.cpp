@@ -1645,6 +1645,105 @@ namespace QcDevice
           return;
       }
 
+      static std::string GetUsbPortChainFromCmTree(DEVINST devInst)
+      {
+          std::vector<unsigned> ports; // leaf-to-root; reversed at end
+          DEVINST current = devInst;
+
+          // USB spec ≤7 tiers; allow extra iterations to skip ACPI nodes.
+          for (int depth = 0; depth < 14; ++depth)
+          {
+              WCHAR hwIds[512] = {};
+              ULONG hwSize = sizeof(hwIds);
+              ULONG hwType = 0;
+              CONFIGRET cr = CM_Get_DevNode_Registry_Property(
+                  current,
+                  CM_DRP_HARDWAREID,
+                  &hwType,
+                  hwIds,
+                  &hwSize,
+                  0);
+
+              if (cr == CR_SUCCESS)
+              {
+                  bool isRootHub  = false;
+                  bool isUsbNode  = false;
+
+                  // REG_MULTI_SZ: iterate NUL-separated strings
+                  for (const WCHAR* s = hwIds; *s; s += wcslen(s) + 1)
+                  {
+                      if (StrStrIW(s, L"ROOT_HUB") != nullptr)
+                      {
+                          isRootHub = true;
+                          break;
+                      }
+                      if (_wcsnicmp(s, L"USB\\", 4) == 0)
+                          isUsbNode = true;
+                  }
+
+                  if (isRootHub)
+                      break; // reached root hub — stop without collecting
+
+                  if (isUsbNode)
+                  {
+                      // Skip USB interface nodes (USB\VID_xxxx&PID_xxxx&MI_xx).
+                      // we donot need to count interface sub-nodes.
+                      // Interface nodes have "&MI_" in every hardware ID.
+                      bool isInterface = false;
+                      for (const WCHAR* s = hwIds; *s; s += wcslen(s) + 1)
+                      {
+                          if (StrStrIW(s, L"&MI_") != nullptr)
+                          {
+                              isInterface = true;
+                              break;
+                          }
+                      }
+
+                      if (!isInterface)
+                      {
+                          // Genuine USB composite/function/hub node — collect port
+                          ULONG portNum  = 0;
+                          ULONG propSize = sizeof(portNum);
+                          ULONG propType = 0;
+                          cr = CM_Get_DevNode_Registry_Property(
+                              current,
+                              CM_DRP_ADDRESS,
+                              &propType,
+                              &portNum,
+                              &propSize,
+                              0);
+                          if (cr == CR_SUCCESS && propType == REG_DWORD)
+                              ports.push_back(static_cast<unsigned>(portNum));
+                      }
+                      // else: interface node — skip address, keep climbing to composite device
+                  }
+                  // else: ACPI/other node — skip (don't collect address, keep climbing)
+              }
+              else
+              {
+                  // No hardware IDs retrievable — probably at host controller; stop
+                  break;
+              }
+
+              DEVINST parent = 0;
+              if (CM_Get_Parent(&parent, current, 0) != CR_SUCCESS)
+                  break;
+              current = parent;
+          }
+
+          if (ports.empty())
+              return "";
+
+          std::reverse(ports.begin(), ports.end());
+
+          std::string chain;
+          for (size_t i = 0; i < ports.size(); ++i)
+          {
+              if (i) chain += "-";
+              chain += std::to_string(ports[i]);
+          }
+          return chain;
+      }
 
       VOID ScanDevices(VOID)
       {
@@ -2134,6 +2233,25 @@ namespace QcDevice
                  }
                  portnos += to_string(portsarr[i]);
              }
+
+             // Builds the port-number chain on ACPI-enumerated USB controllers
+             // for Snapdragon X Elite ARM64 based processor
+             if ((portnos.empty() || wcsstr(LocationPath, L"ACPI(") != NULL) &&
+                StrStrW((PTSTR)devClass, TEXT(D_CLASS_LIBUSB)) != NULL)
+             {
+                 portnos = GetUsbPortChainFromCmTree(devInfoData.DevInst);
+                 if (!portnos.empty())
+                 {
+                     QCD_Printf(Info, "ACPI USB path: CM-tree port chain: %s\n",
+                         portnos.c_str());
+                 }
+                 else
+                 {
+                     QCD_Printf(Warn, "ACPI USB path: CM-tree walk yielded no port numbers; "
+                         "portnos will remain empty\n");
+                 }
+             }
+
              QCD_Printf(Info, "Location Path: %ws, portnos: %s\n", LocationPath, portnos.c_str());
              StringCchCopyW(driverKeyPath, REG_HW_ID_SIZE, TEXT(QC_REG_SW_KEY));
              StringCchCatW(driverKeyPath, REG_HW_ID_SIZE, (PTSTR)driverKey);

@@ -1,8 +1,34 @@
 # QIL Release Notes
 
+## v1.2.2
+
+> **Note:** Since this version, CLI only works with user space driver 1.0.2.2 (Windows) or 1.0.1.8 (Linux).
+
+### New Features
+
+- **Windows ARM64 port detection**: Implemented new port number parser for ARM64 using ACPI path check, while preserving existing x86 port detection logic
+- **MCP Server**: Added SagaHostTools MCP server for AI-assisted device operations
+- **Open-source userspace driver support**: Updated libusb dynamic loader to support open-source userspace installer v1.0.2.2 and later
+
+### Bug Fixes
+
+- **Non-EDL device filtering**: Fixed devices with non-Qualcomm VID/PID (e.g., 90dB port) being incorrectly added during device enumeration; now filters by VID/PID at both `processAddDevice` and `extractDevInfo` levels
+- **ARM64 port mismatch**: Fixed port mismatch issue on ARM64 by skipping USB interface nodes and using `CM_Get_DevNode_Registry_Property` instead of `CM_Get_DevNode_PropertyW`
+- **ARM64 ACPI port chain resolution**: Fixed port chain resolution for ARM64 platforms using ACPI path check
+- **Incorrect boolean return value**: Fixed incorrect boolean return value in QDS
+- **Logger permission errors**: Fixed logger permission errors in multi-user scenarios
+- **ARM64 processor identification**: Added ACPI condition for correctly identifying ARM64 processors
+
+### Documentation
+
+- Updated User Guide (removed legacy PDF, updated markdown version)
+- Updated license information
+
+---
+
 ## v1.2.1
 
-> **Note:** Since this version, CLI only works with user space driver 1.00.1.6 (Windows) or 1.00.1.7 (Linux) or later.
+> **Note:** Since this version, CLI only works with user space driver 1.00.1.6 (Windows) or 1.00.1.7 (Linux).
 
 ### New Features
 
