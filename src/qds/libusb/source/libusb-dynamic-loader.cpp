@@ -76,6 +76,7 @@ bool load_libusb()
     if (g_libusb_handle)
         return true;
 
+    const char* dll_file_name = "libusb-1.0.dll";
 #if defined(_M_ARM64)
     const char* arch_subdir = "ARM64";
 #elif defined(_M_IX86)
@@ -84,11 +85,23 @@ bool load_libusb()
     const char* arch_subdir = "x64"; // fallback
 #endif
     std::string base = "C:\\Program Files (x86)\\Qualcomm\\QUD-Userspace\\DriverPackage\\libusb\\";
-    std::string full_path = base + arch_subdir + "\\libusb-1.0.dll";
+    std::string full_path = base + arch_subdir + "\\" + dll_file_name;
     g_libusb_handle = LoadLibraryA(full_path.c_str());
     if (!g_libusb_handle) {
         Utils::QCD_Printf(Utils::Error, "Failed to load %s (err=%lu)\n", full_path.c_str(), GetLastError());
-        return false;
+		Utils::QCD_Printf(Utils::Error, "Trying other locations...\n");
+#if defined(_M_IX86)
+        base = "C:\\Program Files (x86)\\Qualcomm\\Qualcomm USB Drivers\\libusb\\"; // Compatible with userspace driver 1.0.2.2 and later
+#else
+        base = "C:\\Program Files\\Qualcomm\\Qualcomm USB Drivers\\libusb\\"; // Compatible with userspace driver 1.0.2.2 and later
+#endif
+		full_path = base + dll_file_name;
+		g_libusb_handle = LoadLibraryA(full_path.c_str());
+		if (!g_libusb_handle)
+		{
+            Utils::QCD_Printf(Utils::Error, "Failed to load %s (err=%lu)\n", full_path.c_str(), GetLastError());
+            return false;
+		}
     }
 #else
     if (g_libusb_handle)

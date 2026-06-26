@@ -40,11 +40,14 @@ void printCurrentCommandLine(int argc, char* argv[])
    FLOG_INFO(oss.str());
 }
 
-bool createLogDirectory()
+/// @brief Creates the base QIL directory with proper permissions.
+/// Logger::init() will create Logs/ and PTraceLogs/ subdirectories.
+/// TMP_DIR is created separately for temporary files.
+bool createBaseDirectory()
 {
    try
    {
-      return QC::CLI::FileSystem::createDirectoryReclusively(TMP_DIR);
+      return QC::CLI::FileSystem::createDirectoryReclusively(BASE_DIR);
    }
    catch(const std::exception& e)
    {
@@ -95,24 +98,23 @@ int main(int argc, char* argv[])
 
    try
    {
-      if(createLogDirectory())
+      // Create base directory with proper permissions (0777 on Linux)
+      // This ensures all subdirectories can be created by any user
+      if(!createBaseDirectory())
       {
-        // Initialize logger with log directory and size limit of 100MB
-        KL::Logger::get_instance().init(LOG_DIR, PTRACE_DIR, 0, KL::MAX_LOG_FILE_SIZE, getVersionString());
-        FLOG_INFO("Successfully created LOG directory: " + std::string(LOG_DIR));
-      }
-      else {
-        throw std::runtime_error("Failed to create LOG directory:  " + std::string(LOG_DIR));
+         throw std::runtime_error("Failed to create base directory: " + std::string(BASE_DIR));
       }
 
-      if (createTempDirectory())
-      {
-        FLOG_INFO("Successfully created TMP directory: " + std::string(TMP_DIR));
+      // Initialize logger - it will create Logs/ and PTraceLogs/ subdirectories
+      KL::Logger::get_instance().init(LOG_DIR, PTRACE_DIR, 0, KL::MAX_LOG_FILE_SIZE, getVersionString());
+      FLOG_INFO("Initialized logging in: " + std::string(LOG_DIR));
 
+      // Create temp directory for temporary files
+      if(!createTempDirectory())
+      {
+         throw std::runtime_error("Failed to create temp directory: " + std::string(TMP_DIR));
       }
-      else {
-            throw std::runtime_error("Failed to create TMP directory:  " + std::string(TMP_DIR));
-      };
+      FLOG_INFO("Created temp directory: " + std::string(TMP_DIR));
 
       printCurrentCommandLine(argc, argv);
 

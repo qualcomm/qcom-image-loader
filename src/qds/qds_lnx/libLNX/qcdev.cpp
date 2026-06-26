@@ -473,10 +473,6 @@ static bool extractDevInfo(struct udev_device *device, PDeviceCtx pdeviceCtx)
     device_parent = device;
     do
     {
-        device_parent = udev_device_get_parent(device_parent);
-        if (device_parent == NULL)
-            break;
-
         value = udev_device_get_sysattr_value(device_parent, "idVendor");
         if (value)
         {
@@ -510,7 +506,7 @@ static bool extractDevInfo(struct udev_device *device, PDeviceCtx pdeviceCtx)
             strncpy(pdeviceCtx->mDevParams.ParentDev, p, QCDEV_MAX_VALUE_NAME - 1);
             strncpy(pdeviceCtx->mDevParams.ParentLocationInfomation, p, QCDEV_MAX_VALUE_NAME - 1);
         }
-		   
+
 	   devp_tmp = udev_device_get_parent(device_parent);
 	   if (devp_tmp) {
 	       if (strcasecmp("pci",udev_device_get_subsystem(devp_tmp)) == 0) {
@@ -520,6 +516,7 @@ static bool extractDevInfo(struct udev_device *device, PDeviceCtx pdeviceCtx)
 	   }
 	}
 
+        device_parent = udev_device_get_parent(device_parent);
     } while (device_parent != NULL);
 
     if (device_parent)
@@ -719,6 +716,18 @@ static void processAddDevice(struct udev_device *dev)
     int isQcDriver = 1;
 
     devP = udev_device_get_parent(dev);
+
+    if (qcdevCtx.mSetting &&
+        (qcdevCtx.mSetting->Settings & DEV_FEATURE_SCAN_USB_WITH_VID))
+    {
+        struct _DeviceCtx tmpCtx;
+        memset(&tmpCtx, 0, sizeof(tmpCtx));
+        if (QCDEV_FALSE == extractDevInfo(dev, &tmpCtx))
+        {
+            QCDEV_LOG_INFO("Device filtered by VID/PID\n");
+            return;
+        }
+    }
 
     /* In case of TTY susystem vendor Id cannot be obtained directly */
     const char *vendor = udev_device_get_sysattr_value(dev, "idVendor");

@@ -1227,7 +1227,7 @@ BOOL QcomLibusbDevice::qcom_libusb_open(char *SernumMsm, unsigned int bInterface
     qcom_dev = get_qcomdev_ctx_map(qcomdevkey);
     QCD_Printf(Info, "%s _bInterfaceNumber: SernumMsm= %s, qcom_dev: 0x%p\n", __func__, SernumMsm, qcom_dev);
     if (qcom_dev == nullptr) {
-        return false;
+        return LIBUSB_ERROR_NOT_FOUND;
     }
 
     QcomDeviceInfo* qcomDevInfo = find_device(qcom_dev, qcom_dev->SerNumMSM, bInterfaceNumber);
@@ -1252,7 +1252,7 @@ BOOL QcomLibusbDevice::qcom_libusb_open(char* DeviceName, char* SernumMsm, void*
 #endif
     QCD_Printf(Info, "%s: (key=%s) DeviceName= %s, qcom_dev: 0x%p\n", __func__, qcomdevkey.c_str(), DeviceName, qcom_dev);
     if (qcom_dev == nullptr) {
-        return false;
+        return LIBUSB_ERROR_NOT_FOUND;
     }
 #ifdef QCOM_WIN_ENV
     QcomDeviceInfo* qcomDevInfo = find_device(qcom_dev, qcom_dev->SerNumMSM, DeviceName);
