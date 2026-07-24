@@ -22,17 +22,17 @@ QIL is a zipped package with list of below component bundled:
 |Windows ARM64 | Windows 11 |
 |WSL | Ubuntu 24.04 and newer|
 
-> **Note for Ubuntu 26.04 users:** Ubuntu 26.04 ships with `libxml2.so.16`, but QIL is built against `libxml2.so.2`. Create a symlink to resolve this:
->
-> **x86_64:**
-> ```bash
-> sudo ln -sf /usr/lib/x86_64-linux-gnu/libxml2.so.16 /usr/lib/x86_64-linux-gnu/libxml2.so.2
-> ```
->
-> **ARM64 (aarch64):**
-> ```bash
-> sudo ln -sf /usr/lib/aarch64-linux-gnu/libxml2.so.16 /usr/lib/aarch64-linux-gnu/libxml2.so.2
-> ```
+**Note for Ubuntu 26.04 users:** Ubuntu 26.04 ships with `libxml2.so.16`, but QIL is built against `libxml2.so.2`. Create a symlink to resolve this:
+
+**x86_64:**
+```bash
+sudo ln -sf /usr/lib/x86_64-linux-gnu/libxml2.so.16 /usr/lib/x86_64-linux-gnu/libxml2.so.2
+```
+
+**ARM64 (aarch64):**
+```bash
+sudo ln -sf /usr/lib/aarch64-linux-gnu/libxml2.so.16 /usr/lib/aarch64-linux-gnu/libxml2.so.2
+```
 
 <a id="qil-setup"></a>
 
