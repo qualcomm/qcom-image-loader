@@ -1,5 +1,10 @@
 # QIL Release Notes
+## v1.2.3
 
+### Bug Fixes
+- Fix ARM64 SIGBUS by enforcing 8-byte struct alignment
+  
+---
 ## v1.2.2
 
 > **Note:** Since this version, CLI only works with user space driver 1.0.2.2 (Windows) or 1.0.1.8 (Linux).
