@@ -17,10 +17,11 @@ QIL is a zipped package with list of below component bundled:
 
 |OS  |  Description
 |---|---|
-|Linux x64 | Ubuntu 24.04 and newer|
+|Linux x64 | Ubuntu 22.04 and newer|
+|Linux ARM64 | Ubuntu 22.04 and newer|
 |Windows x64 | Windows 11 |
 |Windows ARM64 | Windows 11 |
-|WSL | Ubuntu 24.04 and newer|
+|WSL | Ubuntu 22.04 and newer|
 
 **Note for Ubuntu 26.04 users:** Ubuntu 26.04 ships with `libxml2.so.16`, but QIL is built against `libxml2.so.2`. Create a symlink to resolve this:
 
