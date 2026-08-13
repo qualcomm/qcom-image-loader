@@ -44,6 +44,8 @@ jobs:
   validate:
     name: Validate inputs
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Check actor is a maintainer
         env:
@@ -90,11 +92,11 @@ jobs:
 
     steps:
       - name: Checkout base branch
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ inputs.base_branch }}
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
 
       - name: Configure git identity
         run: |
@@ -151,14 +153,17 @@ jobs:
       - name: Push release branch
         env:
           BRANCH: ${{ steps.branch.outputs.branch }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git push origin "$BRANCH"
+          git -c http.extraHeader="Authorization: Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" \
+            push origin "$BRANCH"
 
       # ── 4. Create tag ─────────────────────────────────────────────────────
       - name: Create and push tag
         id: tag
         env:
           VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="v${VERSION}"
 
@@ -168,7 +173,8 @@ jobs:
           fi
 
           git tag -a "$TAG" -m "QIL release v${VERSION}"
-          git push origin "$TAG"
+          git -c http.extraHeader="Authorization: Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" \
+            push origin "$TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
   # ───────────────────────────────────────────────────────────────────────────
@@ -178,11 +184,13 @@ jobs:
     name: Build Linux (x64)
     needs: prepare
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       artifact: ${{ steps.package.outputs.artifact }}
     steps:
       - name: Checkout release tag
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ needs.prepare.outputs.tag }}
           fetch-depth: 0
@@ -228,7 +236,7 @@ jobs:
           tar -tzf "$ARCHIVE"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ steps.package.outputs.artifact }}
           path: ${{ steps.package.outputs.artifact }}
@@ -241,12 +249,14 @@ jobs:
     name: Build Windows (${{ matrix.arch }})
     needs: prepare
     runs-on: windows-2019
+    permissions:
+      contents: read
     strategy:
       matrix:
         arch: [x64, ARM64]
     steps:
       - name: Checkout release tag
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ needs.prepare.outputs.tag }}
           fetch-depth: 0
@@ -289,7 +299,7 @@ jobs:
           echo "artifact=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ steps.package.outputs.artifact }}
           path: ${{ steps.package.outputs.artifact }}
@@ -308,22 +318,22 @@ jobs:
 
     steps:
       - name: Checkout release tag
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ needs.prepare.outputs.tag }}
 
       - name: Download Linux artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: ${{ needs.build-linux.outputs.artifact }}
 
       - name: Download Windows x64 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: qil_${{ inputs.version }}_windows_x64.zip
 
       - name: Download Windows ARM64 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: qil_${{ inputs.version }}_windows_arm64.zip
 
