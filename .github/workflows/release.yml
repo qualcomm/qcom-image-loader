@@ -283,7 +283,7 @@ jobs:
           ARCH_LOWER=$(echo "$ARCH" | tr '[:upper:]' '[:lower:]')
           DIR_NAME="qil_${VERSION}_windows_${ARCH_LOWER}"
           ZIP_NAME="${DIR_NAME}.zip"
-          BIN_DIR="Build/Windows/${ARCH}/Release/bin"
+          BIN_DIR="Build/Windows/${ARCH}/bin/Release"
 
           if [ ! -f "${BIN_DIR}/qil.exe" ]; then
             echo "ERROR: Expected binary not found at ${BIN_DIR}/qil.exe"
