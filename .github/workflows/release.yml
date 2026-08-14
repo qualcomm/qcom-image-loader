@@ -181,13 +181,21 @@ jobs:
   # Linux build
   # ───────────────────────────────────────────────────────────────────────────
   build-linux:
-    name: Build Linux (x64)
+    name: Build Linux (${{ matrix.arch }})
     needs: prepare
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
+    strategy:
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
     outputs:
-      artifact: ${{ steps.package.outputs.artifact }}
+      artifact_x64: qil_${{ inputs.version }}_linux_x64.tar.gz
+      artifact_arm64: qil_${{ inputs.version }}_linux_arm64.tar.gz
     steps:
       - name: Checkout release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -214,8 +222,9 @@ jobs:
         id: package
         env:
           VERSION: ${{ inputs.version }}
+          ARCH: ${{ matrix.arch }}
         run: |
-          DIR_NAME="qil_${VERSION}_linux_x64"
+          DIR_NAME="qil_${VERSION}_linux_${ARCH}"
           ARCHIVE="${DIR_NAME}.tar.gz"
           BIN_DIR="Build/Linux/$(uname -m)/Release/bin"
 
@@ -325,10 +334,15 @@ jobs:
           ref: ${{ needs.prepare.outputs.tag }}
           persist-credentials: false
 
-      - name: Download Linux artifact
+      - name: Download Linux x64 artifact
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: ${{ needs.build-linux.outputs.artifact }}
+          name: ${{ needs.build-linux.outputs.artifact_x64 }}
+
+      - name: Download Linux ARM64 artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ needs.build-linux.outputs.artifact_arm64 }}
 
       - name: Download Windows x64 artifact
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -348,7 +362,8 @@ jobs:
           BRANCH: ${{ needs.prepare.outputs.branch }}
           RELEASE_NOTES: ${{ inputs.release_notes }}
           IS_DRAFT: ${{ inputs.draft }}
-          LINUX_ARTIFACT: ${{ needs.build-linux.outputs.artifact }}
+          LINUX_X64_ARTIFACT: ${{ needs.build-linux.outputs.artifact_x64 }}
+          LINUX_ARM64_ARTIFACT: ${{ needs.build-linux.outputs.artifact_arm64 }}
           WINDOWS_X64_ARTIFACT: qil_${{ inputs.version }}_windows_x64.zip
           WINDOWS_ARM64_ARTIFACT: qil_${{ inputs.version }}_windows_arm64.zip
         run: |
@@ -366,7 +381,8 @@ jobs:
           fi
 
           gh release create "$TAG" \
-            "$LINUX_ARTIFACT" \
+            "$LINUX_X64_ARTIFACT" \
+            "$LINUX_ARM64_ARTIFACT" \
             "$WINDOWS_X64_ARTIFACT" \
             "$WINDOWS_ARM64_ARTIFACT" \
             --title "$TAG" \
