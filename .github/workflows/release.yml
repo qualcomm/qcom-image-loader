@@ -249,7 +249,7 @@ jobs:
   build-windows:
     name: Build Windows (${{ matrix.arch }})
     needs: prepare
-    runs-on: windows-2019
+    runs-on: windows-2022
     permissions:
       contents: read
     strategy:
