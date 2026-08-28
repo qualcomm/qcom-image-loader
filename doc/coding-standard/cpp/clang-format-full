@@ -1,6 +1,5 @@
 ---
 # PC-Tools C++ Coding Standard - clang-format configuration
-# Based on: doc/coding-standard/cpp/CodingStandard.txt
 #
 # This file enforces the formatting rules defined in the coding standard:
 # - 3-space indentation (no tabs)

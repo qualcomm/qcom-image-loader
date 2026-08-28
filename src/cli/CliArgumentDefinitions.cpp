@@ -89,7 +89,7 @@ void CliArgumentDefinitions::initialize()
       ArgumentCategory::DEVICE_OPTIONS,
       "",
       {},
-      true,
+      false,
       "12345",
       "Use SERIAL NUMBER from --devices command",
       [](QC::CLI::CliOptions& options, const std::string& value) { options.deviceId = value; }
@@ -365,6 +365,43 @@ void CliArgumentDefinitions::initialize()
       }
    };
 
+   argumentDefinitions["skip-flash-if-data-matched"] = {
+      "skip-flash-if-data-matched",
+      "Skip flashing a partition/image if the on-device data already matches "
+      "a pre-created build validation digest file, using the on-device "
+      "getsha256digest query (fast).",
+      ArgumentType::FLAG,
+      ArgumentCategory::DOWNLOAD_OPTIONS,
+      "",
+      {},
+      false,
+      "qil --flash-build --device=12345 --build=/path/to/build "
+      "--memory-type=UFS --reset=true --skip-flash-if-data-matched",
+      "Requires a Build Validation File (auto-discovered from --build path, "
+      "same as --validation-mode=3/4) and device support for "
+      "getsha256digest.",
+      [](QC::CLI::CliOptions& options, const std::string& value) {
+         if(options.downloadBuildOptions.__isset.skipFlashIfDataMatched &&
+            options.downloadBuildOptions.skipFlashIfDataMatched !=
+               QC::SkipFlashIfDataMatched::SKIP_PRECHECK_SHA256_READBACK_WITH_DIGESTS_FILE)
+         {
+            throw std::invalid_argument(
+               "--skip-flash-if-data-matched and --skip-flash-if-data-matched_read are mutually exclusive"
+            );
+         }
+         options.downloadBuildOptions.__set_skipFlashIfDataMatched(
+            QC::SkipFlashIfDataMatched::SKIP_PRECHECK_SHA256_READBACK_WITH_DIGESTS_FILE
+         );
+         if(!options.downloadBuildOptions.__isset.validationDigestsPath)
+         {
+            std::string buildValidationFile = FileSystem::findBuildValidationFile(options.buildPath);
+            CFLOG_INFO("Build validation file found: " + buildValidationFile, false);
+            options.downloadBuildOptions
+               .__set_validationDigestsPath(CliParserUtil::parseFilePath(options.buildPath, buildValidationFile));
+         }
+      }
+   };
+
    // ADVANCED OPTIONS
    argumentDefinitions["firehose-init-time"] = {
       "firehose-init-time",
@@ -604,7 +641,7 @@ void CliArgumentDefinitions::initialize()
 
    argumentDefinitions["out"] = {
       "out",
-      "Output path to save generated digest file",
+      "Output path. For --devices --json: target file path. For digest commands: existing writable directory.",
       ArgumentType::PATH,
       ArgumentCategory::DIGEST_CREATION,
       "",
@@ -612,32 +649,34 @@ void CliArgumentDefinitions::initialize()
       false,
       "qil --create-ufs-provision-vip-digest --ufs-provision-xml=/path/to/xml "
       "--out=/output/path",
-      "Must be used inside create vip digest or build validation digest "
-      "process.",
+      "For digest creation commands, specify an existing writable directory. "
+      "For --devices --json, specify a target file path (parent directory must exist and be writable).",
       [](QC::CLI::CliOptions& options, const std::string& value) {
          REQUIRE_ABSOLUTE_PATH(value)
-         if(FileSystem::isDirectory(value))
-         {
-            options.outputPath = value;
-         }
-         else
+
+         // --devices: --out names a target JSON file, so validate its parent
+         // directory. All other commands: --out IS the directory itself (unchanged).
+         std::string dirToCheck = (options.command == CliOptions::CommandType::LIST_DEVICES)
+            ? FileSystem::getDirectoryPath(value)
+            : value;
+
+         if(!FileSystem::isDirectory(dirToCheck))
          {
             QC_THROW_FILE_ERROR(
                QC::Common::Exception::DIRECTORY_NOT_FOUND,
                value,
-               "--out directory validation - Please specify "
-               "an existing directory"
+               "--out directory validation - Please specify a path whose directory exists"
             );
          }
-         if(!FileSystem::isDirectoryWritable(value))
+         if(!FileSystem::isDirectoryWritable(dirToCheck))
          {
             QC_THROW_FILE_ERROR(
                QC::Common::Exception::FILE_WRITE_ERROR,
                value,
-               "--out directory validation - Please specify a "
-               "directory with write permissions"
+               "--out directory validation - Please specify a path in a directory with write permissions"
             );
          }
+         options.outputPath = value;
       }
    };
 
@@ -797,7 +836,20 @@ void CliArgumentDefinitions::initialize()
          KL::Logger::get_instance().setLevel(KL::Level::Data);
       }
    };
-
+   argumentDefinitions["json"] = {
+         "json",
+         "Print output to a json file",
+         ArgumentType::FLAG,
+         ArgumentCategory::LOGGING,
+         "",
+         {},
+         false,
+         "qil --devices --json",
+         "Outputs device list to json file",
+         [](QC::CLI::CliOptions& options, const std::string& value) {
+            options.jsonOutput = true;
+         }
+      };
    // Command definitions
    // NOTE: Some optional arguments depend on the build argument and must appear
    // after it. Specifically, device-programmer, raw-program, and patch-program
@@ -866,21 +918,23 @@ void CliArgumentDefinitions::initialize()
        "List all available device identifiers",
        {},
        {argumentDefinitions["verbose"],
-        argumentDefinitions["port-trace"]},
+        argumentDefinitions["port-trace"],
+        argumentDefinitions["json"],
+        argumentDefinitions["out"]},
        "qil --devices",
        CliOptions::CommandType::LIST_DEVICES,
        nullptr},
       {"erase-partitions",
        "Erase specified partitions in device",
        {
-          argumentDefinitions["device"],
           argumentDefinitions["device-programmer"],
           argumentDefinitions["memory-type"],
           // Not suggest to add reset for erase partition, since device might
           // not resetabble
           // argumentDefinitions["reset"]
-       },
-       {argumentDefinitions["slot"],
+         },
+       {argumentDefinitions["device"],
+        argumentDefinitions["slot"],
         argumentDefinitions["partition-index"],
         argumentDefinitions["skip-sahara"],
         argumentDefinitions["firehose-init-time"],
@@ -893,11 +947,11 @@ void CliArgumentDefinitions::initialize()
        nullptr},
       {"flash-build",
        "Flash firmware build to device",
-       {argumentDefinitions["device"],
-        argumentDefinitions["build"],
+       {argumentDefinitions["build"],
         argumentDefinitions["memory-type"],
         argumentDefinitions["reset"]},
        {
+          argumentDefinitions["device"],
           argumentDefinitions["read-image-path"],
           argumentDefinitions["slot"],
           argumentDefinitions["erase"],
@@ -914,6 +968,7 @@ void CliArgumentDefinitions::initialize()
           argumentDefinitions["skip-sahara"],
           argumentDefinitions["firehose-init-time"],
           argumentDefinitions["firehose-rx-timeout"],
+          argumentDefinitions["skip-flash-if-data-matched"],
           argumentDefinitions["validate-image-size"],
           argumentDefinitions["zlp-aware-host"],
           argumentDefinitions["verbose"],
@@ -929,11 +984,11 @@ void CliArgumentDefinitions::initialize()
        nullptr},
       {"get-flash-info",
        "Get device flash information",
-       {argumentDefinitions["device"],
-        argumentDefinitions["memory-type"],
+       {argumentDefinitions["memory-type"],
         argumentDefinitions["device-programmer"],
         argumentDefinitions["reset"]},
-       {argumentDefinitions["slot"],
+       {argumentDefinitions["device"],
+        argumentDefinitions["slot"],
         argumentDefinitions["partition-index"],
         argumentDefinitions["skip-lun-info"],
         argumentDefinitions["skip-sahara"],
@@ -950,12 +1005,12 @@ void CliArgumentDefinitions::initialize()
       {"-h", "Display help information", {}, {}, "qil -h", CliOptions::CommandType::HELP, nullptr},
       {"read-images",
        "Read partition images from device",
-       {argumentDefinitions["device"],
-        argumentDefinitions["build"],
+       {argumentDefinitions["build"],
         argumentDefinitions["memory-type"],
         argumentDefinitions["read-image-path"],
         argumentDefinitions["reset"]},
-       {argumentDefinitions["slot"],
+       {argumentDefinitions["device"],
+        argumentDefinitions["slot"],
         argumentDefinitions["erase"],
         argumentDefinitions["device-programmer"],
         argumentDefinitions["raw-program"],
@@ -973,9 +1028,9 @@ void CliArgumentDefinitions::initialize()
        "Reset device from firehose mode<BR>Normally used in a subsequent "
        "command when the previous command was executed with '--reset=false'.",
        {
-          argumentDefinitions["device"],
        },
-       {argumentDefinitions["zlp-aware-host"], 
+       {argumentDefinitions["device"],
+        argumentDefinitions["zlp-aware-host"], 
         argumentDefinitions["verbose"],
         argumentDefinitions["port-trace"]},
        "qil --reset-device --device=12345",
@@ -984,12 +1039,12 @@ void CliArgumentDefinitions::initialize()
       {"send-xml",
        "Send a firehose command sequence in an XML file. Can be used to send "
        "peek command.",
-       {argumentDefinitions["device"],
-        argumentDefinitions["device-programmer"],
+       {argumentDefinitions["device-programmer"],
         argumentDefinitions["memory-type"],
         argumentDefinitions["xml-path"],
         argumentDefinitions["reset"]},
        {
+          argumentDefinitions["device"],
           argumentDefinitions["slot"],
           argumentDefinitions["skip-sahara"],
           argumentDefinitions["firehose-init-time"],
@@ -1006,14 +1061,14 @@ void CliArgumentDefinitions::initialize()
       {"send-image",
        "Send a binary image to a user defined region in device (With partition "
        "index and start index)",
-       {argumentDefinitions["device"],
-        argumentDefinitions["device-programmer"],
+       {argumentDefinitions["device-programmer"],
         argumentDefinitions["memory-type"],
         argumentDefinitions["image-path"],
         argumentDefinitions["lun"],
         argumentDefinitions["start-sector"],
         argumentDefinitions["reset"]},
        {
+          argumentDefinitions["device"],
           argumentDefinitions["slot"],
           argumentDefinitions["skip-sahara"],
           argumentDefinitions["firehose-init-time"],
@@ -1030,13 +1085,13 @@ void CliArgumentDefinitions::initialize()
       {"ufs-provision",
        "Execute a UFS provision.",
        {
-          argumentDefinitions["device"],
           argumentDefinitions["device-programmer"],
           // Not suggest to add reset for UFS provision, since device might not
           // resetabble argumentDefinitions["reset"],
           argumentDefinitions["ufs-provision-xml"],
        },
        {
+          argumentDefinitions["device"],
           argumentDefinitions["slot"],
           argumentDefinitions["chained-digest"],
           argumentDefinitions["signed-digest"],
@@ -1058,7 +1113,7 @@ void CliArgumentDefinitions::initialize()
        {},
        "qil --version",
        CliOptions::CommandType::DISPLAY_VERSION,
-       nullptr}
+       nullptr},
    };
 
    initialized = true;

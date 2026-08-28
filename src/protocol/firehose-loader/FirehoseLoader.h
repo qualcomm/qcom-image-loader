@@ -109,6 +109,7 @@ private:
 #define PARTITION_FLBA_OFFSET_IN_BYTES 32
 #define PARTITION_LLBA_OFFSET_IN_BYTES 40
 #define PARTITION_NAME_OFFSET_IN_BYTES 56
+#define MAX_LUN_SUPPORTED 16
 
 #ifdef TOOLS_MODE_DEBUG
 #define PRETTYPRINT(buffer, length, MaxLength) printBuffer(buffer, length, MaxLength, __FUNCTION__, __LINE__)
@@ -486,6 +487,13 @@ private:
    void SortMyXmlFiles(void);
    void OpenAndStoreAllXMLFiles(void);
    void ReadSha256File(void);
+   void QueryDeviceSha256Digest(SIZE_T FileSizeNumSectors);
+   void ReadbackAndHashDevice(SIZE_T FileSizeNumSectors, std::shared_ptr<std::fstream>& fd);
+   bool VerifyProgramming(
+      SIZE_T FileSizeNumSectors,
+      std::shared_ptr<std::fstream>& fd,
+      bool& preReadDigest
+   );
 
    enum fh_reboot_options
    {
@@ -683,6 +691,7 @@ private:
    char verify_programming_sha256 = 0;
    char GenerateSha256File = 0;
    char VerifySha256File = 0;
+   char SkipFlashIfDataMatched = 0;
 
    uint8_t temp_hash_value[32];
    uint8_t verify_hash_value[32];

@@ -275,7 +275,9 @@ FirehoseLoader::FirehoseLoader(const FirehosePtr& pFirehose)
       "zlpawarehost=",
       "validate_image_size",
       "maxreadpayloadsizeinbytes=",
-      "excludeerasepartitioninfo="}
+      "excludeerasepartitioninfo=",
+      "skip_flash_if_data_matched",
+      "skip_flash_if_data_matched_getsha" }
   )
 , firehose_tag_data()
 , CurrentHandlerFunction()
@@ -572,7 +574,7 @@ FirehoseLoader::FirehoseLoader(const FirehosePtr& pFirehose)
       'b',
       0
    }; // 37
-   *attributes++ = Attributes_Struct{"LUNum", "", (uint8_t*)&UFS_LUN_Var_Struct.LUNum, 0, 7, 1, 0, NULL, 'i', 0};
+   *attributes++ = Attributes_Struct{"LUNum", "", (uint8_t*)&UFS_LUN_Var_Struct.LUNum, 0, MAX_LUN_SUPPORTED, 1, 0, NULL, 'i', 0};
    *attributes++ =
       Attributes_Struct{"bLUEnable", "", (uint8_t*)&UFS_LUN_Var_Struct.bLUEnable, 0, 0, 1, 0, NULL, 'b', 0};
    *attributes++ =
@@ -3824,6 +3826,23 @@ int32_t FirehoseLoader::processCommand(int32_t argc, char* argv[])
             "getsha256digest command\n"
          );
          verify_programming = 1;
+         verify_programming_sha256 = 1;
+         continue;
+      }
+      else if(strncmp(MyOpt, "skip_flash_if_data_matched", MAX(strlen(MyOpt), strlen("skip_flash_if_data_matched"))) == 0)
+      {
+         SkipFlashIfDataMatched = 1;
+         verify_programming_sha256 = 0;
+         continue;
+      }
+      else if (strncmp(MyOpt, "skip_flash_if_data_matched_getsha", MAX(strlen(MyOpt), strlen("skip_flash_if_data_matched_getsha"))) == 0)
+      {
+         dbg(
+            LOG_DEBUG,
+            "User wants to Verify existing data using the "
+            "getsha256digest command\n"
+         );
+         SkipFlashIfDataMatched = 1;
          verify_programming_sha256 = 1;
          continue;
       }
@@ -10502,6 +10521,8 @@ FirehoseLoader::firehose_error_t FirehoseLoader::handleProgram()
    int32_t result;
    char local_temp_buffer[2048] = {0};
    int32_t pre_verify_programming = 0;
+   bool preReadDigest = false; // true once the pre-write skip-download check has
+                               // consumed a digest-file entry for this image
 
    if(ConvertProgram2Firmware)
    {
@@ -10797,6 +10818,71 @@ FirehoseLoader::firehose_error_t FirehoseLoader::handleProgram()
       // FileToSendWithPath
    }
 
+   // Must run before the <program> tag is built/sent below - once sent, the
+   // device enters raw-data receive mode and an XML query here would be a
+   // protocol mismatch.
+   if(SkipFlashIfDataMatched && VerifySha256File)
+   {
+      if(Simulate == 1 || CreateDigests == 1 || UsingValidation == 1)
+      {
+         dbg(LOG_WARN, "skip_flash_if_data_matched will not work for vip\n");
+      }
+      else
+      {
+         bool matched;
+
+         memscpy(tx_buffer_backup, FIREHOSE_TX_BUFFER_SIZE, tx_buffer, FIREHOSE_TX_BUFFER_SIZE);
+
+         matched = VerifyProgramming(FileSizeNumSectors, fd, preReadDigest);
+
+         // Restore tx_buffer to the parsed <program> XML now that the digest
+         // query/response exchange is done
+         memscpy(tx_buffer, FIREHOSE_TX_BUFFER_SIZE, tx_buffer_backup, FIREHOSE_TX_BUFFER_SIZE);
+
+         if(matched)
+         {
+            dbg(
+               LOG_ALWAYS,
+               "'%s' on-device data already matches the digest file - SKIPPING flash\n",
+               fh.attrs.filename
+            );
+            if(fd != nullptr)
+            {
+               fh_fclose(fd);
+               fd = nullptr;
+            }
+            return FIREHOSE_SUCCESS;
+         }
+
+         dbg(
+            LOG_INFO,
+            "'%s' on-device data does not match the digest file - proceeding with flash\n",
+            fh.attrs.filename
+         );
+
+         // VerifyProgramming() calls find_file() (for the read-back image and/or
+         // the digest file), which overwrites the static buffer FileToSendWithPath
+         // points at - leaving it aimed at BuildValidation.digest. Re-resolve the
+         // source image path before we (re)open it for the flash below.
+         FileToSendWithPath = find_file(fh.attrs.filename, 1);
+         if(FileToSendWithPath == NULL)
+         {
+            dbg(LOG_ERROR, "Could not re-find '%s' after skip-flash digest check", fh.attrs.filename);
+            ExitAndShowLog(1);
+         }
+
+         // The read-back method (verify_programming_sha256==0) reuses fd to
+         // hash the device read-back and then closes/nulls it, whereas the
+         // getsha method leaves fd untouched. Since we're now proceeding with
+         // the flash, re-open the source image so the <program> loop below has
+         // a valid handle (it reads the image through this same fd).
+         if(fd == nullptr)
+         {
+            fd = ReturnFileHandle(FileToSendWithPath, MAX_PATH_SIZE,
+                                  "rb"); // will exit if not successful
+         }
+      }
+   }
 
    // NOTE: Can't send <program> tag as is since num_partition_sectors is most
    // likely BIGGER than the filesize tx_buffer already holds the XML file but
@@ -11240,231 +11326,8 @@ FirehoseLoader::firehose_error_t FirehoseLoader::handleProgram()
    }
    else if(verify_programming)
    {
-      if(verify_programming_sha256 == 0)
-      {
-         InitBufferWithXMLHeader(tx_buffer, FIREHOSE_TX_BUFFER_SIZE);
-         AppendToBuffer(tx_buffer, "<data>\n", FIREHOSE_TX_BUFFER_SIZE);
-         AppendToBuffer(tx_buffer, "<read ", FIREHOSE_TX_BUFFER_SIZE);
-
-         // There can be no path on this name
-         sprintf(temp_buffer, "filename=\"%s\" ", fh.attrs.filename);
-
-         AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
-
-         sprintf(temp_buffer, "SECTOR_SIZE_IN_BYTES=\"%" SIZE_T_FORMAT "\" ", fh.attrs.SECTOR_SIZE_IN_BYTES);
-         AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
-
-         sprintf(temp_buffer, "num_partition_sectors=\"%" SIZE_T_FORMAT "\" ", FileSizeNumSectors);
-         AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
-
-         sprintf(temp_buffer, "physical_partition_number=\"%" SIZE_T_FORMAT "\" ", fh.attrs.physical_partition_number);
-         AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
-
-         sprintf(temp_buffer, "start_sector=\"%s\" ", fh.attrs.start_sector);
-         AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
-
-         snprintf_x(temp_buffer, FIREHOSE_TX_BUFFER_SIZE, "slot=\"%" SIZE_T_FORMAT "\" ", fh.attrs.slot);
-         AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
-
-         AppendToBuffer(tx_buffer, "/>\n</data>", FIREHOSE_TX_BUFFER_SIZE);
-
-         memscpy(temp_buffer3, FIREHOSE_TX_BUFFER_SIZE, tx_buffer,
-                 strlen(tx_buffer)); // memcpy
-
-         SendXMLString(temp_buffer3, strlen(temp_buffer3));
-
-         if(Simulate == 0) /* We are generating VIP tables, no need to verify the hash. */
-         {
-            /* fh.attrs.filename assumes images are in cwd so pick the correct
-             * image path to calculate sha */
-            std::string temp;
-            temp.append(MainOutputDir);
-            temp.append(fh.attrs.filename);
-            dbg(LOG_INFO, "********** for '%s'********", temp.c_str());
-            fd = ReturnFileHandle((char*)temp.c_str(), MAX_PATH_SIZE,
-                                  "rb"); // will exit if not successful
-            FileSize = ReturnFileSize(fd);
-
-            if(FileSize == 0)
-            {
-               // dbg (LOG_ERROR, "Filesize is 0 bytes for '%s'. Previous <read>
-               // failed??",FileToReadBackWithPath);
-               dbg(LOG_ERROR, "Filesize is 0 bytes for '%s'. Previous <read> failed??", fh.attrs.filename);
-               ExitAndShowLog(1);
-            }
-
-
-            // Initialize SHA256
-            SizeOfDataFedToHashRoutine = 0; // reset this
-            sechsharm_sha256_init(&context);
-
-            memset(tx_buffer, 0x0, FIREHOSE_TX_BUFFER_SIZE);
-
-            dbg(LOG_INFO, "Calculating SHA256");
-
-            while(FileSize > FIREHOSE_TX_BUFFER_SIZE)
-            {
-               fd->read(tx_buffer,
-                        FIREHOSE_TX_BUFFER_SIZE); // read from hard drive
-               localBytesRead = fd->gcount();
-               SizeOfDataFedToHashRoutine += (SIZE_T)FIREHOSE_TX_BUFFER_SIZE;
-               sechsharm_sha256_update(
-                  &context,
-                  context.leftover,
-                  &(context.leftover_size),
-                  (uint8_t*)tx_buffer,
-                  FIREHOSE_TX_BUFFER_SIZE
-               );
-               FileSize -= FIREHOSE_TX_BUFFER_SIZE;
-               // dbg (LOG_INFO, ".");
-            }
-
-            // get what is left
-            fd->read(tx_buffer, FileSize); // read from hard drive
-            localBytesRead = fd->gcount();
-            SizeOfDataFedToHashRoutine += FileSize;
-            sechsharm_sha256_update(
-               &context,
-               context.leftover,
-               &(context.leftover_size),
-               (uint8_t*)tx_buffer,
-               static_cast<uint32_t>(FileSize)
-            );
-            if(verify_programming && (FileSize % fh.attrs.SECTOR_SIZE_IN_BYTES))
-            {
-               dbg(LOG_ERROR, "File size is not a multiple of sector size");
-               ExitAndShowLog(1);
-            }
-
-            fh_fclose(fd);
-            fd = nullptr;
-
-
-            sechsharm_sha256_final(&context, context.leftover, &(context.leftover_size), last_hash_value);
-            PrettyPrintHexValueIntoTempBuffer(
-               last_hash_value,
-               32,
-               0,
-               32
-            ); // from, size, offset,
-               // maxlength
-            dbg(
-               LOG_INFO,
-               "verify_programming Read FROM TARGET '%s'\nSHA256 "
-               "(%7" SIZE_T_FORMAT " bytes) %s\n",
-               fh.attrs.filename,
-               SizeOfDataFedToHashRoutine,
-               temp_buffer
-            );
-         }
-      }
-      else /* Use getsha256digest command to get the hash of the data in disk.
-            */
-      {
-         InitBufferWithXMLHeader(tx_buffer, FIREHOSE_TX_BUFFER_SIZE);
-         AppendToBuffer(tx_buffer, "<data>\n", FIREHOSE_TX_BUFFER_SIZE);
-         AppendToBuffer(tx_buffer, "<getsha256digest ", FIREHOSE_TX_BUFFER_SIZE);
-
-         snprintf_x(
-            temp_buffer,
-            FIREHOSE_TX_BUFFER_SIZE,
-            "SECTOR_SIZE_IN_BYTES=\"%" SIZE_T_FORMAT "\" ",
-            fh.attrs.SECTOR_SIZE_IN_BYTES
-         );
-         AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
-
-         snprintf_x(
-            temp_buffer,
-            FIREHOSE_TX_BUFFER_SIZE,
-            "num_partition_sectors=\"%" SIZE_T_FORMAT "\" ",
-            FileSizeNumSectors
-         );
-         AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
-
-         snprintf_x(
-            temp_buffer,
-            FIREHOSE_TX_BUFFER_SIZE,
-            "physical_partition_number=\"%" SIZE_T_FORMAT "\" ",
-            fh.attrs.physical_partition_number
-         );
-         AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
-
-         snprintf_x(temp_buffer, FIREHOSE_TX_BUFFER_SIZE, "start_sector=\"%s\" ", fh.attrs.start_sector);
-         AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
-
-         snprintf_x(temp_buffer, FIREHOSE_TX_BUFFER_SIZE, "slot=\"%" SIZE_T_FORMAT "\" ", fh.attrs.slot);
-         AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
-
-         AppendToBuffer(tx_buffer, "/>\n</data>", FIREHOSE_TX_BUFFER_SIZE);
-
-         memscpy(temp_buffer3, FIREHOSE_TX_BUFFER_SIZE, tx_buffer,
-                 strlen(tx_buffer)); // memcpy
-         SendXMLString(temp_buffer3, strlen(temp_buffer3));
-
-         if(Simulate == 0) /* We are generating VIP tables, no need to verify the hash. */
-         {
-            dbg(LOG_INFO, "verify_programming computed FROM TARGET\n");
-            for(i = 0; i < 32; i++)
-            {
-               char byte[3];
-               uint64_t val;
-               byte[0] = fh.attrs.sha256_verify[i * 2];
-               byte[1] = fh.attrs.sha256_verify[i * 2 + 1];
-               byte[2] = 0;
-               if(hex_atoi(byte, &val) == 0)
-               {
-                  last_hash_value[i] = val & 0xFF;
-               }
-               else
-               {
-                  memset(last_hash_value, 0xEE, sizeof(last_hash_value));
-                  dbg(LOG_ERROR, "Invalid sha string received from target %s\n", fh.attrs.sha256_verify);
-               }
-            }
-            PrettyPrintHexValueIntoTempBuffer(
-               last_hash_value,
-               32,
-               0,
-               32
-            ); // from, size, offset,
-               // maxlength
-            dbg(
-               LOG_INFO,
-               "verify_programming_sha256 Read FROM TARGET '%s'\nSHA256 %s\n",
-               fh.attrs.filename,
-               temp_buffer
-            );
-         }
-      }
-      if(VerifySha256File)
-      {
-         ReadSha256File();
-         PrettyPrintHexValueIntoTempBuffer(
-            verify_hash_value,
-            32,
-            0,
-            32
-         ); // from, size, offset,
-            // maxlength
-         dbg(
-            LOG_INFO,
-            "verify_programming read SHA256 from '%s'\n'%s'SHA256 : %s\n",
-            DigestsPerFileName,
-            fh.attrs.filename,
-            temp_buffer
-         );
-      }
-      if(Simulate)
-      {
-         memscpy(last_hash_value, sizeof(last_hash_value), verify_hash_value, sizeof(verify_hash_value));
-      }
-
-      for(i = 0; i < 32; i++)
-      {
-         if(verify_hash_value[i] != last_hash_value[i]) break;
-      }
-
-      if(i == 32)
+      bool matched = VerifyProgramming(FileSizeNumSectors, fd, preReadDigest);
+      if(matched)
       {
          // dbg (LOG_INFO, "MATCHED - '%s'\n",AllAttributes[i].Name);
          dbg(LOG_ALWAYS, "  __ _           _     _            ");
@@ -14390,6 +14253,292 @@ void FirehoseLoader::ReadSha256File(void)
    }
    return;
 }
+
+// ----------------------------------------------------------------------------
+// QueryDeviceSha256Digest
+//
+/// Sends a <getsha256digest> command for the given partition and parses the
+/// device's response into last_hash_value. Shared by the post-write
+/// verify_programming_sha256 path and the pre-write skip-flash-if-data-matched
+/// path in handleProgram() so both query the device the same
+/// way.
+// ----------------------------------------------------------------------------
+void FirehoseLoader::QueryDeviceSha256Digest(SIZE_T FileSizeNumSectors)
+{
+   SIZE_T i;
+
+   InitBufferWithXMLHeader(tx_buffer, FIREHOSE_TX_BUFFER_SIZE);
+   AppendToBuffer(tx_buffer, "<data>\n", FIREHOSE_TX_BUFFER_SIZE);
+   AppendToBuffer(tx_buffer, "<getsha256digest ", FIREHOSE_TX_BUFFER_SIZE);
+
+   snprintf_x(
+      temp_buffer,
+      FIREHOSE_TX_BUFFER_SIZE,
+      "SECTOR_SIZE_IN_BYTES=\"%" SIZE_T_FORMAT "\" ",
+      fh.attrs.SECTOR_SIZE_IN_BYTES
+   );
+   AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
+
+   snprintf_x(
+      temp_buffer,
+      FIREHOSE_TX_BUFFER_SIZE,
+      "num_partition_sectors=\"%" SIZE_T_FORMAT "\" ",
+      FileSizeNumSectors
+   );
+   AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
+
+   snprintf_x(
+      temp_buffer,
+      FIREHOSE_TX_BUFFER_SIZE,
+      "physical_partition_number=\"%" SIZE_T_FORMAT "\" ",
+      fh.attrs.physical_partition_number
+   );
+   AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
+
+   snprintf_x(temp_buffer, FIREHOSE_TX_BUFFER_SIZE, "start_sector=\"%s\" ", fh.attrs.start_sector);
+   AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
+
+   snprintf_x(temp_buffer, FIREHOSE_TX_BUFFER_SIZE, "slot=\"%" SIZE_T_FORMAT "\" ", fh.attrs.slot);
+   AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
+
+   AppendToBuffer(tx_buffer, "/>\n</data>", FIREHOSE_TX_BUFFER_SIZE);
+
+   memscpy(temp_buffer3, FIREHOSE_TX_BUFFER_SIZE, tx_buffer, strlen(tx_buffer)); // memcpy
+   SendXMLString(temp_buffer3, strlen(temp_buffer3));
+
+   if(Simulate == 0)
+   {
+      for(i = 0; i < 32; i++)
+      {
+         char byte[3];
+         uint64_t val;
+         byte[0] = fh.attrs.sha256_verify[i * 2];
+         byte[1] = fh.attrs.sha256_verify[i * 2 + 1];
+         byte[2] = 0;
+         if(hex_atoi(byte, &val) == 0)
+         {
+            last_hash_value[i] = val & 0xFF;
+         }
+         else
+         {
+            // Malformed response from the device - treat as a mismatch so
+            // callers fall back to their non-matching behavior instead of
+            // trusting a garbage hash
+            memset(last_hash_value, 0xEE, sizeof(last_hash_value));
+            dbg(LOG_ERROR, "Invalid sha string received from target %s\n", fh.attrs.sha256_verify);
+         }
+      }
+   }
+}
+
+// ----------------------------------------------------------------------------
+// ReadbackAndHashDevice
+//
+/// Reads the on-device partition data back (via a <read> command) into a local
+/// file, then hashes that file into last_hash_value. Used when the device does
+/// not support the <getsha256digest> query (verify_programming_sha256==0),
+/// shared by the post-write verify path and the pre-write
+/// skip-flash-if-data-matched-read check so both obtain the on-device hash the
+/// same way.
+// ----------------------------------------------------------------------------
+void FirehoseLoader::ReadbackAndHashDevice(SIZE_T FileSizeNumSectors, std::shared_ptr<std::fstream>& fd)
+{
+   SIZE_T localBytesRead, FileSize;
+
+   InitBufferWithXMLHeader(tx_buffer, FIREHOSE_TX_BUFFER_SIZE);
+   AppendToBuffer(tx_buffer, "<data>\n", FIREHOSE_TX_BUFFER_SIZE);
+   AppendToBuffer(tx_buffer, "<read ", FIREHOSE_TX_BUFFER_SIZE);
+
+   // There can be no path on this name
+   sprintf(temp_buffer, "filename=\"%s\" ", fh.attrs.filename);
+
+   AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
+
+   sprintf(temp_buffer, "SECTOR_SIZE_IN_BYTES=\"%" SIZE_T_FORMAT "\" ", fh.attrs.SECTOR_SIZE_IN_BYTES);
+   AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
+
+   sprintf(temp_buffer, "num_partition_sectors=\"%" SIZE_T_FORMAT "\" ", FileSizeNumSectors);
+   AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
+
+   sprintf(temp_buffer, "physical_partition_number=\"%" SIZE_T_FORMAT "\" ", fh.attrs.physical_partition_number);
+   AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
+
+   sprintf(temp_buffer, "start_sector=\"%s\" ", fh.attrs.start_sector);
+   AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
+
+   snprintf_x(temp_buffer, FIREHOSE_TX_BUFFER_SIZE, "slot=\"%" SIZE_T_FORMAT "\" ", fh.attrs.slot);
+   AppendToBuffer(tx_buffer, temp_buffer, FIREHOSE_TX_BUFFER_SIZE);
+
+   AppendToBuffer(tx_buffer, "/>\n</data>", FIREHOSE_TX_BUFFER_SIZE);
+
+   memscpy(temp_buffer3, FIREHOSE_TX_BUFFER_SIZE, tx_buffer,
+           strlen(tx_buffer)); // memcpy
+
+   SendXMLString(temp_buffer3, strlen(temp_buffer3));
+
+   if(Simulate == 0) /* We are generating VIP tables, no need to verify the hash. */
+   {
+      /* fh.attrs.filename assumes images are in cwd so pick the correct
+       * image path to calculate sha */
+      std::string temp;
+      temp.append(MainOutputDir);
+      temp.append(fh.attrs.filename);
+      dbg(LOG_INFO, "********** for '%s'********", temp.c_str());
+      fd = ReturnFileHandle((char*)temp.c_str(), MAX_PATH_SIZE,
+                            "rb"); // will exit if not successful
+      FileSize = ReturnFileSize(fd);
+
+      if(FileSize == 0)
+      {
+         dbg(LOG_ERROR, "Filesize is 0 bytes for '%s'. Previous <read> failed??", fh.attrs.filename);
+         ExitAndShowLog(1);
+      }
+
+
+      // Initialize SHA256
+      SizeOfDataFedToHashRoutine = 0; // reset this
+      sechsharm_sha256_init(&context);
+
+      memset(tx_buffer, 0x0, FIREHOSE_TX_BUFFER_SIZE);
+
+      dbg(LOG_INFO, "Calculating SHA256");
+
+      while(FileSize > FIREHOSE_TX_BUFFER_SIZE)
+      {
+         fd->read(tx_buffer,
+                  FIREHOSE_TX_BUFFER_SIZE); // read from hard drive
+         localBytesRead = fd->gcount();
+         SizeOfDataFedToHashRoutine += (SIZE_T)FIREHOSE_TX_BUFFER_SIZE;
+         sechsharm_sha256_update(
+            &context,
+            context.leftover,
+            &(context.leftover_size),
+            (uint8_t*)tx_buffer,
+            FIREHOSE_TX_BUFFER_SIZE
+         );
+         FileSize -= FIREHOSE_TX_BUFFER_SIZE;
+      }
+
+      // get what is left
+      fd->read(tx_buffer, FileSize); // read from hard drive
+      localBytesRead = fd->gcount();
+      SizeOfDataFedToHashRoutine += FileSize;
+      sechsharm_sha256_update(
+         &context,
+         context.leftover,
+         &(context.leftover_size),
+         (uint8_t*)tx_buffer,
+         static_cast<uint32_t>(FileSize)
+      );
+      if(verify_programming && (FileSize % fh.attrs.SECTOR_SIZE_IN_BYTES))
+      {
+         dbg(LOG_ERROR, "File size is not a multiple of sector size");
+         ExitAndShowLog(1);
+      }
+
+      fh_fclose(fd);
+      fd = nullptr;
+
+
+      sechsharm_sha256_final(&context, context.leftover, &(context.leftover_size), last_hash_value);
+      PrettyPrintHexValueIntoTempBuffer(last_hash_value, 32, 0, 32);
+      dbg(
+         LOG_INFO,
+         "verify_programming Read FROM TARGET '%s'\nSHA256 "
+         "(%7" SIZE_T_FORMAT " bytes) %s\n",
+         fh.attrs.filename,
+         SizeOfDataFedToHashRoutine,
+         temp_buffer
+      );
+   }
+}
+
+// ----------------------------------------------------------------------------
+// VerifyProgramming
+//
+/// Verifies that the just-written (or, when reused pre-write, the currently
+/// on-device) data for this image matches the expected SHA256, either by
+/// locally hashing a device read-back (verify_programming_sha256==0) or by
+/// querying the device's own <getsha256digest> (verify_programming_sha256==1),
+/// then comparing against verify_hash_value (from DigestsPerFileName when
+/// VerifySha256File is set, or the just-computed/queried value otherwise).
+///
+/// Pure predicate: returns true when the on-device data matches, false
+/// otherwise. It prints no banners and never aborts - the caller owns the
+/// user-facing outcome (FLASHING WORKS/FAILED banners, read-back cleanup,
+/// abort-on-mismatch), so the pre-write skip check can reuse this comparison
+/// silently.
+///
+/// Callers must not invoke this while generating VIP digest tables
+/// (CreateDigests) or during a VIP download (UsingValidation) - neither mode
+/// wants/needs this verification, since the device validates its own writes
+/// in the VIP-download case. Both call sites in handleProgram() already
+/// guard against that before calling in.
+// ----------------------------------------------------------------------------
+bool FirehoseLoader::VerifyProgramming(
+   SIZE_T FileSizeNumSectors,
+   std::shared_ptr<std::fstream>& fd,
+   bool& preReadDigest
+)
+{
+   SIZE_T i;
+
+   if(verify_programming_sha256 == 0)
+   {
+      ReadbackAndHashDevice(FileSizeNumSectors, fd);
+   }
+   else /* Use getsha256digest command to get the hash of the data in disk. */
+   {
+      QueryDeviceSha256Digest(FileSizeNumSectors);
+
+      if(Simulate == 0) /* We are generating VIP tables, no need to verify the hash. */
+      {
+         dbg(LOG_INFO, "verify_programming computed FROM TARGET\n");
+         PrettyPrintHexValueIntoTempBuffer(last_hash_value, 32, 0, 32);
+         dbg(
+            LOG_INFO,
+            "verify_programming_sha256 Read FROM TARGET '%s'\nSHA256 %s\n",
+            fh.attrs.filename,
+            temp_buffer
+         );
+      }
+   }
+   if(VerifySha256File)
+   {
+      // Skip re-reading if the pre-write skip-flash check above already
+      // consumed this image's digest-file entry, otherwise sha256_file_offset
+      // would advance twice for the same image
+      if(!preReadDigest)
+      {
+         ReadSha256File();
+         preReadDigest = true;
+      }
+      PrettyPrintHexValueIntoTempBuffer(verify_hash_value, 32, 0, 32);
+      dbg(
+         LOG_INFO,
+         "verify_programming read SHA256 from '%s'\n'%s'SHA256 : %s\n",
+         DigestsPerFileName,
+         fh.attrs.filename,
+         temp_buffer
+      );
+   }
+   if(Simulate)
+   {
+      memscpy(last_hash_value, sizeof(last_hash_value), verify_hash_value, sizeof(verify_hash_value));
+   }
+
+   for(i = 0; i < 32; i++)
+   {
+      if(verify_hash_value[i] != last_hash_value[i]) break;
+   }
+
+   // Pure match/no-match result. The caller owns the user-facing outcome
+   // (FLASHING WORKS/FAILED banners, read-back cleanup, abort-on-mismatch) so
+   // that the pre-write skip check can reuse this comparison silently.
+   return (i == 32);
+}
+
+// ----------------------------------------------------------------------------
 
 int32_t FirehoseLoader::executeCommand(Firehose::FirehoseCommandType& pParameters)
 {

@@ -459,6 +459,7 @@ ImageTransfer::
 , m_xmlPathString()
 , m_maxPayloadSize(0)
 , m_validationMode(VALIDATION_MODE_NONE)
+, m_skipFlashMode(SKIP_PRECHECK_NONE)
 , m_bReadImages(false)
 , m_outputDir(Device::Manager::getInstance()->getTempDirectory())
 , m_digestHeaderType("mbn")
@@ -1746,6 +1747,20 @@ void ImageTransfer::firehoseSetValidationMode(const ValidationMode mode)
 }
 
 // ----------------------------------------------------------------------------
+// firehoseSetSkipFlashMode
+//
+/// Set the pre-write skip-flash mode (SkipFlashIfDataMatched): 0 = none, 1 =
+/// read-back (host reads the partition back and hashes it), 2 = getsha (fast
+/// on-device getsha256digest query). Skips flashing a partition whose
+/// on-device data already matches the pre-created build validation digest
+/// file.
+// ----------------------------------------------------------------------------
+void ImageTransfer::firehoseSetSkipFlashMode(int32_t mode)
+{
+   m_skipFlashMode = mode;
+}
+
+// ----------------------------------------------------------------------------
 // firehoseSetEdmaPath
 //
 /// Set edma path
@@ -2057,7 +2072,9 @@ void ImageTransfer::firehoseFormatDownloadBuildParameter(const std::filesystem::
       }
 
       if(VALIDATION_MODE_BINARY_READBACK_WITH_DIGESTS_FILE == m_validationMode ||
-         VALIDATION_MODE_SHA256_READBACK_WITH_DIGESTS_FILE == m_validationMode)
+         VALIDATION_MODE_SHA256_READBACK_WITH_DIGESTS_FILE == m_validationMode ||
+         SKIP_PRECHECK_BINARY_READBACK_WITH_DIGESTS_FILE == m_skipFlashMode ||
+         SKIP_PRECHECK_SHA256_READBACK_WITH_DIGESTS_FILE == m_skipFlashMode)
       {
          TOOLS_ASSERT_OR_THROW(
             (!m_validationDigestsFile.empty()),
@@ -2237,25 +2254,92 @@ void ImageTransfer::prepareDownloadCmd(
          firehoseCommand.push_back(std::string("--excludeerasepartitioninfo=") + m_excludeErasePartitionInfo);
       }
 
-      if(VALIDATION_MODE_BINARY_READBACK == m_validationMode)
+      if (SKIP_PRECHECK_NONE == m_skipFlashMode)
       {
-         firehoseCommand.push_back(std::string("--verify_programming"));
+         if (VALIDATION_MODE_BINARY_READBACK == m_validationMode)
+         {
+            firehoseCommand.push_back(std::string("--verify_programming"));
+         }
+         else if (VALIDATION_MODE_SHA256_READBACK == m_validationMode)
+         {
+            firehoseCommand.push_back(std::string("--verify_programming_getsha"));
+         }
+         else if (VALIDATION_MODE_BINARY_READBACK_WITH_DIGESTS_FILE == m_validationMode)
+         {
+            firehoseCommand.push_back(std::string("--verify_programming"));
+            firehoseCommand.push_back(std::string("--verifysha256file"));
+            firehoseCommand.push_back(std::string("--digestsperfilename=") + m_validationDigestsFile.string().c_str());
+         }
+         else if (VALIDATION_MODE_SHA256_READBACK_WITH_DIGESTS_FILE == m_validationMode)
+         {
+            firehoseCommand.push_back(std::string("--verify_programming_getsha"));
+            firehoseCommand.push_back(std::string("--verifysha256file"));
+            firehoseCommand.push_back(std::string("--digestsperfilename=") + m_validationDigestsFile.string().c_str());
+         }
       }
-      else if(VALIDATION_MODE_SHA256_READBACK == m_validationMode)
+      else if (SKIP_PRECHECK_BINARY_READBACK_WITH_DIGESTS_FILE == m_skipFlashMode ||
+               SKIP_PRECHECK_SHA256_READBACK_WITH_DIGESTS_FILE == m_skipFlashMode)
       {
-         firehoseCommand.push_back(std::string("--verify_programming_getsha"));
-      }
-      else if(VALIDATION_MODE_BINARY_READBACK_WITH_DIGESTS_FILE == m_validationMode)
-      {
-         firehoseCommand.push_back(std::string("--verify_programming"));
+         // The skip check needs a digests file to compare against. If the
+         // validation mode didn't already supply one, add it.
          firehoseCommand.push_back(std::string("--verifysha256file"));
          firehoseCommand.push_back(std::string("--digestsperfilename=") + m_validationDigestsFile.string().c_str());
-      }
-      else if(VALIDATION_MODE_SHA256_READBACK_WITH_DIGESTS_FILE == m_validationMode)
-      {
-         firehoseCommand.push_back(std::string("--verify_programming_getsha"));
-         firehoseCommand.push_back(std::string("--verifysha256file"));
-         firehoseCommand.push_back(std::string("--digestsperfilename=") + m_validationDigestsFile.string().c_str());
+         if (VALIDATION_MODE_NONE == m_validationMode)
+         {
+            if (SKIP_PRECHECK_BINARY_READBACK_WITH_DIGESTS_FILE == m_skipFlashMode)
+            {
+               firehoseCommand.push_back(std::string("--skip_flash_if_data_matched"));
+            }
+            else if (SKIP_PRECHECK_SHA256_READBACK_WITH_DIGESTS_FILE == m_skipFlashMode)
+            {
+               firehoseCommand.push_back(std::string("--skip_flash_if_data_matched_getsha"));
+            }
+         }
+         else
+         {
+            if (VALIDATION_MODE_BINARY_READBACK_WITH_DIGESTS_FILE != m_validationMode &&
+               VALIDATION_MODE_SHA256_READBACK_WITH_DIGESTS_FILE != m_validationMode)
+            {
+               FLOG_INFO(
+                  "--validation-mode'is being overridden to use digest file "
+                  "because skip-flash-if-data-matched requires it"
+               );
+            }
+
+            if (SKIP_PRECHECK_SHA256_READBACK_WITH_DIGESTS_FILE == m_skipFlashMode)
+            {
+               if (VALIDATION_MODE_SHA256_READBACK_WITH_DIGESTS_FILE != m_validationMode)
+               {
+                  FLOG_WARNING(
+                     "validation-mode is being overridden to the getsha256digest "
+                     "because skip-flash-if-data-matched shows getsha256digest is supported"
+                  );
+               }
+               m_validationMode = VALIDATION_MODE_SHA256_READBACK_WITH_DIGESTS_FILE;
+               firehoseCommand.push_back(std::string("--skip_flash_if_data_matched_getsha"));
+               firehoseCommand.push_back(std::string("--verify_programming_getsha"));
+            }
+            else if (SKIP_PRECHECK_BINARY_READBACK_WITH_DIGESTS_FILE == m_skipFlashMode)
+            {
+               if (VALIDATION_MODE_SHA256_READBACK == m_validationMode ||
+                   VALIDATION_MODE_SHA256_READBACK_WITH_DIGESTS_FILE == m_validationMode)
+               {
+                  FLOG_WARNING(
+                     "skip-flash-if-data-matched is being overridden to the getsha256digest "
+                     "because --validation-mode shows getsha256digest is supported"
+                  );
+                  m_validationMode = VALIDATION_MODE_SHA256_READBACK_WITH_DIGESTS_FILE;
+                  firehoseCommand.push_back(std::string("--skip_flash_if_data_matched_getsha"));
+                  firehoseCommand.push_back(std::string("--verify_programming_getsha"));
+               }
+               else
+               {
+                  m_validationMode = VALIDATION_MODE_BINARY_READBACK_WITH_DIGESTS_FILE;
+                  firehoseCommand.push_back(std::string("--skip_flash_if_data_matched"));
+                  firehoseCommand.push_back(std::string("--verify_programming"));
+               }
+            }
+         }
       }
 
       if(m_bValidateImageSize)

@@ -13,12 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\Rpc">
-      <UniqueIdentifier>{570d5030-1994-4cc6-85f9-4f5754fb3e96}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\Rpc">
-      <UniqueIdentifier>{d087b535-5da5-4894-81e2-84700805ffa6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Function">
       <UniqueIdentifier>{055139f8-a9ab-47b1-a409-e27d700cef8c}</UniqueIdentifier>
     </Filter>
@@ -73,16 +67,16 @@
     <Filter Include="Header Files\Platform">
       <UniqueIdentifier>{82cc1821-b015-40d6-9c42-adb4864a6dd5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Service">
+      <UniqueIdentifier>{570d5030-1994-4cc6-85f9-4f5754fb3e96}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Service">
+      <UniqueIdentifier>{d087b535-5da5-4894-81e2-84700805ffa6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SoftwareDownload.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Rpc\ImageManagementServiceHandler.cpp">
-      <Filter>Source Files\Rpc</Filter>
-    </ClCompile>
-    <ClCompile Include="Rpc\ImageManagementServiceTypes.cpp">
-      <Filter>Source Files\Rpc</Filter>
     </ClCompile>
     <ClCompile Include="Function\ImageTransfer.cpp">
       <Filter>Source Files\Function</Filter>
@@ -141,14 +135,8 @@
     <ClCompile Include="Protocol\firehose-loader\FirehoseLoader.cpp">
       <Filter>Source Files\Protocol\firehose-loader</Filter>
     </ClCompile>
-    <ClCompile Include="Rpc\DeviceManagerHandler.cpp">
-      <Filter>Source Files\Rpc</Filter>
-    </ClCompile>
     <ClCompile Include="SoftwareDownloadUtility.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Rpc\UtilityServiceHandler.cpp">
-      <Filter>Source Files\Rpc</Filter>
     </ClCompile>
     <ClCompile Include="DeviceDiscovery.cpp">
       <Filter>Source Files</Filter>
@@ -159,6 +147,18 @@
     <ClCompile Include="util\ThisThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="service\DeviceManagerHandler.cpp">
+      <Filter>Source Files\Service</Filter>
+    </ClCompile>
+    <ClCompile Include="service\ImageManagementServiceHandler.cpp">
+      <Filter>Source Files\Service</Filter>
+    </ClCompile>
+    <ClCompile Include="service\ImageManagementServiceTypes.cpp">
+      <Filter>Source Files\Service</Filter>
+    </ClCompile>
+    <ClCompile Include="service\UtilityServiceHandler.cpp">
+      <Filter>Source Files\Service</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Exports\SoftwareDownload.h">
@@ -166,9 +166,6 @@
     </ClInclude>
     <ClInclude Include="Exports\ImageManagementDefinitions.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Rpc\ImageManagementServiceHandler.h">
-      <Filter>Header Files\Rpc</Filter>
     </ClInclude>
     <ClInclude Include="Function\ImageTransfer.h">
       <Filter>Header Files\Function</Filter>
@@ -248,20 +245,8 @@
     <ClInclude Include="Globals.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Rpc\Service.h">
-      <Filter>Header Files\Rpc</Filter>
-    </ClInclude>
-    <ClInclude Include="Rpc\DeviceManagerHandler.h">
-      <Filter>Header Files\Rpc</Filter>
-    </ClInclude>
-    <ClInclude Include="Rpc\Fwd.h">
-      <Filter>Header Files\Rpc</Filter>
-    </ClInclude>
     <ClInclude Include="Exports\SoftwareDownloadUtility.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Rpc\UtilityServiceHandler.h">
-      <Filter>Header Files\Rpc</Filter>
     </ClInclude>
     <ClInclude Include="exports\Definitions.h">
       <Filter>Header Files</Filter>
@@ -328,6 +313,21 @@
     </ClInclude>
     <ClInclude Include="util\TimeHelper.h">
       <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="service\UtilityServiceHandler.h">
+      <Filter>Header Files\Service</Filter>
+    </ClInclude>
+    <ClInclude Include="service\Service.h">
+      <Filter>Header Files\Service</Filter>
+    </ClInclude>
+    <ClInclude Include="service\ImageManagementServiceHandler.h">
+      <Filter>Header Files\Service</Filter>
+    </ClInclude>
+    <ClInclude Include="service\Fwd.h">
+      <Filter>Header Files\Service</Filter>
+    </ClInclude>
+    <ClInclude Include="service\DeviceManagerHandler.h">
+      <Filter>Header Files\Service</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

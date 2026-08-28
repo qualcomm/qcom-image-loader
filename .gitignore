@@ -13,6 +13,8 @@
 CLAUDE.md
 !src/external/libxml2-win-build/build/
 !src/external/libxml2-win-build/build/**
+!src/external/libxml2-lnx-build/build/
+!src/external/libxml2-lnx-build/build/**
 src/qds/qds_lnx/libLNX/*.so
 src/qds/qds_lnx/libLNX/*.a
 src/qds/*.sln

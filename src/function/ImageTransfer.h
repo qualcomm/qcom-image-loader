@@ -88,6 +88,13 @@ public:
       VALIDATION_MODE_SHA256_READBACK_WITH_DIGESTS_FILE,
    };
 
+   enum SkipFlashIfDataMatched
+   {
+      SKIP_PRECHECK_NONE = 0,                             ///< no pre-write skip check
+      SKIP_PRECHECK_BINARY_READBACK_WITH_DIGESTS_FILE = 1, ///< read partition back and hash on host
+      SKIP_PRECHECK_SHA256_READBACK_WITH_DIGESTS_FILE = 2, ///< on-device getsha256digest query
+   };
+
    enum OfflineProcess
    {
       PROCESS_VIP_DIGEST,
@@ -232,6 +239,7 @@ public:
    void firehoseSetMaxReadPayloadSize(const int32_t maxReadPayloadSizeInByte);
    void firehoseSetExcludeErasePartitionInfo(const std::string& excludeErasePartitionInfo);
    void firehoseSetValidationMode(const ValidationMode mode);
+   void firehoseSetSkipFlashMode(int32_t mode);
    void firehoseSetEdmaPath(const std::filesystem::path& edmaFile);
    void firehoseSetDigestHeaderType(const DigestHeaderType digestType);
    void firehoseSetBuildValidationDigests(const std::filesystem::path& digestsFile);
@@ -351,6 +359,7 @@ private:
    int32_t m_numPartition;                            ///< Partition Number
    int32_t m_maxPayloadSize;                          ///< Max payload size
    ValidationMode m_validationMode;                   ///< Build validation mode
+   int32_t m_skipFlashMode;                           ///< SkipFlashIfDataMatched: skip if data matches digest file
    bool m_bReadImages;                                ///< Specify read image process
    bool m_bValidateImageSize;                         ///< Validate partition image size with partition
                                                       ///< raw xml value

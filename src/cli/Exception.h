@@ -38,6 +38,7 @@ public:
       DEVICE_COMMUNICATION_ERROR,
       DEVICE_TIMEOUT,
       DEVICE_DISCONNECTED,
+      DEVICE_MULTIPLE_EDL_DEVICES,
       PROTOCOL_ERROR,
       PROTOCOL_UNSUPPORTED,
       DOWNLOAD_FAILED,
@@ -271,6 +272,8 @@ public:
             return "Device operation timeout";
          case DEVICE_DISCONNECTED:
             return "Device disconnected";
+         case DEVICE_MULTIPLE_EDL_DEVICES:
+            return "Multiple devices in EDL";
          case PROTOCOL_ERROR:
             return "Protocol error";
          case PROTOCOL_UNSUPPORTED:
@@ -357,6 +360,8 @@ public:
             return "DEVICE_TIMEOUT";
          case DEVICE_DISCONNECTED:
             return "DEVICE_DISCONNECTED";
+         case DEVICE_MULTIPLE_EDL_DEVICES:
+            return "DEVICE_MULTIPLE_EDL_DEVICES";
          case PROTOCOL_ERROR:
             return "PROTOCOL_ERROR";
          case PROTOCOL_UNSUPPORTED:
@@ -556,6 +561,8 @@ private:
             return "Check device responsiveness and try increasing timeout";
          case DEVICE_COMMUNICATION_ERROR:
             return "Verify cable connection and device compatibility";
+         case DEVICE_MULTIPLE_EDL_DEVICES:
+            return "Multiple EDL devices found, please re-run command with --device param";
          default:
             return "";
       }

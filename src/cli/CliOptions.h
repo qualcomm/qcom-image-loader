@@ -64,8 +64,9 @@ public:
    // Logging
    bool verbose = false; // --verbose
    KL::LogOption logOptions = KL::LogOption::None;
-
    bool portTrace = false; // --verbose
+   bool jsonOutput = false; // --json
+
    CliOptions()
    : downloadBuildOptions(QC::MemoryType::MEMORY_TYPE_UFS)
    {
@@ -101,20 +102,8 @@ public:
    void validate()
    {
       /********** Shall never failed here, consider remove it later **********/
-      // Check for device argument
       switch(command)
       {
-         case CliOptions::CommandType::DOWNLOAD_BUILD:
-         case CliOptions::CommandType::UFS_PROVISION:
-         case CliOptions::CommandType::ERASE_FLASH:
-         case CliOptions::CommandType::GET_FLASH_INFO:
-         case CliOptions::CommandType::READ_IMAGES:
-         case CliOptions::CommandType::RESET_DEVICE:
-            if(deviceId.empty())
-            {
-               throw std::invalid_argument("Missing required parameter: --device");
-            }
-            break;
          case CliOptions::CommandType::NONE:
             throw std::invalid_argument("Unable to determine command. Use "
                                         "--devices or provide required "
