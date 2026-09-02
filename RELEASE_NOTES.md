@@ -7,7 +7,7 @@
 - **Skip flash if data matched** (`--skip-flash-if-data-matched`): Skip flashing a partition/image before writing it if the on-device data already matches a pre-created build validation digest file, using the on-device `getsha256digest` query
 - **Auto-detect EDL device** (`--devices` optional): Made `--devices` parameter optional for all commands; QIL will automatically detect a connected device in EDL mode. If multiple devices are present, an error is thrown asking the user to specify the device
 - **JSON device output** (`--json`, `--out=<path>`): Added support for writing device list to JSON file with equivalent `--json` and `--out=<path>` options to `qil --devices`
-- **UFS 16-LUN support**: Enhanced UFS support for 16-LUN configurations (Bosch requirement)
+- **UFS 16-LUN support**: Enhanced UFS support for 16-LUN configurations
 - **Ubuntu 26.04 support**: Added support for Ubuntu 26.04 with static linking for libxml2
 - **Linux ARM64 support**: Added Linux ARM64 support for QIL/QMDC with proper struct alignment enforcement
 
