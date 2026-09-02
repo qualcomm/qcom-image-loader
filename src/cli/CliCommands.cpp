@@ -13,6 +13,7 @@
 #include "Spinner.h"
 
 #include <chrono>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <KL/kLogger.h>
@@ -74,7 +75,7 @@ int CliCommands::execute(const CliOptions& options)
             CliHelp::showUsage();
             return 0;
          case CliOptions::CommandType::LIST_DEVICES:
-            return listDevices();
+            return listDevices(options);
 
          case CliOptions::CommandType::READ_IMAGES:
          case CliOptions::CommandType::DOWNLOAD_BUILD:
@@ -146,7 +147,90 @@ std::string CliCommands::getProtocolName(QC::ProtocolType type)
    }
 }
 
-int CliCommands::listDevices()
+static std::string escapeJsonString(const std::string& str)
+{
+   std::string escaped;
+   for(char c: str)
+   {
+      switch(c)
+      {
+         case '"':  escaped += "\\\""; break;
+         case '\\': escaped += "\\\\"; break;
+         case '\b': escaped += "\\b";  break;
+         case '\f': escaped += "\\f";  break;
+         case '\n': escaped += "\\n";  break;
+         case '\r': escaped += "\\r";  break;
+         case '\t': escaped += "\\t";  break;
+         default:
+            if(static_cast<unsigned char>(c) < 0x20)
+            {
+               std::ostringstream esc;
+               esc << "\\u" << std::setfill('0') << std::setw(4) << std::hex
+                   << static_cast<int>(static_cast<unsigned char>(c));
+               escaped += esc.str();
+            }
+            else
+            {
+               escaped += c;
+            }
+            break;
+      }
+   }
+   return escaped;
+}
+
+static std::vector<std::string> buildDeviceFields(const QC::DeviceInfo& dev)
+{
+   return {
+      "Device Description : " + (!dev.description.empty() ? dev.description : "Unknown Device"),
+      "Device Handle      : " + std::to_string(dev.deviceHandle),
+      "Serial Number      : " + (!dev.serialNumber.empty() ? dev.serialNumber : "UNKNOWN"),
+      "ADB Serial Number  : " + (!dev.adbSerialNumber.empty() ? dev.adbSerialNumber : "UNKNOWN"),
+      "VID                : " + (!dev.vid.empty() ? dev.vid : "UNKNOWN"),
+      "PID                : " + (!dev.pid.empty() ? dev.pid : "UNKNOWN"),
+      "EDL Chip ID        : " + (!dev.edlChipId.empty() ? dev.edlChipId : "UNKNOWN"),
+      "Location           : " + (!dev.location.empty() ? dev.location : "UNKNOWN"),
+   };
+}
+
+static std::string deviceToJson(const QC::DeviceInfo& device)
+{
+   std::string obj = "  {\n";
+   for(const auto& line: buildDeviceFields(device))
+   {
+      auto sep = line.find(" : ");
+      std::string key = line.substr(0, sep);
+      key.erase(key.find_last_not_of(' ') + 1);
+      std::string val = line.substr(sep + 3);
+      obj += "    \"" + escapeJsonString(key) + "\": \"" + escapeJsonString(val) + "\",\n";
+   }
+   obj += "    \"Protocols\": [\n";
+   try
+   {
+      if(device.deviceHandle != 0)
+      {
+         std::list<QC::ProtocolInfo> protocolList = QC::DeviceDiscovery::getProtocolList(device.deviceHandle);
+         bool firstProto = true;
+         for(const auto& p: protocolList)
+         {
+            if(!firstProto) obj += ",\n";
+            firstProto = false;
+            const std::string protoType =
+               p.protocolType == QC::ProtocolType::PROT_SAHARA   ? "SAHARA" :
+               p.protocolType == QC::ProtocolType::PROT_FIREHOSE ? "FIREHOSE" : "UNKNOWN";
+            obj += "      {\"Protocol Type\": \"" + escapeJsonString(protoType) +
+                   "\", \"Description\": \"" + escapeJsonString(p.description) + "\"}";
+         }
+         if(!protocolList.empty()) obj += "\n";
+      }
+   }
+   catch(...) {}
+   obj += "    ]\n";
+   obj += "  }";
+   return obj;
+}
+
+int CliCommands::listDevices(const CliOptions& options)
 {
    try
    {
@@ -178,7 +262,7 @@ int CliCommands::listDevices()
          CFLOG_ERROR("Continuing with empty device list", true);
       }
 
-      if(devices.empty())
+      if(devices.empty() && !options.jsonOutput)
       {
          CFLOG_INFO(
             std::string("No devices found\n"
@@ -189,139 +273,96 @@ int CliCommands::listDevices()
                         "4. Check if device drivers are installed"),
             true
          );
-
          QC::DeviceDiscovery::stopMonitoring();
          return 0;
       }
 
-      CFLOG_INFO("Available Devices:\n", true);
+      std::string jsonArray = "[\n";
+      bool firstDevice = true;
+
+      if(!options.jsonOutput)
+         CFLOG_INFO("Available Devices:\n", true);
 
       for(auto& device: devices)
       {
          try
          {
-            std::string deviceId =
-               !device.serialNumber.empty()
-                  ? device.serialNumber
-                  : (!device.adbSerialNumber.empty() ? device.adbSerialNumber
-                     : !device.description.empty()
-                        ? device.description
-                        : "UNKNOWN");
-
-            CFLOG_INFO("[ " + deviceId + " ]", true);
-
-            CFLOG_INFO(
-               "Device Description : " + (!device.description.empty() ? device.description : "Unknown Device"),
-               true
-            );
-            CFLOG_INFO("Device Handle      : " + std::to_string(device.deviceHandle), true);
-
-            if(!device.serialNumber.empty())
+            if(options.jsonOutput)
             {
-               CFLOG_INFO("Serial Number      : " + device.serialNumber, true);
+               if(!firstDevice) jsonArray += ",\n";
+               firstDevice = false;
+               jsonArray += deviceToJson(device);
             }
             else
             {
-               CFLOG_INFO("Serial Number      : UNKNOWN", true);
-            }
+               std::string deviceId =
+                  !device.serialNumber.empty()
+                     ? device.serialNumber
+                     : (!device.adbSerialNumber.empty() ? device.adbSerialNumber
+                        : !device.description.empty()
+                           ? device.description
+                           : "UNKNOWN");
 
-            if(!device.adbSerialNumber.empty())
-            {
-               CFLOG_INFO("ADB Serial Number  : " + device.adbSerialNumber, true);
-            }
-            else
-            {
-               CFLOG_INFO("ADB Serial Number  : UNKNOWN", true);
-            }
+               CFLOG_INFO("[ " + deviceId + " ]", true);
 
-            if(!device.vid.empty())
-            {
-               CFLOG_INFO("VID                : " + device.vid, true);
-            }
-            else
-            {
-               CFLOG_INFO("VID               : UNKNOWN", true);
-            }
-
-            if(!device.pid.empty())
-            {
-               CFLOG_INFO("PID                : " + device.pid, true);
-            }
-            else
-            {
-               CFLOG_INFO("PID                : UNKNOWN", true);
-            }
-
-            if(!device.edlChipId.empty())
-            {
-               CFLOG_INFO("EDL Chip ID        : " + device.edlChipId, true);
-            }
-            else
-            {
-               CFLOG_INFO("EDL Chip ID        : UNKNOWN", true);
-            }
-
-            if(!device.location.empty())
-            {
-               CFLOG_INFO("Location           : " + device.location, true);
-            }
-            else
-            {
-               CFLOG_INFO("Location           : UNKNOWN", true);
-            }
-
-            // Get and display protocols for this device
-            try
-            {
-               if(device.deviceHandle != 0)
+               for(const auto& line: buildDeviceFields(device))
                {
-                  std::list<QC::ProtocolInfo> protocolList = QC::DeviceDiscovery::getProtocolList(device.deviceHandle);
-                  if(!protocolList.empty())
+                  CFLOG_INFO(line, true);
+               }
+
+               try
+               {
+                  if(device.deviceHandle != 0)
                   {
-                     CFLOG_INFO("Protocols          :", true);
-                     for(const auto& protocolInfo: protocolList)
+                     std::list<QC::ProtocolInfo> protocolList =
+                        QC::DeviceDiscovery::getProtocolList(device.deviceHandle);
+                     if(!protocolList.empty())
                      {
-                        CFLOG_INFO(
-                           "Protocol Type: " + getProtocolName(protocolInfo.protocolType) + " --- " +
-                              protocolInfo.description,
-                           true
-                        );
-                        if(!protocolInfo.alternateDescription.empty())
+                        CFLOG_INFO("Protocols          :", true);
+                        for(const auto& protocolInfo: protocolList)
                         {
-                           CFLOG_INFO(" (" + protocolInfo.alternateDescription + ")", true);
-                        }
-                        if(protocolInfo.protocolType == QC::ProtocolType::PROT_SAHARA ||
-                           protocolInfo.protocolType == QC::ProtocolType::PROT_FIREHOSE)
-                        {
-                           std::regex pattern(STRING_PATTERN_EDL);
-                           if(std::regex_search(protocolInfo.description, pattern))
+                           CFLOG_INFO(
+                              "Protocol Type: " + getProtocolName(protocolInfo.protocolType) + " --- " +
+                                 protocolInfo.description,
+                              true
+                           );
+                           if(!protocolInfo.alternateDescription.empty())
                            {
-                              CFLOG_INFO("EDL device found!!!", true);
+                              CFLOG_INFO(" (" + protocolInfo.alternateDescription + ")", true);
+                           }
+                           if(protocolInfo.protocolType == QC::ProtocolType::PROT_SAHARA ||
+                              protocolInfo.protocolType == QC::ProtocolType::PROT_FIREHOSE)
+                           {
+                              std::regex pattern(STRING_PATTERN_EDL);
+                              if(std::regex_search(protocolInfo.description, pattern))
+                              {
+                                 CFLOG_INFO("EDL device found!!!", true);
+                              }
                            }
                         }
+                        CFLOG_INFO("\n", true);
                      }
-                     CFLOG_INFO("\n", true);
+                     else
+                     {
+                        CFLOG_INFO("Protocols          : None available", true);
+                     }
                   }
                   else
                   {
-                     CFLOG_INFO("Protocols          : None available", true);
+                     CFLOG_INFO("Protocols          : Invalid device handle", true);
                   }
                }
-               else
+               catch(const std::exception& e)
                {
-                  CFLOG_INFO("Protocols          : Invalid device handle", true);
+                  CFLOG_ERROR(std::string("Protocols          : Error - ") + e.what(), true);
                }
-            }
-            catch(const std::exception& e)
-            {
-               CFLOG_ERROR(std::string("Protocols          : Error - ") + e.what(), true);
-            }
-            catch(...)
-            {
-               CFLOG_ERROR("Protocols          : Unknown error", true);
-            }
+               catch(...)
+               {
+                  CFLOG_ERROR("Protocols          : Unknown error", true);
+               }
 
-            CFLOG_INFO("\n", true);
+               CFLOG_INFO("\n", true);
+            }
          }
          catch(const std::exception& e)
          {
@@ -333,10 +374,31 @@ int CliCommands::listDevices()
          }
       }
 
-      CFLOG_INFO("Total devices found: " + std::to_string(devices.size()), true);
+      if(options.jsonOutput)
+      {
+         jsonArray += "\n]";
+         if(!options.outputPath.empty())
+         {
+            std::ofstream outFile(options.outputPath, std::ios::trunc);
+            if(!outFile.is_open())
+            {
+               CFLOG_ERROR("Failed to open output file: " + options.outputPath, true);
+               QC::DeviceDiscovery::stopMonitoring();
+               return 1;
+            }
+            outFile << jsonArray;
+            CFLOG_INFO("Device list written to: " + options.outputPath, true);
+         }
+         else
+         {
+            std::cout << jsonArray << std::endl;
+         }
+      }
+      else
+      {
+         CFLOG_INFO("Total devices found: " + std::to_string(devices.size()), true);
+      }
 
-      // Stop monitoring
-      CFLOG_INFO("Stopping device monitoring...", true);
       QC::DeviceDiscovery::stopMonitoring();
       return 0;
    }
@@ -560,7 +622,22 @@ QC::DeviceInfo CliCommands::findTargetDevice(const std::string& deviceIdentifier
       bool foundInThisScan = false;
       for(const auto& device: devices)
       {
-         if(matchesIdentifier(device))
+         if (deviceIdentifier == "")
+         {
+            if(devices.size() == 1)
+            {
+               targetDevice = device;
+               CFLOG_INFO("Target device found: " + device.description, false);
+               deviceFound = true;
+               foundInThisScan = true;
+               // Validate the device to check EDL mode
+               validateDevice(targetDevice, edlModeFound, edlMessageShown);
+            }
+            else if (devices.size() > 1) {
+               QC_THROW_DEVICE_ERROR(QC::Common::Exception::DEVICE_MULTIPLE_EDL_DEVICES, deviceIdentifier, "device discovery");
+            }
+         }
+         else if(matchesIdentifier(device))
          {
             targetDevice = device;
             foundInThisScan = true;

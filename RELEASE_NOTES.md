@@ -1,4 +1,21 @@
 # QIL Release Notes
+
+## v1.3.1
+
+### New Features
+
+- **Skip flash if data matched** (`--skip-flash-if-data-matched`): Skip flashing a partition/image before writing it if the on-device data already matches a pre-created build validation digest file, using the on-device `getsha256digest` query
+- **Auto-detect EDL device** (`--devices` optional): Made `--devices` parameter optional for all commands; QIL will automatically detect a connected device in EDL mode. If multiple devices are present, an error is thrown asking the user to specify the device
+- **JSON device output** (`--json`, `--out=<path>`): Added support for writing device list to JSON file with equivalent `--json` and `--out=<path>` options to `qil --devices`
+- **UFS 16-LUN support**: Enhanced UFS support for 16-LUN configurations (Bosch requirement)
+- **Ubuntu 26.04 support**: Added support for Ubuntu 26.04 with static linking for libxml2
+- **Linux ARM64 support**: Added Linux ARM64 support for QIL/QMDC with proper struct alignment enforcement
+
+### Bug Fixes
+
+- **Skip-flash-if-data-matched disabled during simulate/VIP runs**: Fixed the pre-write skip check so it only runs during a real flash to hardware; it is now correctly disabled for `--simulate`, `--createvipdigests`/`--createdigests`, `--flattenbuildto`, and VIP download runs, none of which have real on-device data to compare against
+- **ARM64 SIGBUS error**: Fixed SIGBUS error on ARM64 by enforcing 8-byte struct alignment in utils.h while maintaining compatibility with x86_64
+
 ## v1.2.3
 
 ### Bug Fixes
@@ -12,7 +29,6 @@
 ### New Features
 
 - **Windows ARM64 port detection**: Implemented new port number parser for ARM64 using ACPI path check, while preserving existing x86 port detection logic
-- **MCP Server**: Added SagaHostTools MCP server for AI-assisted device operations
 - **Open-source userspace driver support**: Updated libusb dynamic loader to support open-source userspace installer v1.0.2.2 and later
 
 ### Bug Fixes

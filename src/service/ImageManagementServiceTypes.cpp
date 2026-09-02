@@ -196,6 +196,11 @@ void DownloadBuildOptions::__set_excludeErasePartitionInfo(const std::vector<Par
    this->excludeErasePartitionInfo = val;
    __isset.excludeErasePartitionInfo = true;
 }
+void DownloadBuildOptions::__set_skipFlashIfDataMatched(const int32_t val)
+{
+   this->skipFlashIfDataMatched = val;
+   __isset.skipFlashIfDataMatched = true;
+}
 DownloadBuildOptions::DownloadBuildOptions(MemoryType::type memoryType)
 {
    this->memoryType = memoryType;

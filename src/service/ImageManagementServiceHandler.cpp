@@ -1083,6 +1083,10 @@ ImageManagementServiceHandler::downloadBuild(const std::string& buildPath, const
                      Device::Manager::getInstance()->getAccessiblePath(options.validationDigestsPath.c_str());
                   pImageTransfer->firehoseSetBuildValidationDigests(digestsPath);
                }
+               if(options.__isset.skipFlashIfDataMatched)
+               {
+                  pImageTransfer->firehoseSetSkipFlashMode(options.skipFlashIfDataMatched);
+               }
 
                // Preserve partition setting
                m_preservationMode = QC::PreservationMode::type::PRESERVATION_NONE;
@@ -1440,6 +1444,10 @@ void ImageManagementServiceHandler::
             std::filesystem::path digestsPath =
                Device::Manager::getInstance()->getAccessiblePath(options.validationDigestsPath.c_str());
             pImageTransfer->firehoseSetBuildValidationDigests(digestsPath);
+         }
+         if(options.__isset.skipFlashIfDataMatched)
+         {
+            pImageTransfer->firehoseSetSkipFlashMode(options.skipFlashIfDataMatched);
          }
 
          if(options.__isset.readImagesPath && !options.readImagesPath.empty())

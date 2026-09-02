@@ -47,6 +47,19 @@ struct ValidationMode
    };
 };
 
+// Pre-write skip check: skip flashing a partition whose on-device data already
+// matches the build validation digest file. The value selects how the on-device
+// hash is obtained.
+struct SkipFlashIfDataMatched
+{
+   enum type
+   {
+      SKIP_PRECHECK_NONE = 0,                                  // no skip check
+      SKIP_PRECHECK_BINARY_READBACK_WITH_DIGESTS_FILE = 1,      // read the partition back and hash on host (any device)
+      SKIP_PRECHECK_SHA256_READBACK_WITH_DIGESTS_FILE = 2,      // on-device getsha256digest query (needs device support)
+   };
+};
+
 struct PreservationMode
 {
    enum type
@@ -119,6 +132,7 @@ typedef struct _DownloadBuildOptions__isset
    , saharaImageList(false)
    , maxReadPayloadSize(false)
    , excludeErasePartitionInfo(false)
+   , skipFlashIfDataMatched(false)
    {
    }
    bool memoryType : 1;
@@ -154,6 +168,7 @@ typedef struct _DownloadBuildOptions__isset
    bool saharaImageList : 1;
    bool maxReadPayloadSize : 1;
    bool excludeErasePartitionInfo : 1;
+   bool skipFlashIfDataMatched : 1;
 } _DownloadBuildOptions__isset;
 
 typedef struct _FlashInfo__isset
@@ -286,6 +301,7 @@ public:
    /*optional*/ std::map<int32_t, std::string> saharaImageList;
    /*optional*/ int32_t maxReadPayloadSize;
    /*optional*/ std::vector<PartitionInfo> excludeErasePartitionInfo;
+   /*optional*/ int32_t skipFlashIfDataMatched; ///< SkipFlashIfDataMatched value (0=none, 1=read-back, 2=getsha)
 
 
    void __set_memoryType(const MemoryType::type val);
@@ -321,6 +337,7 @@ public:
    void __set_saharaImageList(const std::map<int32_t, std::string>& val);
    void __set_maxReadPayloadSize(const int32_t val);
    void __set_excludeErasePartitionInfo(const std::vector<PartitionInfo>& val);
+   void __set_skipFlashIfDataMatched(const int32_t val);
 };
 
 class FlashInfo

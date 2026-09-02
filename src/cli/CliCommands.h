@@ -52,7 +52,7 @@ private:
     *
     * @return Exit code
     */
-   static int listDevices();
+   static int listDevices(const CliOptions& options);
 
    /**
     * @brief Download build to device

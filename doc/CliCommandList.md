@@ -34,16 +34,16 @@ A device can be set into EDL mode via the following methods:<br>
 | `--create-flash-build-vip-digest` | Command used to create flash build VIP digest. Offline process, no device needed | --build<br>--memory-type<br>--out<br>--reset | --slot<br>--erase<br>--cdt<br>--validation-mode<br>--raw-program<br>--patch-program<br>--digest-header-type<br>--port-trace<br>--verbose |
 | `--create-ufs-provision-vip-digest` | Command used to create UFS provision VIP digest. Offline process, no device needed | --out<br>--ufs-provision-xml | --slot<br>--digest-header-type<br>--port-trace<br>--verbose |
 | `--create-validation-digest` | Command used to create build validation digest. Offline process, no device needed | --build<br>--memory-type<br>--out | --raw-program<br>--port-trace<br>--verbose |
-| `--devices` | Command used to list all available device identifiers. |  | --verbose |
-| `--erase-partitions` | Command used to erase specified partitions in device. | --device<br>--device-programmer<br>--memory-type | --slot<br>--partition-index<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
-| `--flash-build` | Command used to flash firmware build to device. | --build<br>--device<br>--memory-type<br>--reset | --read-image-path<br>--slot<br>--erase<br>--device-programmer<br>--cdt<br>--active-partition<br>--chained-digest<br>--signed-digest<br>--validation-mode<br>--raw-program<br>--partition-index<br>--patch-program<br>--preserve-partitions<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--validate-image-size<br>--port-trace<br>--verbose |
-| `--get-flash-info` | Command used to get device flash information only. | --device<br>--device-programmer<br>--memory-type<br>--reset | --slot<br>--partition-index<br>--skip-lun-info<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
+| `--devices` | Command used to list all available device identifiers. |  | --json<br>--out<br>--verbose |
+| `--erase-partitions` | Command used to erase specified partitions in device. | --device-programmer<br>--memory-type | --device<br>--slot<br>--partition-index<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
+| `--flash-build` | Command used to flash firmware build to device. | --build<br>--memory-type<br>--reset | --device<br>--read-image-path<br>--slot<br>--erase<br>--device-programmer<br>--cdt<br>--active-partition<br>--chained-digest<br>--signed-digest<br>--validation-mode<br>--skip-flash-if-data-matched<br>--raw-program<br>--partition-index<br>--patch-program<br>--preserve-partitions<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--validate-image-size<br>--port-trace<br>--verbose |
+| `--get-flash-info` | Command used to get device flash information only. | --device-programmer<br>--memory-type<br>--reset | --device<br>--slot<br>--partition-index<br>--skip-lun-info<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
 | `--help, -h` | Command used to display help information |  |  |
-| `--read-images` | Command used to read partition images from device. | --build<br>--device<br>--memory-type<br>--read-image-path<br>--reset | --slot<br>--erase<br>--device-programmer<br>--raw-program<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
-| `--reset-device` | Command used to reset device from firehose mode<br>Normally used in a subsequent command when the previous command was executed with '--reset=false' option. | --device | --port-trace<br>--verbose |
+| `--read-images` | Command used to read partition images from device. | --build<br>--memory-type<br>--read-image-path<br>--reset | --device<br>--slot<br>--erase<br>--device-programmer<br>--raw-program<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
+| `--reset-device` | Command used to reset device from firehose mode<br>Normally used in a subsequent command when the previous command was executed with '--reset=false' option. |  | --device--port-trace<br>--verbose |
 | `--send-xml` | Command used to send a firehose command sequence in an XML file. Can be used to send peek command. | --device<br>--device-programmer<br>--memory-type<br>--reset<br>--xml-path | --slot<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
-| `--send-image` | Command used to send a binary image to a user defined region in device (With **partition index and start index**). | --device<br>--device-programmer<br>--memory-type<br>--image-path<br>--lun<br>--reset<br>--start-sector | --slot<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
-| `--ufs-provision` | Command used to execute a UFS provision. | --device<br>--device-programmer<br>--ufs-provision-xml | --slot<br>--chained-digest<br>--signed-digest<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
+| `--send-image` | Command used to send a binary image to a user defined region in device (With **partition index and start index**). | --device-programmer<br>--memory-type<br>--image-path<br>--lun<br>--reset<br>--start-sector | --device<br>--slot<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
+| `--ufs-provision` | Command used to execute a UFS provision. | --device-programmer<br>--ufs-provision-xml | --device<br>--slot<br>--chained-digest<br>--signed-digest<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
 | `--version` | Display QIL Application version. |  | --verbose |
 |
 ## <br><br>
@@ -60,9 +60,10 @@ A device can be set into EDL mode via the following methods:<br>
 | `--firehose-init-time` | `<TIME_IN_MS>` | Configure firehose initialization time in ms. Increase for slower devices or connections. |
 | `--firehose-rx-timeout` | `<TIME_IN_MS>` | Configure firehose data reception timeout in ms. Increase for slower devices or connections. |
 | `--image-path` | `<BINARY_IMAGE_FILE_PATH>` | Specify binary image path for --send-image. |
+| `--json` || Output devices list in json format. Will output to console if no --out path is provided. |
 | `--lun` | `<LUN_NUMBER>` | Configure partition index for --send-image. |
 | `--memory-type` | `<UFS\|EMMC\|NAND\|SPINOR>` | Specify type of flash memory on the target device. |
-| `--out` | `<DIR_PATH_FOR_READ>` | Output path to save generated digest file. Must be used inside create vip digest or build validation digest process. |
+| `--out` | `<DIR_PATH_FOR_READ>` | Output path to save generated digest file or device list in a json file. Must be used inside create vip digest or build validation digest process or list devices process. |
 | `--partition-index` | `<COMMA_SPERATED_PARTITION_INDEXES_LIST>` | Comma-separated list of partition indexes to erase during download, erase partition only or get flash info.<br>•**Flash Images**: Only erase specified partition, but this does not impact the download partition which is configured by rawprogram<br>•**Get flash info**: Specify the partition index to get information on<br>•**Erase flash only**: Specify the flash partition to be erased. |
 | `--patch-program` | `<SEMICOLON_SPERATED_PATCH_XML_FILE_NAME_LIST>` | Semicolon-separated list of patch XML files. Specify dedicated XML files to override auto-detection of patch files, only used in download build. |
 | `--preserve-partitions` | `<INDEX>:<NAME1>,<NAME2>,...;<INDEX>:...` | Partitions to preserve (backup and restore) during flash. Format: semicolon-separated groups of `<index>:<name1>,<name2>,...` where index is a LUN number or `x` for auto-find.<br>•Partitions are backed up before flash and restored after download completes.<br>•Not supported with VIP or single-image mode. |
@@ -71,6 +72,7 @@ A device can be set into EDL mode via the following methods:<br>
 | `--read-image-path` | `<DIR_PATH_FOR_READ>` | Directory path to store read-out binary images:<br>•**Flash build**: Stores binaries read back from device during validation (validation-mode 1 or 3 only)<br>•**Read images**: Output directory for partition images read from device |
 | `--reset` | <true\|false>| Enable or disable reset device after firehose process completion. Device will remain in firehose mode if set to false. |
 | `--signed-digest` | `<SIGNED_DIGEST_FILE_PATH>` | Given absolute path or relative path to --build path for signed digest file, used for vip download. Signed digest file needs to be created before performing a VIP download. See Digest file creation section. |
+| `--skip-flash-if-data-matched` || Skip flashing a partition/image if the on-device data already matches a pre-created build validation digest file, using the on-device getsha256digest query (fast). Requires a Build Validation File (auto-discovered from --build path, same as --validation-mode=3/4) and device support for getsha256digest. |
 | `--skip-lun-info` || Enable skipping getting detailed LUN info for --get-flash-info. |
 | `--skip-sahara` || While device already in firehose mode. Enable skipping the transfer of device programmer using Sahara. Normally used in a subsequent command when the previous command was executed with '--reset=false' or when the previous command failed and the device remains in firehose mode. |
 | `--slot` | `<SLOT_INDEX>` | Configure Memory slot number. Default to slot 0 if not specified |
@@ -169,6 +171,12 @@ A device can be set into EDL mode via the following methods:<br>
   qil --device=<MSM SN> --flash-build --reset=true --build="<FLAT_BUILD>" --memory-type=UFS --validation-mode=1
   ```
 
+- **Skip flashing partitions whose on-device data already matches the build validation digest**
+
+  ```bash
+  qil --device=<MSM SN> --flash-build --reset=true --build="<FLAT_BUILD>" --memory-type=UFS --skip-flash-if-data-matched
+  ```
+
 - **Download with validation and save read-back binaries**
 
   ```bash
@@ -247,38 +255,7 @@ A device can be set into EDL mode via the following methods:<br>
   ```
 ---
 
-## 2. Collect Memory Dumps
-
-| Option | Argument | Description |
-|--------|----------|-------------|
-| `--device` | `<MSM SN>` | Target device identifier. |
-| `--dumpdir` | `<PATH>` | Destination directory for the dump. |
-| `--reset` || Enable reset device after dump. |
-| `--uniquets` || Enable creation of a unique timestamped sub‑folder. |
-
-### Examples
-
-- **List available Qualcomm devices**
-
-  ```bash
-  QMDC --devices
-  ```
-
-- **Basic memory dump**
-
-  ```bash
-  QMDC --device=<MSM SN> --dumpdir="<PATH>" --reset=true
-  ```
-
-- **Dump with unique timestamp folder**
-
-  ```bash
-  QMDC --device=<MSM SN> --dumpdir="<PATH>" --reset=true --uniquets
-  ```
-
----
-
-## 3. Create Flatbuild (Flatten Meta Build)
+## 2. Create Flatbuild (Flatten Meta Build)
 
 | Option | Argument | Description |
 |--------|----------|-------------|

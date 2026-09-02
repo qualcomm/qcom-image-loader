@@ -257,6 +257,10 @@ inline std::string printParameter(const QC::DownloadBuildOptions& downloadBuildO
       ss << "\n maxReadPayloadSize = " << downloadBuildOptions.maxReadPayloadSize;
    }
 
+   if (downloadBuildOptions.__isset.skipFlashIfDataMatched)
+   {
+      ss << "\n skipFlashIfDataMatched = " << downloadBuildOptions.skipFlashIfDataMatched;
+   }
    ss << "\n}";
    return ss.str();
 }
