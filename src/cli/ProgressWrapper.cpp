@@ -240,6 +240,41 @@ void ProgressWrapper::
          }
       }
    }
+   // Handle FLATTEN_META_PROGRESSION events - percentage updates
+   else if(EventId::FLATTEN_META_PROGRESSION == eventId)
+   {
+      try
+      {
+         // Parse percentage from eventDescription (format: "Copying: filename (XX%)")
+         std::string desc = eventDescription;
+         size_t percentPos = desc.find('%');
+         if(std::string::npos != percentPos)
+         {
+            // Find the opening parenthesis before the percentage
+            size_t openParen = desc.rfind('(', percentPos);
+            if(std::string::npos != openParen)
+            {
+               std::string percentStr = desc.substr(openParen + 1, percentPos - openParen - 1);
+               int intPercentage = std::stoi(percentStr);
+
+               if(intPercentage >= 0 && intPercentage <= 100)
+               {
+                  g_lastPercentage = intPercentage;
+                  // Remove percentage from message (everything from opening paren onwards)
+                  std::string displayMessage = desc.substr(0, openParen);
+                  // Trim trailing space
+                  if(!displayMessage.empty() && displayMessage.back() == ' ')
+                     displayMessage.pop_back();
+                  g_pActiveProgressSpinner->update(intPercentage, displayMessage);
+               }
+            }
+         }
+      }
+      catch(const std::exception& e)
+      {
+         (void)e;
+      }
+   }
    // Handle all other Firehose events - display on event spinner line
    else
    {

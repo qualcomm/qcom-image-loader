@@ -296,4 +296,34 @@ DataChunkOptions::DataChunkOptions(int32_t partitionIndex, std::string startSect
 }
 
 
+FlattenMetaBuildOptions::~FlattenMetaBuildOptions() noexcept
+{
+}
+void FlattenMetaBuildOptions::__set_memoryType(const std::string& val)
+{
+   this->memoryType = val;
+   __isset.memoryType = true;
+}
+void FlattenMetaBuildOptions::__set_productFlavor(const std::string& val)
+{
+   this->productFlavor = val;
+   __isset.productFlavor = true;
+}
+void FlattenMetaBuildOptions::__set_skuConfig(const std::string& val)
+{
+   this->skuConfig = val;
+   __isset.skuConfig = true;
+}
+void FlattenMetaBuildOptions::__set_outputPath(const std::string& val)
+{
+   this->outputPath = val;
+   __isset.outputPath = true;
+}
+FlattenMetaBuildOptions::FlattenMetaBuildOptions(const std::string& memoryType, const std::string& productFlavor)
+{
+   __set_memoryType(memoryType);
+   __set_productFlavor(productFlavor);
+}
+
+
 } // namespace QC

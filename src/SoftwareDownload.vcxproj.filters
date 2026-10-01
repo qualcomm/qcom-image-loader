@@ -78,6 +78,12 @@
     <ClCompile Include="SoftwareDownload.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Function\FlattenMetaBuild.cpp">
+      <Filter>Source Files\Function</Filter>
+    </ClCompile>
+    <ClCompile Include="Function\MetaCli.cpp">
+      <Filter>Source Files\Function</Filter>
+    </ClCompile>
     <ClCompile Include="Function\ImageTransfer.cpp">
       <Filter>Source Files\Function</Filter>
     </ClCompile>
@@ -144,6 +150,15 @@
     <ClCompile Include="util\Event.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="util\FileSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="util\JsonHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="util\ProcessUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="util\ThisThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -166,6 +181,12 @@
     </ClInclude>
     <ClInclude Include="Exports\ImageManagementDefinitions.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Function\FlattenMetaBuild.h">
+      <Filter>Header Files\Function</Filter>
+    </ClInclude>
+    <ClInclude Include="Function\MetaCli.h">
+      <Filter>Header Files\Function</Filter>
     </ClInclude>
     <ClInclude Include="Function\ImageTransfer.h">
       <Filter>Header Files\Function</Filter>
@@ -261,6 +282,15 @@
       <Filter>Header Files\Protocol\firehose-loader</Filter>
     </ClInclude>
     <ClInclude Include="util\Event.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\FileSystem.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\JsonHelper.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\ProcessUtils.h">
       <Filter>Header Files\Util</Filter>
     </ClInclude>
     <ClInclude Include="util\ThisThread.h">

@@ -45,7 +45,7 @@ typedef void (*ServiceEventCallback)(
    const std::string& eventDescription
 );
 #endif
-class DeviceDiscovery
+class QIL_API DeviceDiscovery
 {
    DeviceDiscovery();
    virtual ~DeviceDiscovery();

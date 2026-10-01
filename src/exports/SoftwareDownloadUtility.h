@@ -12,11 +12,14 @@ namespace QC {
 #elif defined TOOLS_TARGET_LINUX
 
 #endif
-class SoftwareDownloadUtility
+class QIL_API SoftwareDownloadUtility
 {
 public:
-   SoftwareDownloadUtility();
-   virtual ~SoftwareDownloadUtility();
+   // Defined inline: this class only holds static methods, and an exported
+   // class instantiates every member, so an out-of-line ctor/dtor would need a
+   // definition that no translation unit provides.
+   SoftwareDownloadUtility() = default;
+   virtual ~SoftwareDownloadUtility() = default;
 
    // Create VIP Digest
    static ErrorType
@@ -24,6 +27,9 @@ public:
    // Create Build Validation Digest
    static ErrorType
    createDigestsForBuildValidation(std::string buildPath, DownloadBuildOptions options, std::string outputPath);
+   // Flatten Meta-Build
+   static ErrorType
+   flattenMeta(const std::string& buildPath, const FlattenMetaBuildOptions& options);
    static void clean();
 };
 } // namespace QC

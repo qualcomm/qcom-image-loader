@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: BSD 3-Clause Clear License
 #pragma once
 #include "Definitions.h"
+#include "device/ErrorMessage.h"
 #include "device/Exception.h"
 #include "device/Fwd.h"
 #include "device/Logger.h"
@@ -265,6 +266,34 @@ inline std::string printParameter(const QC::DownloadBuildOptions& downloadBuildO
    return ss.str();
 }
 
+template <>
+inline std::string printParameter(const QC::FlattenMetaBuildOptions& flattenMetaBuildOptions)
+{
+   std::ostringstream ss;
+   ss << "{";
+   if(flattenMetaBuildOptions.__isset.memoryType)
+   {
+      ss << "\n memoryType = " << flattenMetaBuildOptions.memoryType;
+   }
+
+   if(flattenMetaBuildOptions.__isset.productFlavor)
+   {
+      ss << "\n productFlavor = " << flattenMetaBuildOptions.productFlavor;
+   }
+
+   if(flattenMetaBuildOptions.__isset.skuConfig)
+   {
+      ss << "\n skuConfig = " << flattenMetaBuildOptions.skuConfig;
+   }
+
+   if(flattenMetaBuildOptions.__isset.outputPath)
+   {
+      ss << "\n outputPath = " << flattenMetaBuildOptions.outputPath;
+   }
+   ss << "\n}";
+   return ss.str();
+}
+
 template <typename _T>
 void logParameter(std::string& output, const std::string& parameterName, const _T& parameterValue)
 {
@@ -441,8 +470,12 @@ inline std::string getAppBuildId()
       isInitialized(),                                                                                                 \
       Device::Exception(                                                                                               \
          Device::Exception::DEVICE_SERVICE_NOT_INITIALIZED,                                                            \
-         QC::getName() + " was used without being initialized.  Call "                                                 \
-                         "initializeService()"                                                                         \
+         Device::Exception::getErrorJson(                                                                              \
+            ERR_SERVICE_NOT_INITIALIZED,                                                                              \
+            DESC_SERVICE_NOT_INITIALIZED(QC::getName()),                                                               \
+            SUGG_SERVICE_NOT_INITIALIZED,                                                                              \
+            POC(CLIENT)                                                                                                \
+         )                                                                                                              \
       )                                                                                                                \
    );
 

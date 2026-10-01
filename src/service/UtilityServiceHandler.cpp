@@ -3,7 +3,9 @@
 #include "service/UtilityServiceHandler.h"
 
 #include "callback/ClientCallbackHandler.h"
+#include "device/ErrorMessage.h"
 #include "function/ImageTransfer.h"
+#include "function/FlattenMetaBuild.h"
 #include "tracker/FunctionTracker.h"
 
 namespace Service {
@@ -102,7 +104,12 @@ void UtilityServiceHandler::offlineFirehoseProcess(
          (QC::MemoryType::MEMORY_TYPE_UNKNOWN > options.memoryType),
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PARAMETERS,
-            "Unsupported memory type : " + std::to_string(static_cast<int32_t>(options.memoryType))
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("memory type")),
+               DESC_UNSUPPORTED_MEMORY_TYPE(options.memoryType),
+               SUGG_UNSUPPORTED_MEMORY_TYPE,
+               POC(CLIENT)
+            )
          )
       );
       // Select memory type
@@ -202,8 +209,12 @@ void UtilityServiceHandler::offlineFirehoseProcess(
                  options.preservationOption.preservedPartitions.size() > 0),
                Device::Exception(
                   Device::Exception::DEVICE_INVALID_PARAMETERS,
-                  "Preserve partition is not supported for VIP "
-                  "process"
+                  Device::Exception::getErrorJson(
+                     ERR_INVALID_PARAMETERS(std::string("preservation option")),
+                     DESC_PRESERVE_PARTITION_NOT_SUPPORTED,
+                     SUGG_PRESERVE_PARTITION_NOT_SUPPORTED,
+                     POC(CLIENT)
+                  )
                )
             );
 
@@ -340,6 +351,28 @@ void UtilityServiceHandler::offlineFirehoseProcess(
          options,
          outputPath
       );
+   }
+   DEVICE_RPC_CATCH;
+   return static_cast<QC::ErrorCode::type>(__functionError);
+}
+
+// ----------------------------------------------------------------------------
+// flattenMeta
+//
+/// Flatten meta build
+// ----------------------------------------------------------------------------
+::QC::ErrorCode::type UtilityServiceHandler::flattenMeta(
+   const std::string& buildPath,
+   const QC::FlattenMetaBuildOptions& options
+)
+{
+   DEVICE_RPC_TRY(PARAMETER(buildPath) PARAMETER(options))
+   {
+      QC::Function::FlattenMetaBuild flattenBuild;
+      if(!flattenBuild.flatten(buildPath, options))
+      {
+         throw Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Flatten operation failed");
+      }
    }
    DEVICE_RPC_CATCH;
    return static_cast<QC::ErrorCode::type>(__functionError);

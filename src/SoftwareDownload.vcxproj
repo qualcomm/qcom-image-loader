@@ -133,7 +133,7 @@
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>
       </SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_HAS_STD_BYTE=0;WIN32_LEAN_AND_MEAN;NOMINMAX;NOGDI;TOOLS_TARGET_WINDOWS;LIBXML_STATIC;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_HAS_STD_BYTE=0;WIN32_LEAN_AND_MEAN;NOMINMAX;NOGDI;TOOLS_TARGET_WINDOWS;LIBXML_STATIC;QIL_STATIC;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>exports;external\kLogger\include;qds\qds_win;external\libxml2-win-build\include;external\libiconv-win-build\include;.</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -145,6 +145,9 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>QcDevice.lib;Rpcrt4.lib;setupapi.lib;Shlwapi.lib;libxml2-static.lib;libiconv-static.lib;libz-static.lib;liblzma-static.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Builds\$(Platform)\$(Configuration)\lib\;$(SolutionDir)src\external\libxml2-win-build\build\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>/IGNORE:4006 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
       <AdditionalDependencies>QcDevice.lib;Rpcrt4.lib;setupapi.lib;Shlwapi.lib;libxml2-static.lib;libiconv-static.lib;libz-static.lib;liblzma-static.lib;ws2_32.lib;</AdditionalDependencies>
@@ -162,7 +165,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>
       </SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_HAS_STD_BYTE=0;WIN32_LEAN_AND_MEAN;NOMINMAX;NOGDI;TOOLS_TARGET_WINDOWS;LIBXML_STATIC;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_HAS_STD_BYTE=0;WIN32_LEAN_AND_MEAN;NOMINMAX;NOGDI;TOOLS_TARGET_WINDOWS;LIBXML_STATIC;QIL_STATIC;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>exports;external\kLogger\include;qds\qds_win;external\libxml2-win-build\include;external\libiconv-win-build\include;.</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -176,6 +179,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>QcDevice.lib;Rpcrt4.lib;setupapi.lib;Shlwapi.lib;libxml2-static.lib;libiconv-static.lib;libz-static.lib;liblzma-static.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Builds\$(Platform)\$(Configuration)\lib\;$(SolutionDir)src\external\libxml2-win-build\build\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>/IGNORE:4006 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
       <AdditionalDependencies>QcDevice.lib;Rpcrt4.lib;setupapi.lib;Shlwapi.lib;libxml2-static.lib;libiconv-static.lib;libz-static.lib;liblzma-static.lib;ws2_32.lib;</AdditionalDependencies>
@@ -192,7 +198,7 @@
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>
       </SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_HAS_STD_BYTE=0;WIN32_LEAN_AND_MEAN;NOMINMAX;NOGDI;TOOLS_TARGET_WINDOWS;LIBXML_STATIC;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_HAS_STD_BYTE=0;WIN32_LEAN_AND_MEAN;NOMINMAX;NOGDI;TOOLS_TARGET_WINDOWS;LIBXML_STATIC;QIL_STATIC;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>exports;external\kLogger\include;qds\qds_win;external\libxml2-win-build\include;external\libiconv-win-build\include;.</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -204,6 +210,9 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>QcDevice.lib;Rpcrt4.lib;setupapi.lib;Shlwapi.lib;libxml2-static.lib;libiconv-static.lib;libz-static.lib;liblzma-static.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Builds\$(Platform)\$(Configuration)\lib\;$(SolutionDir)src\external\libxml2-win-build\build\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>/IGNORE:4006 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
       <AdditionalDependencies>QcDevice.lib;Rpcrt4.lib;setupapi.lib;Shlwapi.lib;libxml2-static.lib;libiconv-static.lib;libz-static.lib;liblzma-static.lib;ws2_32.lib;</AdditionalDependencies>
@@ -221,7 +230,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>
       </SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_HAS_STD_BYTE=0;WIN32_LEAN_AND_MEAN;NOMINMAX;NOGDI;TOOLS_TARGET_WINDOWS;LIBXML_STATIC;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_HAS_STD_BYTE=0;WIN32_LEAN_AND_MEAN;NOMINMAX;NOGDI;TOOLS_TARGET_WINDOWS;LIBXML_STATIC;QIL_STATIC;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>exports;external\kLogger\include;qds\qds_win;external\libxml2-win-build\include;external\libiconv-win-build\include;.</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -235,6 +244,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>QcDevice.lib;Rpcrt4.lib;setupapi.lib;Shlwapi.lib;libxml2-static.lib;libiconv-static.lib;libz-static.lib;liblzma-static.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Builds\$(Platform)\$(Configuration)\lib\;$(SolutionDir)src\external\libxml2-win-build\build\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>/IGNORE:4006 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
       <AdditionalDependencies>QcDevice.lib;Rpcrt4.lib;setupapi.lib;Shlwapi.lib;libxml2-static.lib;libiconv-static.lib;libz-static.lib;liblzma-static.lib;ws2_32.lib;</AdditionalDependencies>
@@ -251,7 +263,7 @@
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>
       </SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_HAS_STD_BYTE=0;WIN32_LEAN_AND_MEAN;NOMINMAX;NOGDI;TOOLS_TARGET_WINDOWS;LIBXML_STATIC;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_HAS_STD_BYTE=0;WIN32_LEAN_AND_MEAN;NOMINMAX;NOGDI;TOOLS_TARGET_WINDOWS;LIBXML_STATIC;QIL_STATIC;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>exports;external\kLogger\include;qds\qds_win;external\libxml2-win-build\include;external\libiconv-win-build\include;.</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -263,6 +275,9 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>QcDevice.lib;Rpcrt4.lib;setupapi.lib;Shlwapi.lib;libxml2-static.lib;libiconv-static.lib;libz-static.lib;liblzma-static.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Builds\$(Platform)\$(Configuration)\lib\;$(SolutionDir)src\external\libxml2-win-build\build\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>/IGNORE:4006 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
       <AdditionalDependencies>QcDevice.lib;Rpcrt4.lib;setupapi.lib;Shlwapi.lib;libxml2-static.lib;libiconv-static.lib;libz-static.lib;liblzma-static.lib;ws2_32.lib;</AdditionalDependencies>
@@ -280,7 +295,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>
       </SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_HAS_STD_BYTE=0;WIN32_LEAN_AND_MEAN;NOMINMAX;NOGDI;TOOLS_TARGET_WINDOWS;LIBXML_STATIC;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_HAS_STD_BYTE=0;WIN32_LEAN_AND_MEAN;NOMINMAX;NOGDI;TOOLS_TARGET_WINDOWS;LIBXML_STATIC;QIL_STATIC;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>exports;external\kLogger\include;qds\qds_win;external\libxml2-win-build\include;external\libiconv-win-build\include;.</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -294,6 +309,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>QcDevice.lib;Rpcrt4.lib;setupapi.lib;Shlwapi.lib;libxml2-static.lib;libiconv-static.lib;libz-static.lib;liblzma-static.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Builds\$(Platform)\$(Configuration)\lib\;$(SolutionDir)src\external\libxml2-win-build\build\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>/IGNORE:4006 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
       <AdditionalDependencies>QcDevice.lib;Rpcrt4.lib;setupapi.lib;Shlwapi.lib;libxml2-static.lib;libiconv-static.lib;libz-static.lib;liblzma-static.lib;ws2_32.lib;</AdditionalDependencies>
@@ -315,7 +333,11 @@
     <ClCompile Include="device\Impl.cpp" />
     <ClCompile Include="device\Logger.cpp" />
     <ClCompile Include="device\Manager.cpp" />
+    <ClCompile Include="function\FlattenMetaBuild.cpp" />
+    <!-- function\FlattenMetaBuild.cpp uses cli\Spinner.h; a DLL must resolve it. -->
+    <ClCompile Include="cli\Spinner.cpp" />
     <ClCompile Include="function\ImageTransfer.cpp" />
+    <ClCompile Include="function\MetaCli.cpp" />
     <ClCompile Include="protocol\Base.cpp" />
     <ClCompile Include="protocol\Firehose.cpp" />
     <ClCompile Include="protocol\firehose-loader\FhLoaderSha.cpp" />
@@ -333,6 +355,9 @@
     <ClCompile Include="SoftwareDownload.cpp" />
     <ClCompile Include="SoftwareDownloadUtility.cpp" />
     <ClCompile Include="util\Event.cpp" />
+    <ClCompile Include="util\FileSystem.cpp" />
+    <ClCompile Include="util\JsonHelper.cpp" />
+    <ClCompile Include="util\ProcessUtils.cpp" />
     <ClCompile Include="util\ThisThread.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -379,11 +404,16 @@
     <ClInclude Include="tracker\FunctionTracker.h" />
     <ClInclude Include="exports\ImageManagementDefinitions.h" />
     <ClInclude Include="exports\SoftwareDownload.h" />
+    <ClInclude Include="function\FlattenMetaBuild.h" />
     <ClInclude Include="function\ImageTransfer.h" />
+    <ClInclude Include="function\MetaCli.h" />
     <ClInclude Include="util\AppEvent.h" />
     <ClInclude Include="util\AppMessage.h" />
     <ClInclude Include="util\AppUser.h" />
     <ClInclude Include="util\Event.h" />
+    <ClInclude Include="util\FileSystem.h" />
+    <ClInclude Include="util\JsonHelper.h" />
+    <ClInclude Include="util\ProcessUtils.h" />
     <ClInclude Include="util\ThisThread.h" />
     <ClInclude Include="util\FunctionHelper.h" />
     <ClInclude Include="util\MathHelper.h" />

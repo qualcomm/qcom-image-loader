@@ -54,6 +54,28 @@ ErrorType SoftwareDownloadUtility::
    return result;
 }
 
+ErrorType SoftwareDownloadUtility::
+   flattenMeta(const std::string& buildPath, const FlattenMetaBuildOptions& options)
+{
+   QC::ErrorType result;
+   std::shared_ptr<Service::UtilityServiceHandler> pUtility;
+   try
+   {
+      pUtility = std::make_shared<Service::UtilityServiceHandler>();
+      result.errorCode = pUtility->initializeService();
+      if(result.errorCode == QC::ErrorCode::DEVICE_NO_ERROR)
+      {
+         result.errorCode = pUtility->flattenMeta(buildPath, options);
+      }
+   }
+   LIB_CATCH
+   if(pUtility != nullptr)
+   {
+      pUtility->destroyService();
+   }
+   return result;
+}
+
 void SoftwareDownloadUtility::clean()
 {
 }

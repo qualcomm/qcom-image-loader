@@ -133,7 +133,15 @@ void Firehose::setIo(const Communication::CommonIoPtr& pIo)
 void Firehose::connect(const int32_t clientId)
 {
    (void)clientId; // Suppress unused parameter warning
-   TOOLS_ASSERT_OR_THROW(STATE_DISCONNECTED != getState(), ToolException("Firehose Protocol Unavailable"));
+   TOOLS_ASSERT_OR_THROW(
+      STATE_DISCONNECTED != getState(),
+      ToolException(ToolException::getErrorJson(
+         ERR_PROTOCOL_UNAVAILABLE,
+         DESC_PROTOCOL_UNAVAILABLE(std::string("Firehose")),
+         SUGG_PROTOCOL_UNAVAILABLE(std::string("Firehose")),
+         POC(CE)
+      ))
+   );
 
    std::lock_guard<std::recursive_mutex> lock(m_connectMutex);
 
@@ -141,8 +149,15 @@ void Firehose::connect(const int32_t clientId)
    // time
    TOOLS_ASSERT_OR_THROW(
       !m_bConnected,
-      Device::
-         Exception(Device::Exception::DEVICE_CONNECTION_LOCKED, "Firehose protocol already opened: " + getDescription())
+      Device::Exception(
+         Device::Exception::DEVICE_CONNECTION_LOCKED,
+         Device::Exception::getErrorJson(
+            ERR_PROTOCOL_ALREADY_OPENED,
+            DESC_PROTOCOL_ALREADY_OPENED(std::string("Firehose"), getDescription()),
+            SUGG_PROTOCOL_ALREADY_OPENED,
+            POC(CLIENT)
+         )
+      )
    );
 
    if(!m_bConnected)
@@ -275,7 +290,15 @@ Base::TransactionId Firehose::sendAsync(const Device::SharedByteBufferPtr& pBuff
 
    TOOLS_ASSERT_OR_THROW(
       0 != bytesSent,
-      Device::Exception(Device::Exception::DEVICE_INVALID_PACKET, "Send 0 byte fail: " + getDescription())
+      Device::Exception(
+         Device::Exception::DEVICE_INVALID_PACKET,
+         Device::Exception::getErrorJson(
+            ERR_SEND_ZERO_BYTES_FAILED,
+            DESC_SEND_ZERO_BYTES_FAILED(getDescription()),
+            SUGG_SEND_ZERO_BYTES_FAILED,
+            POC(CE)
+         )
+      )
    );
    return NULL_TRANSACTION_ID;
 }
@@ -359,7 +382,15 @@ void Firehose::handleFirehoseLoaderError(void)
 {
    if(m_pFirehoseLoader == nullptr)
    {
-      TOOLS_THROW(Device::Exception(Device::Exception::DEVICE_UNKNOWN_ERROR, "Firehose loader is freed"));
+      TOOLS_THROW(Device::Exception(
+         Device::Exception::DEVICE_UNKNOWN_ERROR,
+         Device::Exception::getErrorJson(
+            ERR_LOADER_FREED,
+            DESC_LOADER_FREED,
+            SUGG_LOADER_FREED,
+            POC(CE)
+         )
+      ));
    }
    std::string errorString(m_pFirehoseLoader->getDeviceErrorString());
    if(errorString.empty())
@@ -374,6 +405,7 @@ void Firehose::handleFirehoseLoaderError(void)
          Device::Exception::DEVICE_RESPONSE_ERROR,
          Device::Exception::getErrorJson(
             ERR_DEVICE_STORAGE_OPEN_FAILURE,
+            DESC_DEVICE_STORAGE_OPEN_FAILURE,
             SUGG_DEVICE_STORAGE_OPEN_FAILURE,
             std::string(POC(TARGET)) + " or " + std::string(POC(BOOT_STORAGE))
          )
@@ -392,7 +424,8 @@ void Firehose::handleFirehoseLoaderError(void)
       TOOLS_THROW(Device::Exception(
          Device::Exception::DEVICE_RESPONSE_ERROR,
          Device::Exception::getErrorJson(
-            ERR_IMAGE_NOT_FOUND(imageName),
+            ERR_IMAGE_NOT_FOUND,
+            DESC_IMAGE_NOT_FOUND(imageName),
             SUGG_IMAGE_NOT_FOUND,
             std::string(POC(TARGET)) + " or " + std::string(POC(CLIENT))
          )
@@ -404,6 +437,7 @@ void Firehose::handleFirehoseLoaderError(void)
          Device::Exception::DEVICE_RESPONSE_ERROR,
          Device::Exception::getErrorJson(
             ERR_SIGNATURE_VERIFICATION_FAILED,
+            DESC_SIGNATURE_VERIFICATION_FAILED,
             SUGG_SIGNATURE_VERIFICATION_FAILED,
             std::string(POC(TARGET)) + " or " + std::string(POC(CLIENT))
          )
@@ -411,8 +445,15 @@ void Firehose::handleFirehoseLoaderError(void)
    }
    else
    {
-      TOOLS_THROW(Device::Exception(Device::Exception::DEVICE_UNKNOWN_ERROR, "Firehose process failed: " + errorString)
-      );
+      TOOLS_THROW(Device::Exception(
+         Device::Exception::DEVICE_UNKNOWN_ERROR,
+         Device::Exception::getErrorJson(
+            ERR_FIREHOSE_PROCESS_FAILED,
+            DESC_FIREHOSE_PROCESS_FAILED(errorString),
+            SUGG_FIREHOSE_PROCESS_FAILED,
+            POC(CE)
+         )
+      ));
    }
 }
 
@@ -497,7 +538,15 @@ void Firehose::getStorageInfo(StorageInfoType& info)
 {
    TOOLS_ASSERT_OR_THROW(
       m_pFirehoseLoader != nullptr,
-      Device::Exception(Device::Exception::DEVICE_UNKNOWN_ERROR, "Firehose Loader not active " + getDescription())
+      Device::Exception(
+         Device::Exception::DEVICE_UNKNOWN_ERROR,
+         Device::Exception::getErrorJson(
+            ERR_LOADER_NOT_ACTIVE,
+            DESC_LOADER_NOT_ACTIVE(getDescription()),
+            SUGG_LOADER_NOT_ACTIVE,
+            POC(CE)
+         )
+      )
    );
    m_pFirehoseLoader->getStorageInfo(info);
 }

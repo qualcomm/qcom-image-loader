@@ -13,9 +13,14 @@ namespace Device {
 class Exception : public ToolException
 {
 public:
-   static std::string getErrorJson(const std::string& error, const std::string& suggestion, const std::string& poc)
+   static std::string getErrorJson(
+      const std::string& issue,
+      const std::string& description,
+      const std::string& resolution,
+      const std::string& poc
+   )
    {
-      return "{ \"error\": \"" + error + "\", \"suggestion\": \"" + suggestion + "\", \"poc\": \"" + poc + "\"}";
+      return ToolException::getErrorJson(issue, description, resolution, poc);
    }
    enum ErrorCode
    {
