@@ -34,6 +34,7 @@ A device can be set into EDL mode via the following methods:<br>
 | `--create-flash-build-vip-digest` | Command used to create flash build VIP digest. Offline process, no device needed | --build<br>--memory-type<br>--out<br>--reset | --slot<br>--erase<br>--cdt<br>--validation-mode<br>--raw-program<br>--patch-program<br>--digest-header-type<br>--port-trace<br>--verbose |
 | `--create-ufs-provision-vip-digest` | Command used to create UFS provision VIP digest. Offline process, no device needed | --out<br>--ufs-provision-xml | --slot<br>--digest-header-type<br>--port-trace<br>--verbose |
 | `--create-validation-digest` | Command used to create build validation digest. Offline process, no device needed | --build<br>--memory-type<br>--out | --raw-program<br>--port-trace<br>--verbose |
+| `--flatten-meta` | Command used to flatten a meta-build into partition images and configuration files. Offline process, no device needed | --meta-build<br>--memory-type<br>--flavor | --sku<br>--verbose |
 | `--devices` | Command used to list all available device identifiers. |  | --json<br>--out<br>--verbose |
 | `--erase-partitions` | Command used to erase specified partitions in device. | --device-programmer<br>--memory-type | --device<br>--slot<br>--partition-index<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--port-trace<br>--verbose |
 | `--flash-build` | Command used to flash firmware build to device. | --build<br>--memory-type<br>--reset | --device<br>--read-image-path<br>--slot<br>--erase<br>--device-programmer<br>--cdt<br>--active-partition<br>--chained-digest<br>--signed-digest<br>--validation-mode<br>--skip-flash-if-data-matched<br>--raw-program<br>--partition-index<br>--patch-program<br>--preserve-partitions<br>--skip-sahara<br>--firehose-init-time<br>--firehose-rx-timeout<br>--validate-image-size<br>--port-trace<br>--verbose |
@@ -80,6 +81,9 @@ A device can be set into EDL mode via the following methods:<br>
 | `--ufs-provision-xml` | `<PROVISION_XML>` | Given absolute Path to UFS provision XML file. Only used together with --ufs-provision & --create-ufs-provision-vip-digest. |
 | `--validate-image-size` || Validate image sizes against rawprogram.xml during download. Compares image file sizes with sizes specified in rawprogram.xml and fails if any image exceeds the defined size. |
 | `--validation-mode` | `<0\|1\|2\|3\|4>` | Validate firmware images during download. No validation if not specified:<br> 0 - No validation<br> 1 - **Binary Readback**: Read back binary data from mobile -> create digest 1 from those flash data -> read original download binary file -> create digest 2 for download file in runtime -> compare digest 2 with digest 1<br> 2 - **SHA256 Readback**: Read digest 1 from mobile directly -> read download binary file -> create digest 2 for original download file in runtime -> compare digest 2 with digest 1<br> 3 - **Binary readback with digest file (Requires Build Validation File)**: Read back binary data from mobile -> create digest 1 from those flash data -> load pre-created digest 2 from file -> compare digest 2 with digest 1<br> 4 - **SHA256 Readback with digest file (Requires Build Validation File)**: Read digest 1 from mobile directly -> load pre-created digest 2 from file -> compare digest 2 with digest 1 |
+| `--flavor` | `<FLAVOR>` | Build flavor for meta-build flattening (e.g., **asic**). Required for --flatten-meta operation. |
+| `--meta-build` | `<META_BUILD_PATH>` | Absolute path to meta-build contents XML file (e.g., `\\server\share\build\contents.xml`). Required for --flatten-meta operation. |
+| `--sku` | `<SKU_CONFIG>` | Optional SKU configuration for meta-build flattening. If not specified, uses default SKU configuration. |
 | `--verbose` || Enable verbose logging output. Shows detailed operation logs and debug information. |
 | `--xml-path` | `<PEEK_XML\|CMD_FILE_PATH>` | Configure command XML file path used by --send-xml. Can be used to send peek command. |
 |
@@ -244,6 +248,24 @@ A device can be set into EDL mode via the following methods:<br>
 
   ```bash
   qil --create-validation-digest --build="<FLAT_BUILD>" --memory-type=UFS --out="<OUT_PATH>" --raw-program="rawprogram0.xml;rawprogram1.xml"
+  ```
+
+- **Flatten a meta-build from a local path**
+
+  ```bash
+  qil --flatten-meta --meta-build="C:\builds\meta-build\contents.xml" --memory-type=UFS --flavor=asic
+  ```
+
+- **Flatten a meta-build from a network UNC path**
+
+  ```bash
+  qil --flatten-meta --meta-build="\\server\share\build\contents.xml" --memory-type=UFS --flavor=asic
+  ```
+
+- **Flatten with a specific SKU configuration**
+
+  ```bash
+  qil --flatten-meta --meta-build="C:\builds\meta-build\contents.xml" --memory-type=UFS --flavor=asic --sku="sku_variant_1"
   ```
 
 - **A complex sample for UFS provision and download to multiple flash using skip sahara**
