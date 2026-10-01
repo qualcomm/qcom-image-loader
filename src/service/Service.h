@@ -3,6 +3,7 @@
 #pragma once
 #include "Definitions.h"
 #include "device/Exception.h"
+#include "device/ErrorMessage.h"
 #include "device/Fwd.h"
 #include "util/AppEvent.h"
 #include "util/AppMessage.h"
@@ -106,9 +107,12 @@ protected:
          !m_bInitialized,
          Device::Exception(
             Device::Exception::DEVICE_SERVICE_ALREADY_INITIALIZED,
-            std::string("Service already initialized. If initialization is "
-                        "needed on a "
-                        "different protocol, create a new service for it.")
+            Device::Exception::getErrorJson(
+               ERR_SERVICE_ALREADY_INITIALIZED,
+               DESC_SERVICE_ALREADY_INITIALIZED,
+               SUGG_SERVICE_ALREADY_INITIALIZED,
+               POC(CLIENT)
+            )
          )
       );
       m_bInitialized = true;

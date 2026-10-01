@@ -651,9 +651,12 @@ ImageTransfer::saharaInitializeHelloRequest(const Sahara::Mode mode, const std::
       pBuffer != nullptr,
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PACKET,
-         "No packet received from device waiting for reset "
-         "state machine (image_tx_pending state)" +
-            pSahara->getDescription()
+         Device::Exception::getErrorJson(
+            ERR_NO_RESPONSE_RECEIVED,
+            DESC_NO_PACKET_RECEIVED(std::string("waiting for reset state machine (image_tx_pending state)"), pSahara->getDescription()),
+            SUGG_NO_PACKET_RESET_STATE,
+            POC(TARGET)
+         )
       )
    );
 
@@ -677,8 +680,12 @@ void ImageTransfer::saharaWarmReset()
             pSahara->isSaharaV3WarmResetEnabled(),
             Device::Exception(
                Device::Exception::DEVICE_UNKNOWN_ERROR,
-               "Beyond max resetable cycle, please hard reset "
-               "the phone"
+               Device::Exception::getErrorJson(
+                  ERR_NO_RESPONSE_RECEIVED,
+                  DESC_MAX_RESET_CYCLES_EXCEEDED,
+                  SUGG_MAX_RESET_CYCLES_EXCEEDED,
+                  POC(TARGET)
+               )
             )
          );
          break;
@@ -697,9 +704,12 @@ void ImageTransfer::saharaWarmReset()
       pBuffer != nullptr,
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PACKET,
-         "No packet received from device get info command "
-         "execute (command state)" +
-            pSahara->getDescription()
+         Device::Exception::getErrorJson(
+            ERR_NO_RESPONSE_RECEIVED,
+            DESC_NO_PACKET_RECEIVED(std::string("get info command execute (command state)"), pSahara->getDescription()),
+            SUGG_NO_PACKET_COMMAND_STATE,
+            POC(TARGET)
+         )
       )
    );
 
@@ -715,9 +725,12 @@ void ImageTransfer::saharaWarmReset()
       // Will naver comes here
       TOOLS_THROW(Device::Exception(
          Device::Exception::DEVICE_INVALID_PACKET,
-         "Command execute response not received "
-         "from Sahara protocol: " +
-            pSahara->getDescription()
+         Device::Exception::getErrorJson(
+            ERR_NO_RESPONSE_RECEIVED,
+            DESC_NO_RESPONSE_RECEIVED(std::string("command response"), pSahara->getDescription()),
+            SUGG_COMMAND_RESPONSE_NOT_RECEIVED,
+            POC(TARGET)
+         )
       ));
    }
 }
@@ -753,7 +766,12 @@ void ImageTransfer::getDeviceInfo(EdlDeviceInfo& deviceInfo)
                Sahara::Mode::MODE_IMAGE_TX_PENDING == pHello->m_mode, // Only availible for EDL
             Device::Exception(
                Device::Exception::DEVICE_INVALID_PACKET,
-               "Command mode not available in Sahara protocol: " + pSahara->getDescription()
+               Device::Exception::getErrorJson(
+                  ERR_NO_RESPONSE_RECEIVED,
+                  DESC_COMMAND_MODE_NOT_AVAILABLE(pSahara->getDescription()),
+                  SUGG_COMMAND_MODE_NOT_AVAILABLE,
+                  POC(TARGET)
+               )
             )
          );
 
@@ -782,9 +800,12 @@ void ImageTransfer::getDeviceInfo(EdlDeviceInfo& deviceInfo)
             pBuffer != nullptr,
             Device::Exception(
                Device::Exception::DEVICE_INVALID_PACKET,
-               "No packet received from device get info "
-               "(image_tx_pending state)" +
-                  pSahara->getDescription()
+               Device::Exception::getErrorJson(
+                  ERR_NO_RESPONSE_RECEIVED,
+                  DESC_NO_PACKET_RECEIVED(std::string("get info (image_tx_pending state)"), pSahara->getDescription()),
+                  SUGG_NO_PACKET_COMMAND_STATE,
+                  POC(TARGET)
+               )
             )
          );
          pHeader = Util::buffer_cast<const Sahara::FrameHeader*>(pBuffer->begin(), pBuffer->size());
@@ -795,9 +816,12 @@ void ImageTransfer::getDeviceInfo(EdlDeviceInfo& deviceInfo)
          // Will naver comes here
          TOOLS_THROW(Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "Command ready not received from Sahara "
-            "protocol: " +
-               pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_NO_RESPONSE_RECEIVED,
+               DESC_NO_RESPONSE_RECEIVED(std::string("COMMAND_READY packet"), pSahara->getDescription()),
+               SUGG_COMMAND_READY_NOT_RECEIVED,
+               POC(TARGET)
+            )
          ));
       }
    }
@@ -817,9 +841,12 @@ void ImageTransfer::getDeviceInfo(EdlDeviceInfo& deviceInfo)
          pBuffer != nullptr,
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "No packet received from device get info command "
-            "execute (command state)" +
-               pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_NO_RESPONSE_RECEIVED,
+               DESC_NO_PACKET_RECEIVED(std::string("get info command execute (command state)"), pSahara->getDescription()),
+               SUGG_NO_PACKET_COMMAND_STATE,
+               POC(TARGET)
+            )
          )
       );
       pHeader = Util::buffer_cast<const Sahara::FrameHeader*>(pBuffer->begin(), pBuffer->size());
@@ -832,18 +859,24 @@ void ImageTransfer::getDeviceInfo(EdlDeviceInfo& deviceInfo)
             pBuffer != nullptr,
             Device::Exception(
                Device::Exception::DEVICE_INVALID_PACKET,
-               "No packet received from device get info command "
-               "execute (command state)" +
-                  pSahara->getDescription()
+               Device::Exception::getErrorJson(
+                  ERR_NO_RESPONSE_RECEIVED,
+                  DESC_NO_PACKET_RECEIVED(std::string("get info command execute (command state)"), pSahara->getDescription()),
+                  SUGG_NO_PACKET_COMMAND_STATE,
+                  POC(TARGET)
+               )
             )
          );
          TOOLS_ASSERT_OR_THROW(
             EDL_SERIAL_NUMBER_LENGTH <= pCmdExecuteResp->m_responseLength, // Sahara 3.0
             Device::Exception(
                Device::Exception::DEVICE_INVALID_PACKET,
-               "Invalid response length from device get info "
-               "command execute (command state)" +
-                  pSahara->getDescription()
+               Device::Exception::getErrorJson(
+                  ERR_NO_RESPONSE_RECEIVED,
+                  DESC_INVALID_RESPONSE_LENGTH(pSahara->getDescription()),
+                  SUGG_INVALID_RESPONSE_LENGTH,
+                  POC(TARGET)
+               )
             )
          );
          pSendBuffer = pSahara->createCommand<Sahara::CommandExecuteData>(Sahara::SAHARA_COMMAND_EXECUTE_DATA);
@@ -857,18 +890,24 @@ void ImageTransfer::getDeviceInfo(EdlDeviceInfo& deviceInfo)
             pBuffer != nullptr,
             Device::Exception(
                Device::Exception::DEVICE_INVALID_PACKET,
-               "No packet received from device get info command "
-               "execute data (command state)" +
-                  pSahara->getDescription()
+               Device::Exception::getErrorJson(
+                  ERR_NO_RESPONSE_RECEIVED,
+                  DESC_NO_PACKET_RECEIVED(std::string("get info command execute data (command state)"), pSahara->getDescription()),
+                  SUGG_NO_PACKET_COMMAND_STATE,
+                  POC(TARGET)
+               )
             )
          );
          TOOLS_ASSERT_OR_THROW(
             pCmdExecuteResp->m_responseLength == pBuffer->size(),
             Device::Exception(
                Device::Exception::DEVICE_INVALID_PACKET,
-               "Invalid response length from device get info "
-               "command execute data (command state)" +
-                  pSahara->getDescription()
+               Device::Exception::getErrorJson(
+                  ERR_NO_RESPONSE_RECEIVED,
+                  DESC_INVALID_RESPONSE_LENGTH(pSahara->getDescription()),
+                  SUGG_INVALID_RESPONSE_LENGTH,
+                  POC(TARGET)
+               )
             )
          );
 
@@ -902,9 +941,12 @@ void ImageTransfer::getDeviceInfo(EdlDeviceInfo& deviceInfo)
          // Will naver comes here
          TOOLS_THROW(Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "Command execute response not received "
-            "from Sahara protocol: " +
-               pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_NO_RESPONSE_RECEIVED,
+               DESC_NO_RESPONSE_RECEIVED(std::string("COMMAND_EXECUTE_RESP packet"), pSahara->getDescription()),
+               SUGG_COMMAND_EXECUTE_RESPONSE_NOT_RECEIVED,
+               POC(TARGET)
+            )
          ));
       }
       if(Sahara::CMD_SN_READ == command)
@@ -931,8 +973,12 @@ void ImageTransfer::transferFirehoseProgrammer(const std::filesystem::path& imag
    {
       TOOLS_THROW(Device::Exception(
          Device::Exception::DEVICE_INVALID_PARAMETERS,
-         "Invalid device programmer, provide either a \"firehoseProgPath\" or "
-         "a \"saharaImageList\" option"
+         Device::Exception::getErrorJson(
+            ERR_INVALID_PARAMETERS(std::string("device programmer")),
+            DESC_INVALID_PROGRAMMER,
+            SUGG_INVALID_PROGRAMMER,
+            POC(TARGET)
+         )
       ));
    }
 
@@ -941,8 +987,12 @@ void ImageTransfer::transferFirehoseProgrammer(const std::filesystem::path& imag
    {
       TOOLS_THROW(Device::Exception(
          Device::Exception::DEVICE_INVALID_PARAMETERS,
-         "Conflict in choosing device programmer, provide either a "
-         "\"firehoseProgPath\" or \"saharaImageList\" option"
+         Device::Exception::getErrorJson(
+            ERR_INVALID_PARAMETERS(std::string("device programmer")),
+            DESC_CONFLICTING_PROGRAMMER_OPTIONS,
+            SUGG_CONFLICTING_PROGRAMMER_OPTIONS,
+            POC(TARGET)
+         )
       ));
    }
 
@@ -954,8 +1004,12 @@ void ImageTransfer::transferFirehoseProgrammer(const std::filesystem::path& imag
       {
          TOOLS_THROW(Device::Exception(
             Device::Exception::DEVICE_INVALID_PARAMETERS,
-            "Invalid device programmer, provide either a \"firehoseProgPath\" "
-            "or a \"saharaImageList\" option"
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("device programmer")),
+               DESC_INVALID_PROGRAMMER,
+               SUGG_INVALID_PROGRAMMER,
+               POC(TARGET)
+            )
          ));
       }
       FLOG_INFO(
@@ -972,7 +1026,12 @@ void ImageTransfer::transferFirehoseProgrammer(const std::filesystem::path& imag
    {
       TOOLS_THROW(Device::Exception(
          Device::Exception::DEVICE_INVALID_PARAMETERS,
-         Device::Exception::getErrorJson(ERR_FIREHOSE_PROGRAMMER_NOT_FOUND, SUGG_FILE_NOT_FOUND, POC(TARGET))
+         Device::Exception::getErrorJson(
+            ERR_FIREHOSE_PROGRAMMER_NOT_FOUND,
+            DESC_FIREHOSE_PROGRAMMER_NOT_FOUND,
+            SUGG_FILE_NOT_FOUND,
+            POC(TARGET)
+         )
       ));
    }
 
@@ -1021,7 +1080,8 @@ Sahara::Mode ImageTransfer::transferImageList(const BuildImageList& imageList)
             Device::Exception(
                Device::Exception::DEVICE_INVALID_PACKET,
                Device::Exception::getErrorJson(
-                  ERR_SAHARA_IMAGE_NOT_FOUND(std::string(std::to_string(imageId))),
+                  ERR_SAHARA_IMAGE_NOT_FOUND,
+                  DESC_SAHARA_IMAGE_NOT_FOUND(std::string(std::to_string(imageId))),
                   SUGG_SAHARA_IMAGE_NOT_FOUND,
                   POC(TARGET)
                )
@@ -1055,7 +1115,12 @@ Sahara::Mode ImageTransfer::transferImageList(const BuildImageList& imageList)
       {
          TOOLS_THROW(Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "Sahara protocol mode unknown: " + pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_INVALID_DEVICE_STATE,
+               DESC_PROTOCOL_MODE_UNKNOWN(pSahara->getDescription()),
+               SUGG_PROTOCOL_MODE_UNKNOWN,
+               POC(TARGET)
+            )
          ));
       }
    }
@@ -1109,7 +1174,12 @@ Sahara::Mode ImageTransfer::saharaWaitForNextImage(
                                                                        // flashless mode
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "Image transfer mode not available in Sahara protocol: " + pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_NO_RESPONSE_RECEIVED,
+               DESC_IMAGE_TRANSFER_MODE_NOT_AVAILABLE(pSahara->getDescription()),
+               SUGG_COMMAND_MODE_NOT_AVAILABLE,
+               POC(TARGET)
+            )
          )
       );
 
@@ -1158,9 +1228,12 @@ Sahara::Mode ImageTransfer::saharaWaitForNextImage(
          pBuffer != nullptr,
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "No packet received from device waiting for next "
-            "image (image_tx_pending state)" +
-               pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_NO_RESPONSE_RECEIVED,
+               DESC_NO_PACKET_RECEIVED(std::string("waiting for next image (image_tx_pending state)"), pSahara->getDescription()),
+               SUGG_NO_PACKET_COMMAND_STATE,
+               POC(TARGET)
+            )
          )
       );
       pHeader = Util::buffer_cast<const Sahara::FrameHeader*>(pBuffer->begin(), pBuffer->size());
@@ -1188,7 +1261,12 @@ Sahara::Mode ImageTransfer::saharaWaitForNextImage(
             TOOLS_SIZEOF(Sahara::ReadData) == pReadData->m_header.m_length && 0 == pReadData->m_dataOffset,
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "Read data not available from Sahara protocol: " + pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_NO_RESPONSE_RECEIVED,
+               DESC_NO_RESPONSE_RECEIVED(std::string("Read data"), pSahara->getDescription()),
+               SUGG_READ_DATA_NOT_RECEIVED,
+               POC(TARGET)
+            )
          )
       );
       imageId = pReadData->m_imageId;
@@ -1205,9 +1283,12 @@ Sahara::Mode ImageTransfer::saharaWaitForNextImage(
             0 == pReadData64Bit->m_dataOffset,
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "64 bit Read data not available "
-            "from Sahara protocol: " +
-               pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_NO_RESPONSE_RECEIVED,
+               DESC_NO_RESPONSE_RECEIVED(std::string("64 bit Read data"), pSahara->getDescription()),
+               SUGG_READ_DATA_NOT_RECEIVED,
+               POC(TARGET)
+            )
          )
       );
       imageId = pReadData64Bit->m_imageId;
@@ -1218,7 +1299,12 @@ Sahara::Mode ImageTransfer::saharaWaitForNextImage(
       // Will naver comes here
       TOOLS_THROW(Device::Exception(
          Device::Exception::DEVICE_INVALID_PACKET,
-         "Read data not received from Sahara protocol: " + pSahara->getDescription()
+         Device::Exception::getErrorJson(
+            ERR_NO_RESPONSE_RECEIVED,
+            DESC_NO_RESPONSE_RECEIVED(std::string("READ_DATA packet"), pSahara->getDescription()),
+            SUGG_READ_DATA_NOT_RECEIVED,
+            POC(TARGET)
+         )
       ));
    }
 
@@ -1250,10 +1336,16 @@ void ImageTransfer::saharaTransferSingleImage(const std::filesystem::path& image
          pBuffer != nullptr,
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "No packet received from device waiting for data transfer command. "
-            "wait time(" +
-               std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(rxTimeSpan).count()) +
-               "ms): " + pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_NO_RESPONSE_RECEIVED,
+               DESC_NO_PACKET_RECEIVED(
+                  std::string("waiting for data transfer command (rxTimeMs: " +
+                     std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(rxTimeSpan).count()) + ")"),
+                  pSahara->getDescription()
+               ),
+               SUGG_NO_PACKET_COMMAND_STATE,
+               POC(TARGET)
+            )
          )
       );
       const Sahara::FrameHeader* pHeader =
@@ -1269,7 +1361,12 @@ void ImageTransfer::saharaTransferSingleImage(const std::filesystem::path& image
                TOOLS_SIZEOF(Sahara::ReadData) == pReadData->m_header.m_length,
             Device::Exception(
                Device::Exception::DEVICE_INVALID_PACKET,
-               "Read data not available from Sahara protocol: " + pSahara->getDescription()
+               Device::Exception::getErrorJson(
+                  ERR_NO_RESPONSE_RECEIVED,
+                  DESC_NO_RESPONSE_RECEIVED(std::string("Read data"), pSahara->getDescription()),
+                  SUGG_READ_DATA_NOT_RECEIVED,
+                  POC(TARGET)
+               )
             )
          );
 
@@ -1286,9 +1383,12 @@ void ImageTransfer::saharaTransferSingleImage(const std::filesystem::path& image
                TOOLS_SIZEOF(Sahara::ReadData64Bit) == pReadData64Bit->m_header.m_length,
             Device::Exception(
                Device::Exception::DEVICE_INVALID_PACKET,
-               "64 bit Read data not available from Sahara "
-               "protocol: " +
-                  pSahara->getDescription()
+               Device::Exception::getErrorJson(
+                  ERR_NO_RESPONSE_RECEIVED,
+                  DESC_NO_RESPONSE_RECEIVED(std::string("64 bit Read data"), pSahara->getDescription()),
+                  SUGG_READ_DATA_NOT_RECEIVED,
+                  POC(TARGET)
+               )
             )
          );
 
@@ -1303,13 +1403,13 @@ void ImageTransfer::saharaTransferSingleImage(const std::filesystem::path& image
          if(Sahara::Status::STATUS_SUCCESS != pEndOfImageTransfer->m_status)
          {
             saharaReset();
-            Device::Exception ex(Device::Exception::DEVICE_INVALID_PACKET);
             TOOLS_THROW(Device::Exception(
                Device::Exception::DEVICE_INVALID_PACKET,
                Device::Exception::getErrorJson(
-                  ERR_SAHARA_PROTOCOL_RESET(
+                  ERR_SAHARA_PROTOCOL_RESET,
+                  DESC_SAHARA_PROTOCOL_RESET(
                      std::string(imageFile.filename().string().c_str()),
-                     ex.getErrorCodeString(Device::Exception::DEVICE_INVALID_PACKET)
+                     std::to_string(pEndOfImageTransfer->m_status)
                   ),
                   SUGG_SAHARA_PROTOCOL_RESET,
                   std::string(POC(TARGET)) + " or " + std::string(POC(BOOT))
@@ -1325,16 +1425,24 @@ void ImageTransfer::saharaTransferSingleImage(const std::filesystem::path& image
       {
          TOOLS_THROW(Device::Exception(
             Device::Exception::DEVICE_INVALID_PARAMETERS,
-            "Image " + std::string(imageFile.string().c_str()) + " rejected by device: " + pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("image")),
+               DESC_IMAGE_REJECTED_BY_DEVICE(std::string(imageFile.string().c_str()), pSahara->getDescription()),
+               SUGG_IMAGE_REJECTED_BY_DEVICE,
+               POC(TARGET)
+            )
          ));
       }
       else
       {
          TOOLS_THROW(Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "Read data not received from Sahara "
-            "protocol: " +
-               pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_NO_RESPONSE_RECEIVED,
+               DESC_NO_RESPONSE_RECEIVED(std::string("Read data"), pSahara->getDescription()),
+               SUGG_READ_DATA_NOT_RECEIVED,
+               POC(TARGET)
+            )
          ));
       }
    }
@@ -1349,9 +1457,12 @@ void ImageTransfer::saharaTransferSingleImage(const std::filesystem::path& image
       pDoneResponseBuffer != nullptr,
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PACKET,
-         "No packet received from device waiting "
-         "for done response:" +
-            pSahara->getDescription()
+         Device::Exception::getErrorJson(
+            ERR_NO_RESPONSE_RECEIVED,
+            DESC_NO_PACKET_RECEIVED(std::string("waiting for done response"), pSahara->getDescription()),
+            SUGG_NO_PACKET_COMMAND_STATE,
+            POC(TARGET)
+         )
       )
    );
    const Sahara::DoneResponse* pDoneResponse =
@@ -1361,9 +1472,12 @@ void ImageTransfer::saharaTransferSingleImage(const std::filesystem::path& image
          TOOLS_SIZEOF(Sahara::DoneResponse) == pDoneResponse->m_header.m_length,
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PACKET,
-         "Image transfer done response not "
-         "received from Sahara protocol: " +
-            pSahara->getDescription()
+         Device::Exception::getErrorJson(
+            ERR_NO_RESPONSE_RECEIVED,
+            DESC_NO_RESPONSE_RECEIVED(std::string("Done response"), pSahara->getDescription()),
+            SUGG_NO_PACKET_COMMAND_STATE,
+            POC(TARGET)
+         )
       )
    );
 
@@ -1380,9 +1494,12 @@ void ImageTransfer::saharaTransferSingleImage(const std::filesystem::path& image
       default:
          TOOLS_THROW(Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "Invalid image transfer status from "
-            "Sahara protocol: " +
-               pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_NO_RESPONSE_RECEIVED,
+               DESC_INVALID_TRANSFER_STATUS(pSahara->getDescription()),
+               SUGG_INVALID_TRANSFER_STATUS,
+               POC(TARGET)
+            )
          ));
    }
 }
@@ -1418,8 +1535,17 @@ void ImageTransfer::
          pBuffer != nullptr,
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "Image transfer fail to read file: " + std::string(localPath.string().c_str()) + " offset " +
-               std::to_string(offset) + " length " + std::to_string(length) + pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_NO_RESPONSE_RECEIVED,
+               DESC_FILE_READ_FAILED(
+                  std::string(localPath.string().c_str()),
+                  std::to_string(offset),
+                  std::to_string(length),
+                  pSahara->getDescription()
+               ),
+               SUGG_FILE_READ_FAILED,
+               POC(TARGET)
+            )
          )
       );
       m_pSaharaConnection->sendSync(pBuffer);
@@ -1484,7 +1610,12 @@ std::string ImageTransfer::firehoseGetMemoryName()
       default:
          TOOLS_THROW(Device::Exception(
             Device::Exception::DEVICE_INVALID_PARAMETERS,
-            "Invalid device memory type: " + m_memoryType
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("memory type")),
+               DESC_INVALID_MEMORY_TYPE(std::to_string(static_cast<int32_t>(m_memoryType))),
+               SUGG_INVALID_MEMORY_TYPE,
+               POC(CLIENT)
+            )
          ));
    }
 
@@ -1789,7 +1920,15 @@ void ImageTransfer::firehoseSetDigestHeaderType(const DigestHeaderType digestHea
          m_digestHeaderType = "elf";
          break;
       default:
-         TOOLS_THROW(Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Invalid Digest Header Type"));
+         TOOLS_THROW(Device::Exception(
+            Device::Exception::DEVICE_INVALID_PARAMETERS,
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("digest header type")),
+               DESC_INVALID_DIGEST_HEADER_TYPE,
+               SUGG_INVALID_DIGEST_HEADER_TYPE,
+               POC(TARGET)
+            )
+         ));
    }
 }
 
@@ -1897,7 +2036,15 @@ void ImageTransfer::firehoseFormatDownloadBuildParameter(const std::filesystem::
    {
       TOOLS_ASSERT_OR_THROW(
          (!m_signedDigestsFile.empty()),
-         Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Missing signed digests option")
+         Device::Exception(
+            Device::Exception::DEVICE_INVALID_PARAMETERS,
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("signed digests")),
+               DESC_MISSING_SIGNED_DIGESTS,
+               SUGG_MISSING_SIGNED_DIGESTS,
+               POC(TARGET)
+            )
+         )
       );
    }
 
@@ -2024,7 +2171,15 @@ void ImageTransfer::firehoseFormatDownloadBuildParameter(const std::filesystem::
 
       TOOLS_ASSERT_OR_THROW(
          (bIsSingleImageSet || bIsJsonPathSet || bIsFlatBuildSet),
-         Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "No Firehose program file available")
+         Device::Exception(
+            Device::Exception::DEVICE_INVALID_PARAMETERS,
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("program file")),
+               DESC_NO_PROGRAM_FILE_AVAILABLE,
+               SUGG_NO_PROGRAM_FILE_AVAILABLE,
+               POC(TARGET)
+            )
+         )
       );
 
       if(m_partitionIndexList.size() > 0)
@@ -2037,7 +2192,12 @@ void ImageTransfer::firehoseFormatDownloadBuildParameter(const std::filesystem::
                (*it >= 0),
                Device::Exception(
                   Device::Exception::DEVICE_INVALID_PARAMETERS,
-                  "Invalid Partition Number:" + std::to_string(*it)
+                  Device::Exception::getErrorJson(
+                     ERR_INVALID_PARAMETERS(std::string("partition")),
+                     DESC_INVALID_PARTITION_NUMBER(*it),
+                     SUGG_INVALID_PARTITION_NUMBER,
+                     POC(CLIENT)
+                  )
                )
             );
          }
@@ -2078,7 +2238,15 @@ void ImageTransfer::firehoseFormatDownloadBuildParameter(const std::filesystem::
       {
          TOOLS_ASSERT_OR_THROW(
             (!m_validationDigestsFile.empty()),
-            Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "No build validation file available")
+            Device::Exception(
+               Device::Exception::DEVICE_INVALID_PARAMETERS,
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("validation file")),
+                  DESC_NO_VALIDATION_FILE_AVAILABLE,
+                  SUGG_NO_VALIDATION_FILE_AVAILABLE,
+                  POC(TARGET)
+               )
+            )
          );
       }
    }
@@ -2392,7 +2560,12 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
                Sahara::Mode::MODE_IMAGE_TX_PENDING == pHello->m_mode, // Only availible for EDL
             Device::Exception(
                Device::Exception::DEVICE_INVALID_PACKET,
-               "Command mode not available in Sahara protocol: " + pSahara->getDescription()
+               Device::Exception::getErrorJson(
+                  ERR_NO_RESPONSE_RECEIVED,
+                  DESC_COMMAND_MODE_NOT_AVAILABLE(pSahara->getDescription()),
+                  SUGG_COMMAND_MODE_NOT_AVAILABLE,
+                  POC(TARGET)
+               )
             )
          );
 
@@ -2430,9 +2603,12 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
                pBuffer != nullptr,
                Device::Exception(
                   Device::Exception::DEVICE_RESPONSE_ERROR,
-                  "No response received from the device, found "
-                  "in invalid state, " +
-                     pSahara->getDescription()
+                  Device::Exception::getErrorJson(
+                     ERR_INVALID_DEVICE_STATE,
+                     DESC_NO_RESPONSE_DEVICE_INVALID_STATE(pSahara->getDescription()),
+                     SUGG_NO_RESPONSE_DEVICE_INVALID_STATE,
+                     POC(CE)
+                  )
                )
             );
 
@@ -2446,9 +2622,12 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
       {
          TOOLS_THROW(Device::Exception(
             Device::Exception::DEVICE_RESPONSE_ERROR,
-            "Device found in invalid state, not "
-            "ready to receive commands, " +
-               pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_INVALID_DEVICE_STATE,
+               DESC_DEVICE_NOT_READY(pSahara->getDescription()),
+               SUGG_DEVICE_NOT_READY,
+               POC(CE)
+            )
          ));
       }
    }
@@ -2466,9 +2645,15 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
       pBuffer != nullptr,
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PACKET,
-         "No packet received from device sahara debug command "
-         "execute (command state)" +
-            pSahara->getDescription()
+         Device::Exception::getErrorJson(
+            ERR_NO_RESPONSE_RECEIVED,
+            DESC_NO_PACKET_RECEIVED(
+               std::string("sahara debug command execute (command state)"),
+               pSahara->getDescription()
+            ),
+            SUGG_NO_PACKET_COMMAND_STATE,
+            POC(TARGET)
+         )
       )
    );
    pHeader = Util::buffer_cast<const Sahara::FrameHeader*>(pBuffer->begin(), pBuffer->size());
@@ -2481,9 +2666,15 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
          pBuffer != nullptr,
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "No packet received from device sahara debug "
-            "command execute (command state)" +
-               pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_NO_RESPONSE_RECEIVED,
+               DESC_NO_PACKET_RECEIVED(
+                  std::string("sahara debug command execute (command state)"),
+                  pSahara->getDescription()
+               ),
+               SUGG_NO_PACKET_COMMAND_STATE,
+               POC(TARGET)
+            )
          )
       );
 
@@ -2503,7 +2694,12 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
          {
             TOOLS_THROW(Device::Exception(
                Device::Exception::DEVICE_RESPONSE_ERROR,
-               "Error dumping file from " + pSahara->getDescription()
+               Device::Exception::getErrorJson(
+                  ERR_COMMAND_EXECUTION_FAILED,
+                  DESC_ERROR_DUMPING_FILE(pSahara->getDescription()),
+                   SUGG_ERROR_DUMPING_FILE(std::string("fuse info")),
+                  POC(CE)
+               )
             ));
          };
 
@@ -2515,8 +2711,12 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
          pSaharaCmd10Buffer != nullptr,
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "No data received from device for sahara command: "
-            "Get Fuse Information, 0x0A"
+            Device::Exception::getErrorJson(
+               ERR_NO_RESPONSE_RECEIVED,
+               DESC_NO_COMMAND_DATA_RECEIVED(std::string("Get Fuse Information, 0x0A")),
+               SUGG_NO_COMMAND_DATA_RECEIVED(std::string("Get Fuse Information")),
+               POC(TARGET)
+            )
          )
       );
 
@@ -2524,9 +2724,12 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
          SOC_HW_VERSION_MIN_SIZE < pSaharaCmd10Buffer->size(),
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "SOC_HW_VERSION not supported by the device, failed "
-            "to retrive "
-            "storage or memory type from the device"
+            Device::Exception::getErrorJson(
+               ERR_INVALID_DEVICE_STATE,
+               DESC_SOC_VERSION_NOT_SUPPORTED,
+               SUGG_SOC_VERSION_NOT_SUPPORTED,
+               POC(TARGET)
+            )
          )
       );
 
@@ -2546,18 +2749,27 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
          Util::buffer_cast<const Sahara::EndOfImageTransfer*>(pBuffer->begin(), pBuffer->size());
       TOOLS_THROW(Device::Exception(
          Device::Exception::DEVICE_RESPONSE_ERROR,
-         "Received end of image transfer from the device for sahara command: "
-         "Get Fuse Information, 0x0A, status: " +
-            std::to_string(pEndOfImageTransfer->m_status)
+         Device::Exception::getErrorJson(
+            ERR_INVALID_DEVICE_STATE,
+            DESC_END_OF_TRANSFER_FOR_COMMAND(
+               std::string("Get Fuse Information, 0x0A"),
+               std::to_string(pEndOfImageTransfer->m_status)
+            ),
+            SUGG_END_OF_TRANSFER_FOR_COMMAND(std::string("Get Fuse Information")),
+            POC(CE)
+         )
       ));
    }
    else
    {
       TOOLS_THROW(Device::Exception(
          Device::Exception::DEVICE_INVALID_PACKET,
-         "Command execute response not received "
-         "from Sahara protocol: " +
-            pSahara->getDescription()
+         Device::Exception::getErrorJson(
+            ERR_COMMAND_EXECUTION_FAILED,
+            DESC_COMMAND_EXECUTE_RESPONSE_NOT_RECEIVED(pSahara->getDescription()),
+            SUGG_COMMAND_EXECUTE_RESPONSE_NOT_RECEIVED,
+            POC(CE)
+         )
       ));
    }
 
@@ -2572,9 +2784,15 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
       pBuffer != nullptr,
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PACKET,
-         "No packet received from device sahara debug command "
-         "execute (command state)" +
-            pSahara->getDescription()
+         Device::Exception::getErrorJson(
+            ERR_NO_RESPONSE_RECEIVED,
+            DESC_NO_PACKET_RECEIVED(
+               std::string("sahara debug command execute (command state)"),
+               pSahara->getDescription()
+            ),
+            SUGG_NO_PACKET_COMMAND_STATE,
+            POC(TARGET)
+         )
       )
    );
    pHeader = Util::buffer_cast<const Sahara::FrameHeader*>(pBuffer->begin(), pBuffer->size());
@@ -2588,9 +2806,15 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
          pBuffer != nullptr,
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "No packet received from device sahara debug "
-            "command execute (command state)" +
-               pSahara->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_NO_RESPONSE_RECEIVED,
+               DESC_NO_PACKET_RECEIVED(
+                  std::string("sahara debug command execute (command state)"),
+                  pSahara->getDescription()
+               ),
+               SUGG_NO_PACKET_COMMAND_STATE,
+               POC(TARGET)
+            )
          )
       );
 
@@ -2610,7 +2834,12 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
          {
             TOOLS_THROW(Device::Exception(
                Device::Exception::DEVICE_RESPONSE_ERROR,
-               "Error dumping file from " + pSahara->getDescription()
+               Device::Exception::getErrorJson(
+                  ERR_COMMAND_EXECUTION_FAILED,
+                  DESC_ERROR_DUMPING_FILE(pSahara->getDescription()),
+                   SUGG_ERROR_DUMPING_FILE(std::string("Read Debug Data")),
+                  POC(CE)
+               )
             ));
          };
 
@@ -2622,8 +2851,12 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
          pSaharaCmd6Buffer != nullptr,
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "No data received from device sahara command: Read "
-            "Debug Data, 0x06"
+            Device::Exception::getErrorJson(
+               ERR_NO_RESPONSE_RECEIVED,
+               DESC_NO_COMMAND_DATA_RECEIVED(std::string("Read Debug Data, 0x06")),
+               SUGG_NO_COMMAND_DATA_RECEIVED(std::string("Read Debug Data")),
+               POC(TARGET)
+            )
          )
       );
 
@@ -2631,8 +2864,12 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
          BOOT_CONFIG_MIN_SIZE < pSaharaCmd6Buffer->size(),
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PACKET,
-            "Boot config not supported by the device, failed to "
-            "retrive storage or memory type from the device"
+            Device::Exception::getErrorJson(
+               ERR_INVALID_DEVICE_STATE,
+               DESC_BOOT_CONFIG_NOT_SUPPORTED,
+               SUGG_BOOT_CONFIG_NOT_SUPPORTED,
+               POC(TARGET)
+            )
          )
       );
 
@@ -2653,18 +2890,27 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
          Util::buffer_cast<const Sahara::EndOfImageTransfer*>(pBuffer->begin(), pBuffer->size());
       TOOLS_THROW(Device::Exception(
          Device::Exception::DEVICE_RESPONSE_ERROR,
-         "Received end of image transfer from the device for "
-         "sahara command: Read Debug Data, 0x06, status: " +
-            std::to_string(pEndOfImageTransfer->m_status)
+         Device::Exception::getErrorJson(
+            ERR_INVALID_DEVICE_STATE,
+            DESC_END_OF_TRANSFER_FOR_COMMAND(
+               std::string("Read Debug Data, 0x06"),
+               std::to_string(pEndOfImageTransfer->m_status)
+            ),
+            SUGG_END_OF_TRANSFER_FOR_COMMAND(std::string("Read Debug Data")),
+            POC(CE)
+         )
       ));
    }
    else
    {
       TOOLS_THROW(Device::Exception(
          Device::Exception::DEVICE_INVALID_PACKET,
-         "Command execute response not received "
-         "from Sahara protocol: " +
-            pSahara->getDescription()
+         Device::Exception::getErrorJson(
+            ERR_COMMAND_EXECUTION_FAILED,
+            DESC_COMMAND_EXECUTE_RESPONSE_NOT_RECEIVED(pSahara->getDescription()),
+            SUGG_COMMAND_EXECUTE_RESPONSE_NOT_RECEIVED,
+            POC(CE)
+         )
       ));
    }
 
@@ -2678,9 +2924,12 @@ ImageTransfer::MemoryType ImageTransfer::getDeviceMemoryType()
       !description.empty() || error.empty(),
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PARAMETERS,
-         "Failed to retrive storage or memory type from the DCL "
-         "DB, SOC_HW_VERSION: " +
-            socHw.str() + ", Error: " + error
+         Device::Exception::getErrorJson(
+            ERR_INVALID_PARAMETERS(std::string("storage or memory type")),
+            DESC_FAILED_RETRIEVE_MEMORY_TYPE_DB(socHw.str(), error),
+            SUGG_FAILED_RETRIEVE_MEMORY_TYPE_DB,
+            POC(METABUILD)
+         )
       )
    );
 
@@ -2755,7 +3004,15 @@ void ImageTransfer::firehoseRunOfflineProcess(
    }
    TOOLS_ASSERT_OR_THROW(
       m_pOfflineFirehoseLoader != nullptr,
-      Device::Exception(Device::Exception::DEVICE_UNKNOWN_ERROR, "Firehose Loader not active  ")
+      Device::Exception(
+         Device::Exception::DEVICE_UNKNOWN_ERROR,
+         Device::Exception::getErrorJson(
+            ERR_LOADER_NOT_ACTIVE,
+            DESC_LOADER_NOT_ACTIVE(std::string("offlineFirehoseProcess")),
+            SUGG_LOADER_NOT_ACTIVE_IMG,
+            POC(TARGET)
+         )
+      )
    );
 
    prepareDownloadCmd(buildPathDir, firehoseCommand, true);
@@ -2769,7 +3026,15 @@ void ImageTransfer::firehoseRunOfflineProcess(
          firehoseCommand.push_back(std::string("--generatesha256file"));
          break;
       default:
-         TOOLS_THROW(Device::Exception(Device::Exception::DEVICE_UNKNOWN_ERROR, "Invalid offline process"));
+         TOOLS_THROW(Device::Exception(
+            Device::Exception::DEVICE_UNKNOWN_ERROR,
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("offline process")),
+               DESC_INVALID_OFFLINE_PROCESS,
+               SUGG_INVALID_OFFLINE_PROCESS,
+               POC(TARGET)
+            )
+         ));
    }
 
    notify(std::make_shared<ImageTransferEvent>(ImageTransferEvent::FIREHOSE_CREATE_DIGESTS, "Create Digest files"));
@@ -2813,13 +3078,28 @@ void ImageTransfer::firehoseRunOfflineProcess(
       errorString = m_pOfflineFirehoseLoader->getDeviceErrorString();
       if(!errorString.empty())
       {
-         TOOLS_THROW(Device::Exception(Device::Exception::DEVICE_RESPONSE_ERROR, errorString));
+         TOOLS_THROW(Device::Exception(
+            Device::Exception::DEVICE_RESPONSE_ERROR,
+            Device::Exception::getErrorJson(
+               ERR_FIREHOSE_PROCESS_FAILED,
+               DESC_FIREHOSE_PROCESS_FAILED(errorString),
+               SUGG_FIREHOSE_PROCESS_FAILED,
+               POC(TARGET)
+            )
+         ));
       }
       else
       {
          errorString = m_pOfflineFirehoseLoader->getInternalErrorString();
-         TOOLS_THROW(Device::
-                        Exception(Device::Exception::DEVICE_UNKNOWN_ERROR, "Firehose process failed: " + errorString));
+         TOOLS_THROW(Device::Exception(
+            Device::Exception::DEVICE_UNKNOWN_ERROR,
+            Device::Exception::getErrorJson(
+               ERR_FIREHOSE_PROCESS_FAILED,
+               DESC_FIREHOSE_PROCESS_FAILED(errorString),
+               SUGG_FIREHOSE_PROCESS_FAILED,
+               POC(TARGET)
+            )
+         ));
       }
    }
 
@@ -2829,13 +3109,28 @@ void ImageTransfer::firehoseRunOfflineProcess(
       errorString = m_pOfflineFirehoseLoader->getDeviceErrorString();
       if(!errorString.empty())
       {
-         TOOLS_THROW(Device::Exception(Device::Exception::DEVICE_RESPONSE_ERROR, errorString));
+         TOOLS_THROW(Device::Exception(
+            Device::Exception::DEVICE_RESPONSE_ERROR,
+            Device::Exception::getErrorJson(
+               ERR_FIREHOSE_PROCESS_FAILED,
+               DESC_FIREHOSE_PROCESS_FAILED(errorString),
+               SUGG_FIREHOSE_PROCESS_FAILED,
+               POC(TARGET)
+            )
+         ));
       }
       else
       {
          errorString = m_pOfflineFirehoseLoader->getInternalErrorString();
-         TOOLS_THROW(Device::
-                        Exception(Device::Exception::DEVICE_UNKNOWN_ERROR, "Firehose process failed: " + errorString));
+         TOOLS_THROW(Device::Exception(
+            Device::Exception::DEVICE_UNKNOWN_ERROR,
+            Device::Exception::getErrorJson(
+               ERR_FIREHOSE_PROCESS_FAILED,
+               DESC_FIREHOSE_PROCESS_FAILED(errorString),
+               SUGG_FIREHOSE_PROCESS_FAILED,
+               POC(TARGET)
+            )
+         ));
       }
    }
 }
@@ -2930,7 +3225,15 @@ void ImageTransfer::getPartitionHeaderFromFile(const std::filesystem::path& imag
       sizeof(PartitionHeader) <= fileSize,
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PARAMETERS,
-         "Partition header file size too small: " + std::to_string(fileSize)
+         Device::Exception::getErrorJson(
+            ERR_INVALID_PARAMETERS(std::string("partition header file")),
+            DESC_PARTITION_VALIDATION_FAILED(
+               std::string("Partition header file size too small"),
+               std::to_string(fileSize)
+            ),
+            SUGG_PARTITION_HEADER_FILE_TOO_SMALL(std::to_string(sizeof(PartitionHeader))),
+            POC(CLIENT)
+         )
       )
    );
 
@@ -2941,7 +3244,15 @@ void ImageTransfer::getPartitionHeaderFromFile(const std::filesystem::path& imag
       PARTITION_HEADER_SIGNATURE == partitionHeader.signature,
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PARAMETERS,
-         "Partition header signature does not match: " + std::to_string(partitionHeader.signature)
+         Device::Exception::getErrorJson(
+            ERR_INVALID_PARAMETERS(std::string("partition header signature")),
+            DESC_PARTITION_VALIDATION_FAILED(
+               std::string("Partition header signature does not match"),
+               std::to_string(partitionHeader.signature)
+            ),
+            SUGG_PARTITION_HEADER_SIGNATURE_MISMATCH(std::to_string(PARTITION_HEADER_SIGNATURE)),
+            POC(CLIENT)
+         )
       )
    );
 }
@@ -2963,7 +3274,15 @@ void ImageTransfer::getPartitionEntriesFromFile(
       sizeof(PartitionEntryParameters) <= entrySize,
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PARAMETERS,
-         "Partition entry size invalid: " + std::to_string(entrySize)
+         Device::Exception::getErrorJson(
+            ERR_INVALID_PARAMETERS(std::string("partition entry size")),
+            DESC_PARTITION_VALIDATION_FAILED(
+               std::string("Partition entry size invalid"),
+               std::to_string(entrySize)
+            ),
+            SUGG_PARTITION_ENTRY_SIZE_INVALID(std::to_string(sizeof(PartitionEntryParameters))),
+            POC(CLIENT)
+         )
       )
    );
 
@@ -2978,7 +3297,15 @@ void ImageTransfer::getPartitionEntriesFromFile(
       entrySize * entryCount <= fileSize,
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PARAMETERS,
-         "Partition entry file size too small: " + std::to_string(fileSize)
+         Device::Exception::getErrorJson(
+            ERR_INVALID_PARAMETERS(std::string("partition entry file")),
+            DESC_PARTITION_VALIDATION_FAILED(
+               std::string("Partition entry file size too small"),
+               std::to_string(fileSize)
+            ),
+            SUGG_PARTITION_ENTRY_FILE_TOO_SMALL(std::to_string(entrySize * entryCount)),
+            POC(CLIENT)
+         )
       )
    );
 
@@ -3025,7 +3352,17 @@ void ImageTransfer::getPartitionHeaderFromFileMibib(
       uint64_t(pageSize) * pagePerBlock * PARTITION_HEADER_BLOCK_NUM_NAND <= fileSize,
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PARAMETERS,
-         "Partition entry file size too small: " + std::to_string(fileSize)
+         Device::Exception::getErrorJson(
+            ERR_INVALID_PARAMETERS(std::string("partition entry file")),
+            DESC_PARTITION_VALIDATION_FAILED(
+               std::string("Partition entry file size too small"),
+               std::to_string(fileSize)
+            ),
+            SUGG_PARTITION_ENTRY_FILE_TOO_SMALL(
+               std::to_string(uint64_t(pageSize) * pagePerBlock * PARTITION_HEADER_BLOCK_NUM_NAND)
+            ),
+            POC(CLIENT)
+         )
       )
    );
 
@@ -3040,7 +3377,15 @@ void ImageTransfer::getPartitionHeaderFromFileMibib(
             MIBIB_NUM_PARTITION_HEADER == mibibHeader.numberOfPartitionHeaderEntries,
             Device::Exception(
                Device::Exception::DEVICE_INVALID_PARAMETERS,
-               "Partition head number is not valid: " + std::to_string(mibibHeader.numberOfPartitionHeaderEntries)
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("partition head number")),
+                  DESC_PARTITION_VALIDATION_FAILED(
+                     std::string("Partition head number is not valid"),
+                     std::to_string(mibibHeader.numberOfPartitionHeaderEntries)
+                  ),
+                  SUGG_PARTITION_HEAD_NUMBER_INVALID(std::to_string(MIBIB_NUM_PARTITION_HEADER)),
+                  POC(METABUILD)
+               )
             )
          );
 
@@ -3049,14 +3394,29 @@ void ImageTransfer::getPartitionHeaderFromFileMibib(
          TOOLS_ASSERT_OR_THROW(
             partitionHeader.magicNumber1 == MIBIB_PARAMETER_MAGIC1 &&
                partitionHeader.magicNumber2 == MIBIB_PARAMETER_MAGIC2,
-            Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Partition head magic is not valid")
+            Device::Exception(
+               Device::Exception::DEVICE_INVALID_PARAMETERS,
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("partition head magic")),
+                  DESC_MIBIB_MAGIC_NOT_FOUND,
+                  SUGG_MIBIB_MAGIC_NOT_FOUND,
+                  POC(TARGET)
+               )
+            )
          );
          TOOLS_ASSERT_OR_THROW(
             partitionHeader.sizeOfPartitionEntry == mibibHeader.sizeOfPartitionEntry,
             Device::Exception(
                Device::Exception::DEVICE_INVALID_PARAMETERS,
-               "Mibib partition size is not match with partition head" +
-                  std::to_string(partitionHeader.sizeOfPartitionEntry)
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("partition entry size")),
+                  DESC_PARTITION_VALIDATION_FAILED(
+                     std::string("Mibib partition size is not match with partition head"),
+                     std::to_string(partitionHeader.sizeOfPartitionEntry)
+                  ),
+                  SUGG_MIBIB_PARTITION_SIZE_MISMATCH(std::to_string(mibibHeader.sizeOfPartitionEntry)),
+                  POC(METABUILD)
+               )
             )
          );
          blockOffset = i;
@@ -3070,7 +3430,15 @@ void ImageTransfer::getPartitionHeaderFromFileMibib(
 
    outputFile->close();
 
-   TOOLS_THROW(Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Can not find mibib magic number"));
+   TOOLS_THROW(Device::Exception(
+      Device::Exception::DEVICE_INVALID_PARAMETERS,
+      Device::Exception::getErrorJson(
+         ERR_INVALID_PARAMETERS(std::string("mibib magic number")),
+         DESC_MIBIB_MAGIC_NOT_FOUND,
+         SUGG_MIBIB_MAGIC_NOT_FOUND,
+         POC(TARGET)
+      )
+   ));
 }
 
 // ----------------------------------------------------------------------------
@@ -3100,7 +3468,15 @@ void ImageTransfer::getPartitionEntriesFromFileMibib(
       uint64_t(entryCount) * entrySize + fileOffset <= fileSize,
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PARAMETERS,
-         "Partition entry file size too small: " + std::to_string(fileSize)
+         Device::Exception::getErrorJson(
+            ERR_INVALID_PARAMETERS(std::string("partition entry file")),
+            DESC_PARTITION_VALIDATION_FAILED(
+               std::string("Partition entry file size too small"),
+               std::to_string(fileSize)
+            ),
+            SUGG_PARTITION_ENTRY_FILE_TOO_SMALL(std::to_string(uint64_t(entryCount) * entrySize + fileOffset)),
+            POC(CLIENT)
+         )
       )
    );
    outputFile->seekg(fileOffset, std::ios::beg);
@@ -3167,8 +3543,12 @@ void ImageTransfer::getPartitionDefaultSectorParameterNand(uint32_t& pageSize, u
       0 != m_pageSize && 0 != m_pagePerBlock,
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PARAMETERS,
-         "NAND information is invalid, please run get flash "
-         "information in advance"
+         Device::Exception::getErrorJson(
+            ERR_INVALID_PARAMETERS(std::string("NAND page/block size")),
+            DESC_NAND_INFO_INVALID,
+            SUGG_NAND_INFO_INVALID(std::to_string(m_pageSize), std::to_string(m_pagePerBlock)),
+            POC(CLIENT)
+         )
       )
    );
 
@@ -3193,7 +3573,12 @@ void ImageTransfer::firehoseGetPartitionEntries(std::vector<PartitionEntry>& par
             (*it >= 0),
             Device::Exception(
                Device::Exception::DEVICE_INVALID_PARAMETERS,
-               "Invalid Partition Number:" + std::to_string(*it)
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("partition")),
+                  DESC_INVALID_PARTITION_NUMBER(*it),
+                  SUGG_INVALID_PARTITION_NUMBER,
+                  POC(CLIENT)
+               )
             )
          );
       }
@@ -3521,7 +3906,15 @@ void ImageTransfer::firehoseErasePartitionSectors(const std::vector<DataChunkOpt
 {
    TOOLS_ASSERT_OR_THROW(
       MEMORY_TYPE_UNKNOWN != m_memoryType,
-      Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Memory type not set!")
+      Device::Exception(
+         Device::Exception::DEVICE_INVALID_PARAMETERS,
+         Device::Exception::getErrorJson(
+            ERR_INVALID_PARAMETERS(std::string("memory type")),
+            DESC_INVALID_MEMORY_TYPE(std::string("not set")),
+            SUGG_INVALID_MEMORY_TYPE,
+            POC(TARGET)
+         )
+      )
    );
 
    std::filesystem::path tempFilePath = Util::createTempFileName(Device::Manager::getInstance()->getTempDirectory());
@@ -3675,7 +4068,15 @@ void ImageTransfer::
 {
    TOOLS_ASSERT_OR_THROW(
       m_jsonFile.empty(),
-      Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Preservation not supported for MetaBuild")
+      Device::Exception(
+         Device::Exception::DEVICE_INVALID_PARAMETERS,
+         Device::Exception::getErrorJson(
+            ERR_PRESERVATION_NOT_SUPPORTED,
+            DESC_IMG_PRESERVATION_NOT_SUPPORTED_VIP,
+            SUGG_PRESERVE_PARTITION_NOT_SUPPORTED,
+            POC(TARGET)
+         )
+      )
    );
 
    XmlPartitionInfoPtr pXmlPartitionInfo = std::make_shared<XmlPartitionInfo>();
@@ -3724,8 +4125,15 @@ void ImageTransfer::
        pXmlPatchInfo->getSectorSizeInBytes() == pXmlPartitionInfo->getSectorSizeInBytes()),
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PARAMETERS,
-         "Sector size in bytes mismatch "
-         "between partition and patch file"
+         Device::Exception::getErrorJson(
+            ERR_INVALID_PARAMETERS(std::string("sector size")),
+            DESC_SECTOR_SIZE_MISMATCH,
+            SUGG_SECTOR_SIZE_MISMATCH(
+               std::to_string(pXmlPatchInfo->getSectorSizeInBytes()),
+               std::to_string(pXmlPartitionInfo->getSectorSizeInBytes())
+            ),
+            POC(CLIENT)
+         )
       )
    );
 
@@ -3776,7 +4184,15 @@ void ImageTransfer::
                requestLength <= fileSize,
                Device::Exception(
                   Device::Exception::DEVICE_INVALID_PARAMETERS,
-                  "Partition file size too small for patch: " + std::to_string(fileSize)
+                  Device::Exception::getErrorJson(
+                     ERR_INVALID_PARAMETERS(std::string("partition file")),
+                     DESC_PARTITION_VALIDATION_FAILED(
+                        std::string("Partition file size too small for patch"),
+                        std::to_string(fileSize)
+                     ),
+                     SUGG_PARTITION_FILE_TOO_SMALL_FOR_PATCH(std::to_string(requestLength)),
+                     POC(CLIENT)
+                  )
                )
             );
 
@@ -3791,7 +4207,15 @@ void ImageTransfer::
          TOOLS_SIZEOF(PartitionHeader) + sectorSizeInByte <= fileSize,
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PARAMETERS,
-            "Partition file size too small for header: " + std::to_string(fileSize)
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("partition file")),
+               DESC_PARTITION_VALIDATION_FAILED(
+                  std::string("Partition file size too small for header"),
+                  std::to_string(fileSize)
+               ),
+               SUGG_PARTITION_FILE_TOO_SMALL_FOR_HEADER(std::to_string(TOOLS_SIZEOF(PartitionHeader) + sectorSizeInByte)),
+               POC(CLIENT)
+            )
          )
       );
 
@@ -3808,7 +4232,15 @@ void ImageTransfer::
          entrySize * entryCount + partitionStartOffset <= fileSize,
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PARAMETERS,
-            "Partition entry file size too small: " + std::to_string(fileSize)
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("partition entry file")),
+               DESC_PARTITION_VALIDATION_FAILED(
+                  std::string("Partition entry file size too small"),
+                  std::to_string(fileSize)
+               ),
+               SUGG_PARTITION_ENTRY_FILE_TOO_SMALL(std::to_string(entrySize * entryCount + partitionStartOffset)),
+               POC(CLIENT)
+            )
          )
       );
       for(uint32_t i = 0; i < entryCount; ++i)

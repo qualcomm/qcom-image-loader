@@ -5,6 +5,7 @@
 #include "communication/CommonIO.h"
 #include "device/Connection.h"
 #include "device/DataPacket.h"
+#include "device/ErrorMessage.h"
 #include "device/Exception.h"
 #include "device/Impl.h"
 #include "device/Manager.h"
@@ -283,7 +284,15 @@ void Base::lock(const int32_t clientId, const Device::Protocol::ProtocolLockKey&
    TOOLS_UNUSED_PARAMETER(clientId);
    TOOLS_UNUSED_PARAMETER(key);
    TOOLS_UNUSED_PARAMETER(reason);
-   TOOLS_THROW(ToolException("Lock feature is not supported"));
+   TOOLS_THROW(
+      ToolException(ToolException::getErrorJson(
+            ERR_PROTOCOL_LOCK_NOT_SUPPORTED,
+            DESC_PROTOCOL_LOCK_NOT_SUPPORTED(getDescription()),
+            SUGG_PROTOCOL_LOCK_NOT_SUPPORTED,
+            POC(CE)
+         )
+      )
+   );
 }
 
 // ----------------------------------------------------------------------------
@@ -295,7 +304,15 @@ void Base::unlock(const int32_t clientId, const Device::Protocol::ProtocolLockKe
 {
    TOOLS_UNUSED_PARAMETER(clientId);
    TOOLS_UNUSED_PARAMETER(key);
-   TOOLS_THROW(ToolException("Unlock feature is not supported"));
+   TOOLS_THROW(
+      ToolException(ToolException::getErrorJson(
+            ERR_PROTOCOL_UNLOCK_NOT_SUPPORTED,
+            DESC_PROTOCOL_UNLOCK_NOT_SUPPORTED(getDescription()),
+            SUGG_PROTOCOL_UNLOCK_NOT_SUPPORTED,
+            POC(CE)
+         )
+      )
+   );
 }
 
 // ----------------------------------------------------------------------------
@@ -334,7 +351,15 @@ Device::DataPacketPtr Base::sendSyncWithKey(
    TOOLS_UNUSED_PARAMETER(pBuffer);
    TOOLS_UNUSED_PARAMETER(timeout);
    TOOLS_UNUSED_PARAMETER(bPriority);
-   TOOLS_THROW(ToolException("Send sync with key feature is not supported"));
+   TOOLS_THROW(
+      ToolException(ToolException::getErrorJson(
+            ERR_SEND_SYNC_WITH_KEY_NOT_SUPPORTED,
+            DESC_SEND_SYNC_WITH_KEY_NOT_SUPPORTED(getDescription()),
+            SUGG_SEND_SYNC_WITH_KEY_NOT_SUPPORTED,
+            POC(CE)
+         )
+      )
+   );
 }
 
 // ----------------------------------------------------------------------------
@@ -351,7 +376,15 @@ Base::TransactionId Base::sendAsyncWithKey(
    TOOLS_UNUSED_PARAMETER(key);
    TOOLS_UNUSED_PARAMETER(pBuffer);
    TOOLS_UNUSED_PARAMETER(bPriority);
-   TOOLS_THROW(ToolException("Send async with key feature is not supported"));
+   TOOLS_THROW(
+      ToolException(ToolException::getErrorJson(
+            ERR_SEND_ASYNC_WITH_KEY_NOT_SUPPORTED,
+            DESC_SEND_ASYNC_WITH_KEY_NOT_SUPPORTED(getDescription()),
+            SUGG_SEND_ASYNC_WITH_KEY_NOT_SUPPORTED,
+            POC(CE)
+         )
+      )
+   );
 }
 // ----------------------------------------------------------------------------
 // getOverrideProtocol

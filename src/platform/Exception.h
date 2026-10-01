@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: BSD 3-Clause Clear License
 #pragma once
 #include "platform/LangMacros.h"
+#include "device/ErrorMessage.h"
 #if defined TOOLS_TARGET_WINDOWS
 #include <eh.h>
 #include <windows.h>
@@ -108,6 +109,18 @@ namespace Tool {
 class ErrorException : public std::exception
 {
 public:
+   static std::string getErrorJson(
+      const std::string& issue,
+      const std::string& description,
+      const std::string& resolution,
+      const std::string& poc
+   )
+   {
+      return "{ \"issue\": \"" + escapeJson(issue) + "\", \"description\": \"" +
+         escapeJson(description) + "\", \"resolution\": \"" + escapeJson(resolution) +
+         "\", \"poc\": \"" + escapeJson(poc) + "\"}";
+   }
+
    static const int32_t defaultErrorCode()
    {
       return -1;
@@ -244,6 +257,37 @@ public:
    }
 
 private:
+   static std::string escapeJson(const std::string& value)
+   {
+      std::string escaped;
+      escaped.reserve(value.size());
+      for(const char character : value)
+      {
+         switch(character)
+         {
+            case '\\':
+               escaped += "\\\\";
+               break;
+            case '"':
+               escaped += "\\\"";
+               break;
+            case '\n':
+               escaped += "\\n";
+               break;
+            case '\r':
+               escaped += "\\r";
+               break;
+            case '\t':
+               escaped += "\\t";
+               break;
+            default:
+               escaped += character;
+               break;
+         }
+      }
+      return escaped;
+   }
+
    int32_t m_errorCode;
    std::string m_what;
    std::string m_where;
@@ -280,13 +324,23 @@ inline void seTranslator(unsigned code, void* pInfo)
    {
       case EXCEPTION_ACCESS_VIOLATION:
          sprintf_s(msg, sizeof(msg), "Access violation at 0x%p", pExInfo->ExceptionRecord->ExceptionAddress);
-         throw ToolException(msg);
+         throw ToolException(ToolException::getErrorJson(
+            ERR_ACCESS_VIOLATION,
+            std::string(msg),
+            SUGG_ACCESS_VIOLATION,
+            POC(CE)
+         ));
          break;
 
       case EXCEPTION_INT_DIVIDE_BY_ZERO:
       case EXCEPTION_FLT_DIVIDE_BY_ZERO:
          sprintf_s(msg, sizeof(msg), "Divide by zero at 0x%p", pExInfo->ExceptionRecord->ExceptionAddress);
-         throw ToolException(msg);
+         throw ToolException(ToolException::getErrorJson(
+            ERR_DIVIDE_BY_ZERO,
+            std::string(msg),
+            SUGG_DIVIDE_BY_ZERO,
+            POC(CE)
+         ));
          break;
 
       default:
@@ -297,7 +351,12 @@ inline void seTranslator(unsigned code, void* pInfo)
             pExInfo->ExceptionRecord->ExceptionAddress,
             code
          );
-         throw ToolException(msg);
+         throw ToolException(ToolException::getErrorJson(
+            ERR_STRUCTURED_EXCEPTION,
+            std::string(msg),
+            SUGG_STRUCTURED_EXCEPTION,
+            POC(CE)
+         ));
    }
 }
 

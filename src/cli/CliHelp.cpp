@@ -42,6 +42,7 @@ void CliHelp::showUsage()
    showArgumentCategory(ArgumentCategory::ADVANCED_OPTIONS, "ADVANCED OPTIONS");
    showArgumentCategory(ArgumentCategory::UFS_PROVISIONING, "UFS PROVISIONING");
    showArgumentCategory(ArgumentCategory::DIGEST_CREATION, "DIGEST CREATION");
+   showArgumentCategory(ArgumentCategory::FLATTEN_META, "FLATTEN META BUILD");
    showArgumentCategory(ArgumentCategory::FLASH_OPERATIONS, "FLASH OPERATIONS");
    showArgumentCategory(ArgumentCategory::LOGGING, "LOGGING");
 

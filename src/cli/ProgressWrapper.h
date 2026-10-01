@@ -64,15 +64,7 @@ public:
       return m_durationSeconds;
    }
 
-   // Disable copy and move
-   ProgressWrapper(const ProgressWrapper&) = delete;
-   ProgressWrapper& operator=(const ProgressWrapper&) = delete;
-   ProgressWrapper(ProgressWrapper&&) = delete;
-   ProgressWrapper& operator=(ProgressWrapper&&) = delete;
-
-private:
-   // Static callback function for service events
-   // Must match ServiceEventCallback calling convention (__stdcall on Windows x86)
+   // Static callback function for service events - public for external use
 #ifdef TOOLS_TARGET_WINDOWS
    static void __stdcall
    serviceEventCallback(const std::string& serviceName, int64_t eventId, const std::string& eventDescription);
@@ -81,6 +73,13 @@ private:
    serviceEventCallback(const std::string& serviceName, int64_t eventId, const std::string& eventDescription);
 #endif
 
+   // Disable copy and move
+   ProgressWrapper(const ProgressWrapper&) = delete;
+   ProgressWrapper& operator=(const ProgressWrapper&) = delete;
+   ProgressWrapper(ProgressWrapper&&) = delete;
+   ProgressWrapper& operator=(ProgressWrapper&&) = delete;
+
+private:
    void startProgress();
    void stopProgress();
 

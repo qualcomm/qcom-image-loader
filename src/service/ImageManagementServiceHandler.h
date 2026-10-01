@@ -97,6 +97,7 @@ private:
    bool isMhiConnectedDevice(const Device::ImplPtr& pDevice);
    void updateMemorySettings(const Function::ImageTransferPtr& pImageTransfer);
    std::string createGuidString(uint32_t data1, uint16_t data2, uint16_t data3, uint64_t data4);
+   std::string deviceImageModeToString(QC::DeviceImageMode::type mode);
 
    std::shared_ptr<ImageManagementConnectionWorker> m_pImageManagementConnectionWorker;
    std::shared_ptr<Util::StdThreadWrapper> m_pImageManagementConnectionWorkerThread;

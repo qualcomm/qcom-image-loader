@@ -4,6 +4,7 @@
 
 #include "communication/CommonIO.h"
 #include "device/Buffer.h"
+#include "device/ErrorMessage.h"
 #include "device/Impl.h"
 #include "function/ImageTransfer.h"
 #include "protocol/Fwd.h"
@@ -337,14 +338,30 @@ void ImageManagementServiceHandler::getDeviceInfo(QC::EdlDeviceInfo& edlDeviceIn
    {
       if(isServiceLocked())
       {
-         TOOLS_THROW(Device::Exception(Device::Exception::DEVICE_SERVICE_LOCKED, "Image management service locked"));
+         TOOLS_THROW(Device::Exception(
+            Device::Exception::DEVICE_SERVICE_LOCKED,
+            Device::Exception::getErrorJson(
+               ERR_SERVICE_LOCKED,
+               DESC_IMG_SERVICE_LOCKED,
+               SUGG_IMG_SERVICE_LOCKED(std::string("getDeviceInfo")),
+               POC(CLIENT)
+            )
+         ));
       }
       std::lock_guard<std::recursive_mutex> lock(m_mutex);
       Util::ThisThread::waitForEvent(&m_connectionWorkerEvent, CONNECTION_WORKER_READY_WAIT_PERIOD);
       // Constraint for EDL mode now
       TOOLS_ASSERT_OR_THROW(
          QC::DeviceImageMode::DEVICE_IMAGE_MODE_SAHARA_DOWNLOAD == m_deviceImageMode,
-         Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Download mode not available")
+         Device::Exception(
+            Device::Exception::DEVICE_PROTOCOL_INVALID,
+            Device::Exception::getErrorJson(
+               ERR_PROTOCOL_INVALID,
+               DESC_IMG_DOWNLOAD_MODE_NOT_AVAILABLE,
+               SUGG_IMG_DOWNLOAD_MODE_NOT_AVAILABLE(std::string("getDeviceInfo")),
+               POC(TARGET)
+            )
+         )
       );
 
       if(0xFFFFFFFFU != m_serialNumber && 0xFFFFFFFFU != m_msmHwId)
@@ -394,13 +411,29 @@ void ImageManagementServiceHandler::
    {
       if(isServiceLocked())
       {
-         TOOLS_THROW(Device::Exception(Device::Exception::DEVICE_SERVICE_LOCKED, "Image management service locked"));
+         TOOLS_THROW(Device::Exception(
+            Device::Exception::DEVICE_SERVICE_LOCKED,
+            Device::Exception::getErrorJson(
+               ERR_SERVICE_LOCKED,
+               DESC_IMG_SERVICE_LOCKED,
+               SUGG_IMG_SERVICE_LOCKED(std::string("transferImages")),
+               POC(CLIENT)
+            )
+         ));
       }
       std::lock_guard<std::recursive_mutex> lock(m_mutex);
       Util::ThisThread::waitForEvent(&m_connectionWorkerEvent, CONNECTION_WORKER_READY_WAIT_PERIOD);
       TOOLS_ASSERT_OR_THROW(
          QC::DeviceImageMode::DEVICE_IMAGE_MODE_SAHARA_DOWNLOAD == m_deviceImageMode,
-         Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Download mode not available")
+         Device::Exception(
+            Device::Exception::DEVICE_PROTOCOL_INVALID,
+            Device::Exception::getErrorJson(
+               ERR_PROTOCOL_INVALID,
+               DESC_IMG_DOWNLOAD_MODE_NOT_AVAILABLE,
+               SUGG_IMG_DOWNLOAD_MODE_NOT_AVAILABLE(std::string("transferImages")),
+               POC(TARGET)
+            )
+         )
       );
 
       doSaharaConnect();
@@ -491,7 +524,12 @@ void ImageManagementServiceHandler::doFirehoseGetFlashInfo(
                Util::isNumber(storageInfo.pageSize),
                Device::Exception(
                   Device::Exception::DEVICE_INVALID_PARAMETERS,
-                  "Invalid page size for NAND: " + storageInfo.pageSize
+                  Device::Exception::getErrorJson(
+                     ERR_INVALID_PARAMETERS(std::string("page size")),
+                     DESC_IMG_INVALID_PAGE_SIZE_NAND(std::string(storageInfo.pageSize)),
+                     SUGG_IMG_INVALID_PAGE_SIZE_NAND,
+                     POC(TARGET)
+                  )
                )
             );
             m_pageSize = static_cast<uint32_t>(std::stoul(std::string(storageInfo.pageSize)));
@@ -499,7 +537,12 @@ void ImageManagementServiceHandler::doFirehoseGetFlashInfo(
                m_pageSize != 0,
                Device::Exception(
                   Device::Exception::DEVICE_UNKNOWN_ERROR,
-                  "Converation error for page size: " + storageInfo.pageSize
+                  Device::Exception::getErrorJson(
+                     ERR_INVALID_PARAMETERS(std::string("page size")),
+                     DESC_IMG_PAGE_SIZE_CONVERSION_ERROR(std::string(storageInfo.pageSize)),
+                     SUGG_IMG_INVALID_PAGE_SIZE_NAND,
+                     POC(TARGET)
+                  )
                )
             );
             pImageTransfer->firehoseSetPageSize(m_pageSize);
@@ -512,13 +555,26 @@ void ImageManagementServiceHandler::doFirehoseGetFlashInfo(
          {
             TOOLS_ASSERT_OR_THROW(
                m_pageSize != 0,
-               Device::Exception(Device::Exception::DEVICE_UNKNOWN_ERROR, "Page size is Zero")
+               Device::Exception(
+                  Device::Exception::DEVICE_INVALID_PARAMETERS,
+                  Device::Exception::getErrorJson(
+                     ERR_INVALID_PARAMETERS(std::string("page size")),
+                     DESC_IMG_INVALID_PAGE_SIZE_NAND(std::string("0")),
+                     SUGG_IMG_INVALID_PAGE_SIZE_NAND,
+                     POC(TARGET)
+                  )
+               )
             );
             TOOLS_ASSERT_OR_THROW(
                Util::isNumber(storageInfo.blockSize),
                Device::Exception(
                   Device::Exception::DEVICE_INVALID_PARAMETERS,
-                  "Invalid block size for NAND: " + storageInfo.blockSize
+                  Device::Exception::getErrorJson(
+                     ERR_INVALID_PARAMETERS(std::string("block size")),
+                     DESC_IMG_INVALID_BLOCK_SIZE_NAND(std::string(storageInfo.blockSize)),
+                     SUGG_IMG_INVALID_BLOCK_SIZE_NAND,
+                     POC(TARGET)
+                  )
                )
             );
             m_pagePerBlock = static_cast<uint32_t>(std::stoul(storageInfo.blockSize)) / m_pageSize;
@@ -526,7 +582,12 @@ void ImageManagementServiceHandler::doFirehoseGetFlashInfo(
                m_pagePerBlock != 0,
                Device::Exception(
                   Device::Exception::DEVICE_UNKNOWN_ERROR,
-                  "Converation error for block size: " + storageInfo.blockSize
+                  Device::Exception::getErrorJson(
+                     ERR_INVALID_PARAMETERS(std::string("block size")),
+                     DESC_IMG_BLOCK_SIZE_CONVERSION_ERROR(std::string(storageInfo.blockSize)),
+                     SUGG_IMG_BLOCK_SIZE_CONVERSION_ERROR(static_cast<uint32_t>(std::stoul(storageInfo.blockSize)), m_pageSize),
+                     POC(TARGET)
+                  )
                )
             );
             pImageTransfer->firehoseSetPagePerBlock(m_pagePerBlock);
@@ -580,20 +641,41 @@ void ImageManagementServiceHandler::
    {
       if(isServiceLocked())
       {
-         TOOLS_THROW(Device::Exception(Device::Exception::DEVICE_SERVICE_LOCKED, "Image management service locked"));
+         TOOLS_THROW(Device::Exception(
+            Device::Exception::DEVICE_SERVICE_LOCKED,
+            Device::Exception::getErrorJson(
+               ERR_SERVICE_LOCKED,
+               DESC_IMG_SERVICE_LOCKED,
+               SUGG_IMG_SERVICE_LOCKED(std::string("getFlashInfo")),
+               POC(CLIENT)
+            )
+         ));
       }
       std::lock_guard<std::recursive_mutex> lock(m_mutex);
       Util::ThisThread::waitForEvent(&m_connectionWorkerEvent, CONNECTION_WORKER_READY_WAIT_PERIOD);
       TOOLS_ASSERT_OR_THROW(
          isEdlModeAvailable(),
-         Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Download mode not available")
+         Device::Exception(
+            Device::Exception::DEVICE_PROTOCOL_INVALID,
+            Device::Exception::getErrorJson(
+               ERR_PROTOCOL_INVALID,
+               DESC_IMG_DOWNLOAD_MODE_NOT_AVAILABLE,
+               SUGG_IMG_DOWNLOAD_MODE_NOT_AVAILABLE(std::string("getFlashInfo")),
+               POC(TARGET)
+            )
+         )
       );
       m_memoryType = options.memoryType;
       TOOLS_ASSERT_OR_THROW(
          (QC::MemoryType::MEMORY_TYPE_UNKNOWN > m_memoryType),
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PARAMETERS,
-            "Unsupported memory type : " + std::to_string(m_memoryType)
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("memory type")),
+               DESC_IMG_UNSUPPORTED_MEMORY_TYPE(m_memoryType),
+               SUGG_IMG_UNSUPPORTED_MEMORY_TYPE,
+               POC(CLIENT)
+            )
          )
       );
 
@@ -634,7 +716,12 @@ void ImageManagementServiceHandler::
                (*it >= MAX_PARTITION_NUM),
                Device::Exception(
                   Device::Exception::DEVICE_INVALID_PARAMETERS,
-                  "Invalid Partition Number:" + std::to_string(*it)
+                  Device::Exception::getErrorJson(
+                     ERR_INVALID_PARAMETERS(std::string("partition")),
+                     DESC_IMG_INVALID_PARTITION_NUMBER(std::string(std::to_string(*it))),
+                     SUGG_IMG_INVALID_PARTITION_NUMBER,
+                     POC(CLIENT)
+                  )
                )
             );
             if(*it < maxPartition)
@@ -687,20 +774,41 @@ QC::ErrorCode::type ImageManagementServiceHandler::erasePartition(const QC::Down
       Util::ThisThread::waitForEvent(&m_connectionWorkerEvent, CONNECTION_WORKER_READY_WAIT_PERIOD);
       TOOLS_ASSERT_OR_THROW(
          isEdlModeAvailable(),
-         Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Download mode not available")
+         Device::Exception(
+            Device::Exception::DEVICE_PROTOCOL_INVALID,
+            Device::Exception::getErrorJson(
+               ERR_PROTOCOL_INVALID,
+               DESC_IMG_DOWNLOAD_MODE_NOT_AVAILABLE,
+               SUGG_IMG_DOWNLOAD_MODE_NOT_AVAILABLE(std::string("erasePartition")),
+               POC(TARGET)
+            )
+         )
       );
       m_memoryType = options.memoryType;
       TOOLS_ASSERT_OR_THROW(
          (QC::MemoryType::MEMORY_TYPE_UNKNOWN > m_memoryType),
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PARAMETERS,
-            "Unsupported memory type : " + std::string(std::to_string(m_memoryType))
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("memory type")),
+               DESC_IMG_UNSUPPORTED_MEMORY_TYPE(m_memoryType),
+               SUGG_IMG_UNSUPPORTED_MEMORY_TYPE,
+               POC(CLIENT)
+            )
          )
       );
 
       TOOLS_ASSERT_OR_THROW(
          (options.__isset.partitionIndexList && !options.partitionIndexList.empty()),
-         Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Erase Partition Number is not set")
+         Device::Exception(
+            Device::Exception::DEVICE_INVALID_PARAMETERS,
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("partition")),
+               DESC_IMG_ERASE_PARTITION_NUMBER_NOT_SET,
+               SUGG_IMG_ERASE_PARTITION_NUMBER_NOT_SET,
+               POC(CLIENT)
+            )
+         )
       );
 
       Function::ImageTransferPtr pImageTransfer =
@@ -737,7 +845,12 @@ QC::ErrorCode::type ImageManagementServiceHandler::erasePartition(const QC::Down
                (*it >= 0),
                Device::Exception(
                   Device::Exception::DEVICE_INVALID_PARAMETERS,
-                  "Invalid Partition Number:" + std::to_string(*it)
+                  Device::Exception::getErrorJson(
+                     ERR_INVALID_PARAMETERS(std::string("partition")),
+                     DESC_IMG_INVALID_PARTITION_NUMBER(std::string(std::to_string(*it))),
+                     SUGG_IMG_INVALID_PARTITION_NUMBER,
+                     POC(CLIENT)
+                  )
                )
             );
             partitionIndexList.push_back(*it);
@@ -838,7 +951,15 @@ void ImageManagementServiceHandler::doFirehosePreserve(
 
       TOOLS_ASSERT_OR_THROW(
          preservedIt != preservedEnd,
-         Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Can not find partition:" + partition.name)
+         Device::Exception(
+            Device::Exception::DEVICE_INVALID_PARAMETERS,
+            Device::Exception::getErrorJson(
+               ERR_PARTITION_NOT_FOUND,
+               DESC_IMG_PARTITION_NOT_FOUND(std::string(partition.name)),
+               SUGG_IMG_PARTITION_NOT_FOUND,
+               POC(CLIENT)
+            )
+         )
       );
 
       Function::ImageTransfer::DataChunkOptions preservedDataChunk;
@@ -873,8 +994,15 @@ void ImageManagementServiceHandler::doFirehosePreserve(
 
       TOOLS_ASSERT_OR_THROW(
          preservedIt != preservedEnd,
-         Device::
-            Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Can not find partition in build:" + partition.name)
+         Device::Exception(
+            Device::Exception::DEVICE_INVALID_PARAMETERS,
+            Device::Exception::getErrorJson(
+               ERR_PARTITION_NOT_FOUND,
+               DESC_IMG_PARTITION_NOT_FOUND_IN_BUILD(std::string(partition.name)),
+               SUGG_IMG_PARTITION_NOT_FOUND_IN_BUILD,
+               POC(CLIENT)
+            )
+         )
       );
 
       // Format the filename with GUID
@@ -944,7 +1072,15 @@ ImageManagementServiceHandler::downloadBuild(const std::string& buildPath, const
       Util::ThisThread::waitForEvent(&m_connectionWorkerEvent, CONNECTION_WORKER_READY_WAIT_PERIOD);
       TOOLS_ASSERT_OR_THROW(
          isEdlModeAvailable(),
-         Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Download mode not available")
+         Device::Exception(
+            Device::Exception::DEVICE_PROTOCOL_INVALID,
+            Device::Exception::getErrorJson(
+               ERR_PROTOCOL_INVALID,
+               DESC_IMG_DOWNLOAD_MODE_NOT_AVAILABLE,
+               SUGG_IMG_DOWNLOAD_MODE_NOT_AVAILABLE(std::string("downloadBuild")),
+               POC(TARGET)
+            )
+         )
       );
       Function::ImageTransferPtr pImageTransfer =
          std::make_shared<Function::ImageTransfer>(m_pSaharaConnection, m_pFirehoseConnection);
@@ -956,7 +1092,12 @@ ImageManagementServiceHandler::downloadBuild(const std::string& buildPath, const
             (QC::MemoryType::MEMORY_TYPE_UNKNOWN > m_memoryType),
             Device::Exception(
                Device::Exception::DEVICE_INVALID_PARAMETERS,
-               "Unsupported memory type : " + std::to_string(m_memoryType)
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("memory type")),
+                  DESC_IMG_UNSUPPORTED_MEMORY_TYPE(m_memoryType),
+                  SUGG_IMG_UNSUPPORTED_MEMORY_TYPE,
+                  POC(CLIENT)
+               )
             )
          );
          // Select memory type
@@ -1099,7 +1240,12 @@ ImageManagementServiceHandler::downloadBuild(const std::string& buildPath, const
                      (!bIsVipEnabled),
                      Device::Exception(
                         Device::Exception::DEVICE_INVALID_PARAMETERS,
-                        "Preserve partition is not supported for VIP process"
+                        Device::Exception::getErrorJson(
+                           ERR_PRESERVATION_NOT_SUPPORTED,
+                           DESC_IMG_PRESERVATION_NOT_SUPPORTED_VIP,
+                           SUGG_IMG_PRESERVATION_NOT_SUPPORTED_VIP,
+                           POC(CLIENT)
+                        )
                      )
                   );
 
@@ -1107,8 +1253,12 @@ ImageManagementServiceHandler::downloadBuild(const std::string& buildPath, const
                      (!options.__isset.singleImagePath || options.singleImagePath.empty()),
                      Device::Exception(
                         Device::Exception::DEVICE_INVALID_PARAMETERS,
-                        "Preserve partition is not supported for single "
-                        "image"
+                        Device::Exception::getErrorJson(
+                           ERR_PRESERVATION_NOT_SUPPORTED,
+                           DESC_IMG_PRESERVATION_NOT_SUPPORTED_SINGLE_IMAGE,
+                           SUGG_IMG_PRESERVATION_NOT_SUPPORTED_SINGLE_IMAGE,
+                           POC(CLIENT)
+                        )
                      )
                   );
                   m_preservationMode = options.preservationOption.preservationMode;
@@ -1140,7 +1290,12 @@ ImageManagementServiceHandler::downloadBuild(const std::string& buildPath, const
                   (options.__isset.lun && Function::ImageTransfer::INVALID_LUN < options.lun),
                   Device::Exception(
                      Device::Exception::DEVICE_INVALID_PARAMETERS,
-                     "Provide valid LUN for the image: " + std::string(imagePath.string().c_str())
+                     Device::Exception::getErrorJson(
+                        ERR_INVALID_PARAMETERS(std::string("LUN")),
+                        DESC_IMG_INVALID_LUN(std::string(imagePath.string().c_str())),
+                        SUGG_IMG_INVALID_LUN,
+                        POC(CLIENT)
+                     )
                   )
                );
 
@@ -1148,7 +1303,12 @@ ImageManagementServiceHandler::downloadBuild(const std::string& buildPath, const
                   (options.__isset.startSector && Function::ImageTransfer::INVALID_START_SECTOR < options.startSector),
                   Device::Exception(
                      Device::Exception::DEVICE_INVALID_PARAMETERS,
-                     "Provide valid start sector for the image: " + std::string(imagePath.string().c_str())
+                     Device::Exception::getErrorJson(
+                        ERR_INVALID_PARAMETERS(std::string("start sector")),
+                        DESC_IMG_INVALID_START_SECTOR_FOR_IMAGE(std::string(imagePath.string().c_str())),
+                        SUGG_IMG_INVALID_START_SECTOR_FOR_IMAGE,
+                        POC(CLIENT)
+                     )
                   )
                );
 
@@ -1300,7 +1460,12 @@ QC::ErrorCode::type ImageManagementServiceHandler::resetDevice(const int32_t tim
                (m_deviceImageMode == QC::DeviceImageMode::DEVICE_IMAGE_MODE_SAHARA_CRASH),
                Device::Exception(
                   Device::Exception::DEVICE_PROTOCOL_INVALID,
-                  "Unsupported device image mode : " + std::to_string(m_deviceImageMode)
+                  Device::Exception::getErrorJson(
+                     ERR_INVALID_DEVICE_IMAGE_MODE,
+                     DESC_IMG_UNSUPPORTED_DEVICE_IMAGE_MODE(m_deviceImageMode),
+                     SUGG_IMG_UNSUPPORTED_DEVICE_IMAGE_MODE(deviceImageModeToString(m_deviceImageMode), std::string("SAHARA_CRASH")),
+                     POC(TARGET)
+                  )
                )
             );
             // Send Sahara reset command directly
@@ -1392,20 +1557,41 @@ void ImageManagementServiceHandler::
    {
       if(isServiceLocked())
       {
-         TOOLS_THROW(Device::Exception(Device::Exception::DEVICE_SERVICE_LOCKED, "Image management service locked"));
+         TOOLS_THROW(Device::Exception(
+            Device::Exception::DEVICE_SERVICE_LOCKED,
+            Device::Exception::getErrorJson(
+               ERR_SERVICE_LOCKED,
+               DESC_IMG_SERVICE_LOCKED,
+               SUGG_IMG_SERVICE_LOCKED(std::string("initPartitionTable")),
+               POC(CLIENT)
+            )
+         ));
       }
       std::lock_guard<std::recursive_mutex> lock(m_mutex);
       Util::ThisThread::waitForEvent(&m_connectionWorkerEvent, CONNECTION_WORKER_READY_WAIT_PERIOD);
       TOOLS_ASSERT_OR_THROW(
          isEdlModeAvailable(),
-         Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Download mode not available")
+         Device::Exception(
+            Device::Exception::DEVICE_PROTOCOL_INVALID,
+            Device::Exception::getErrorJson(
+               ERR_PROTOCOL_INVALID,
+               DESC_IMG_DOWNLOAD_MODE_NOT_AVAILABLE,
+               SUGG_IMG_DOWNLOAD_MODE_NOT_AVAILABLE(std::string("initPartitionTable")),
+               POC(TARGET)
+            )
+         )
       );
       m_memoryType = options.memoryType;
       TOOLS_ASSERT_OR_THROW(
          (QC::MemoryType::MEMORY_TYPE_UNKNOWN > m_memoryType),
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PARAMETERS,
-            "Unsupported memory type : " + std::to_string(m_memoryType)
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("memory type")),
+               DESC_IMG_UNSUPPORTED_MEMORY_TYPE(m_memoryType),
+               SUGG_IMG_UNSUPPORTED_MEMORY_TYPE,
+               POC(CLIENT)
+            )
          )
       );
 
@@ -1574,7 +1760,12 @@ QC::ErrorCode::type ImageManagementServiceHandler::readPartitionData(const std::
          (QC::MemoryType::MEMORY_TYPE_UNKNOWN > m_memoryType),
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PARAMETERS,
-            "Unsupported memory type : " + std::to_string(m_memoryType)
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("memory type")),
+               DESC_IMG_UNSUPPORTED_MEMORY_TYPE(m_memoryType),
+               SUGG_IMG_UNSUPPORTED_MEMORY_TYPE,
+               POC(CLIENT)
+            )
          )
       );
       std::vector<Function::ImageTransfer::DataChunkOptions> dataChunkOptions;
@@ -1584,32 +1775,80 @@ QC::ErrorCode::type ImageManagementServiceHandler::readPartitionData(const std::
       {
          TOOLS_ASSERT_OR_THROW(
             it->__isset.startSector,
-            Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Missing start sector")
+            Device::Exception(
+               Device::Exception::DEVICE_INVALID_PARAMETERS,
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("start sector")),
+                  DESC_IMG_MISSING_START_SECTOR,
+                  SUGG_IMG_MISSING_START_SECTOR(std::string("readPartitionData")),
+                  POC(CLIENT)
+               )
+            )
          );
          std::string fmtStartSector = getValidPartitionDigits(it->startSector);
          TOOLS_ASSERT_OR_THROW(
             !fmtStartSector.empty(),
-            Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Invalid start sector:" + it->startSector)
+            Device::Exception(
+               Device::Exception::DEVICE_INVALID_PARAMETERS,
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("start sector")),
+                  DESC_IMG_INVALID_START_SECTOR_WITH_IMAGE(std::string(it->imagePath), std::string(it->startSector)),
+                  SUGG_IMG_INVALID_START_SECTOR,
+                  POC(CLIENT)
+               )
+            )
          );
          TOOLS_ASSERT_OR_THROW(
             it->__isset.sectorCount,
-            Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Missing sector number")
+            Device::Exception(
+               Device::Exception::DEVICE_INVALID_PARAMETERS,
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("sector number")),
+                  DESC_IMG_MISSING_SECTOR_NUMBER,
+                  SUGG_IMG_INVALID_SECTOR_NUMBER,
+                  POC(CLIENT)
+               )
+            )
          );
          std::string fmtSectorCount = getValidPartitionDigits(it->sectorCount);
          TOOLS_ASSERT_OR_THROW(
             !fmtSectorCount.empty(),
-            Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Invalid sector number:" + it->sectorCount)
+            Device::Exception(
+               Device::Exception::DEVICE_INVALID_PARAMETERS,
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("sector number")),
+                  DESC_IMG_INVALID_SECTOR_NUMBER(std::string(it->sectorCount)),
+                  SUGG_IMG_INVALID_SECTOR_NUMBER,
+                  POC(CLIENT)
+               )
+            )
          );
 
          TOOLS_ASSERT_OR_THROW(
             (it->__isset.sectorCount && !it->imagePath.empty()),
-            Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Missing readback file path!")
+            Device::Exception(
+            Device::Exception::DEVICE_INVALID_PARAMETERS,
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("readback file path")),
+               DESC_IMG_MISSING_READBACK_FILE_PATH,
+               SUGG_IMG_MISSING_READBACK_FILE_PATH,
+               POC(CLIENT)
+            )
+         )
          );
          dataChunkOptions.push_back({it->partitionIndex, fmtStartSector, fmtSectorCount, it->imagePath.c_str()});
       }
       TOOLS_ASSERT_OR_THROW(
          m_bEntertedFirehoseMode,
-         Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Device has not entered firehose mode!")
+         Device::Exception(
+            Device::Exception::DEVICE_PROTOCOL_INVALID,
+            Device::Exception::getErrorJson(
+               ERR_PROTOCOL_INVALID,
+               DESC_IMG_DEVICE_NOT_IN_FIREHOSE_MODE,
+               SUGG_IMG_DEVICE_NOT_IN_FIREHOSE_MODE,
+               POC(TARGET)
+            )
+         )
       );
 
       Function::ImageTransferPtr pImageTransfer =
@@ -1659,7 +1898,12 @@ QC::ErrorCode::type ImageManagementServiceHandler::writePartitionData(const std:
          (QC::MemoryType::MEMORY_TYPE_UNKNOWN > m_memoryType),
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PARAMETERS,
-            "Unsupported memory type : " + std::to_string(m_memoryType)
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("memory type")),
+               DESC_IMG_UNSUPPORTED_MEMORY_TYPE(m_memoryType),
+               SUGG_IMG_UNSUPPORTED_MEMORY_TYPE,
+               POC(CLIENT)
+            )
          )
       );
 
@@ -1670,30 +1914,70 @@ QC::ErrorCode::type ImageManagementServiceHandler::writePartitionData(const std:
       {
          TOOLS_ASSERT_OR_THROW(
             it->__isset.startSector,
-            Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Missing start sector")
+            Device::Exception(
+               Device::Exception::DEVICE_INVALID_PARAMETERS,
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("start sector")),
+                  DESC_IMG_MISSING_START_SECTOR,
+                  SUGG_IMG_MISSING_START_SECTOR(std::string("writePartitionData")),
+                  POC(CLIENT)
+               )
+            )
          );
          std::string fmtStartSector = getValidPartitionDigits(it->startSector);
          TOOLS_ASSERT_OR_THROW(
             !fmtStartSector.empty(),
-            Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Invalid start sector:" + it->startSector)
+            Device::Exception(
+               Device::Exception::DEVICE_INVALID_PARAMETERS,
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("start sector")),
+                  DESC_IMG_INVALID_START_SECTOR_WITH_IMAGE(std::string(it->imagePath), std::string(it->startSector)),
+                  SUGG_IMG_INVALID_START_SECTOR,
+                  POC(CLIENT)
+               )
+            )
          );
          std::string fmtSectorCount = getValidPartitionDigits(it->sectorCount);
          TOOLS_ASSERT_OR_THROW(
             !fmtSectorCount.empty(),
-            Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Invalid sector number:" + it->sectorCount)
+            Device::Exception(
+               Device::Exception::DEVICE_INVALID_PARAMETERS,
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("sector number")),
+                  DESC_IMG_INVALID_SECTOR_NUMBER(std::string(it->sectorCount)),
+                  SUGG_IMG_INVALID_SECTOR_NUMBER,
+                  POC(CLIENT)
+               )
+            )
          );
          std::filesystem::path availableImagePath =
             Device::Manager::getInstance()->getAccessiblePath(std::filesystem::path(it->imagePath));
          TOOLS_ASSERT_OR_THROW(
             std::filesystem::exists(availableImagePath),
-            Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Device has not entered firehose mode!")
+            Device::Exception(
+               Device::Exception::DEVICE_PROTOCOL_INVALID,
+               Device::Exception::getErrorJson(
+                  ERR_PROTOCOL_INVALID,
+                  DESC_IMG_FILE_NOT_FOUND(std::string(it->imagePath)),
+                  SUGG_IMG_FILE_NOT_FOUND(std::string("writePartitionData")),
+                  POC(CLIENT)
+               )
+            )
          );
          dataChunkOptions.push_back({it->partitionIndex, fmtStartSector, fmtSectorCount, availableImagePath});
       }
 
       TOOLS_ASSERT_OR_THROW(
          m_bEntertedFirehoseMode,
-         Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Device has not entered firehose mode!")
+         Device::Exception(
+            Device::Exception::DEVICE_PROTOCOL_INVALID,
+            Device::Exception::getErrorJson(
+               ERR_PROTOCOL_INVALID,
+               DESC_IMG_DEVICE_NOT_IN_FIREHOSE_MODE,
+               SUGG_IMG_DEVICE_NOT_IN_FIREHOSE_MODE,
+               POC(TARGET)
+            )
+         )
       );
 
       Function::ImageTransferPtr pImageTransfer =
@@ -1746,7 +2030,12 @@ QC::ErrorCode::type ImageManagementServiceHandler::erasePartitionData(const std:
          (QC::MemoryType::MEMORY_TYPE_UNKNOWN > m_memoryType),
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PARAMETERS,
-            "Unsupported memory type : " + std::to_string(m_memoryType)
+            Device::Exception::getErrorJson(
+               ERR_INVALID_PARAMETERS(std::string("memory type")),
+               DESC_IMG_UNSUPPORTED_MEMORY_TYPE(m_memoryType),
+               SUGG_IMG_UNSUPPORTED_MEMORY_TYPE,
+               POC(CLIENT)
+            )
          )
       );
 
@@ -1757,21 +2046,53 @@ QC::ErrorCode::type ImageManagementServiceHandler::erasePartitionData(const std:
       {
          TOOLS_ASSERT_OR_THROW(
             it->__isset.startSector,
-            Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Missing start sector")
+            Device::Exception(
+               Device::Exception::DEVICE_INVALID_PARAMETERS,
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("start sector")),
+                  DESC_IMG_MISSING_START_SECTOR,
+                  SUGG_IMG_MISSING_START_SECTOR(std::string("erasePartitionData")),
+                  POC(CLIENT)
+               )
+            )
          );
          std::string fmtStartSector = getValidPartitionDigits(it->startSector);
          TOOLS_ASSERT_OR_THROW(
             !fmtStartSector.empty(),
-            Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Invalid start sector:" + it->startSector)
+            Device::Exception(
+               Device::Exception::DEVICE_INVALID_PARAMETERS,
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("start sector")),
+                  DESC_IMG_INVALID_START_SECTOR_WITH_IMAGE(std::string(it->imagePath), std::string(it->startSector)),
+                  SUGG_IMG_INVALID_START_SECTOR,
+                  POC(CLIENT)
+               )
+            )
          );
          TOOLS_ASSERT_OR_THROW(
             it->__isset.sectorCount,
-            Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Missing sector number")
+            Device::Exception(
+               Device::Exception::DEVICE_INVALID_PARAMETERS,
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("sector number")),
+                  DESC_IMG_MISSING_SECTOR_NUMBER,
+                  SUGG_IMG_INVALID_SECTOR_NUMBER,
+                  POC(CLIENT)
+               )
+            )
          );
          std::string fmtSectorCount = getValidPartitionDigits(it->sectorCount);
          TOOLS_ASSERT_OR_THROW(
             !fmtSectorCount.empty(),
-            Device::Exception(Device::Exception::DEVICE_INVALID_PARAMETERS, "Invalid sector number:" + it->sectorCount)
+            Device::Exception(
+               Device::Exception::DEVICE_INVALID_PARAMETERS,
+               Device::Exception::getErrorJson(
+                  ERR_INVALID_PARAMETERS(std::string("sector number")),
+                  DESC_IMG_INVALID_SECTOR_NUMBER(std::string(it->sectorCount)),
+                  SUGG_IMG_INVALID_SECTOR_NUMBER,
+                  POC(CLIENT)
+               )
+            )
          );
 
          dataChunkOptions.push_back({it->partitionIndex, fmtStartSector, fmtSectorCount, ""});
@@ -1779,7 +2100,15 @@ QC::ErrorCode::type ImageManagementServiceHandler::erasePartitionData(const std:
 
       TOOLS_ASSERT_OR_THROW(
          m_bEntertedFirehoseMode,
-         Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Device has not entered firehose mode!")
+         Device::Exception(
+            Device::Exception::DEVICE_PROTOCOL_INVALID,
+            Device::Exception::getErrorJson(
+               ERR_PROTOCOL_INVALID,
+               DESC_IMG_DEVICE_NOT_IN_FIREHOSE_MODE,
+               SUGG_IMG_DEVICE_NOT_IN_FIREHOSE_MODE,
+               POC(TARGET)
+            )
+         )
       );
 
       Function::ImageTransferPtr pImageTransfer =
@@ -1901,7 +2230,15 @@ void ImageManagementServiceHandler::doSaharaConnect()
    Util::ThisThread::sleep(std::chrono::seconds(1));
    TOOLS_ASSERT_OR_THROW(
       m_pSaharaProtocol != nullptr,
-      Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Sahara protocol not available")
+      Device::Exception(
+         Device::Exception::DEVICE_PROTOCOL_INVALID,
+         Device::Exception::getErrorJson(
+            ERR_PROTOCOL_INVALID,
+            DESC_IMG_PROTOCOL_NOT_AVAILABLE(std::string("Sahara")),
+            SUGG_IMG_PROTOCOL_NOT_AVAILABLE,
+            POC(CE)
+         )
+      )
    );
    m_pSaharaConnection = m_pDeviceManagerHandler->createConnection(
       m_pSaharaProtocol,
@@ -1910,7 +2247,15 @@ void ImageManagementServiceHandler::doSaharaConnect()
    );
    TOOLS_ASSERT_OR_THROW(
       m_pSaharaConnection != nullptr,
-      Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Sahara connection not available")
+      Device::Exception(
+         Device::Exception::DEVICE_PROTOCOL_INVALID,
+         Device::Exception::getErrorJson(
+            ERR_PROTOCOL_INVALID,
+            DESC_IMG_CONNECTION_NOT_AVAILABLE(std::string("Sahara")),
+            SUGG_IMG_CONNECTION_NOT_AVAILABLE,
+            POC(CE)
+         )
+      )
    );
 
    m_pSaharaConnection->connect();
@@ -1946,8 +2291,13 @@ void ImageManagementServiceHandler::doEdlSwitch(const std::string& programmerPat
    else
    {
       TOOLS_THROW(Device::Exception(
-         Device::Exception::DEVICE_INVALID_DEVICE_HANDLE,
-         "Invalid Device Image Mode:" + std::to_string(m_deviceImageMode)
+         Device::Exception::DEVICE_PROTOCOL_INVALID,
+         Device::Exception::getErrorJson(
+            ERR_EDL_SWITCH_NOT_AVAILABLE,
+            DESC_EDL_SWITCH_NOT_AVAILABLE(deviceImageModeToString(m_deviceImageMode)),
+            SUGG_EDL_SWITCH_NOT_AVAILABLE,
+            POC(CE)
+         )
       ));
    }
 #ifdef TOOLS_TARGET_LINUX
@@ -2021,7 +2371,12 @@ void ImageManagementServiceHandler::doFirehoseSwitch(
                Function::ImageTransfer::MemoryType::MEMORY_TYPE_UNKNOWN != memoryType,
                Device::Exception(
                   Device::Exception::DEVICE_INVALID_PARAMETERS,
-                  "Failed to retrive memory type from the device"
+                  Device::Exception::getErrorJson(
+                     ERR_FAILED_TO_RETRIEVE_MEMORY_TYPE,
+                     DESC_IMG_FAILED_TO_RETRIEVE_MEMORY_TYPE,
+                     SUGG_IMG_FAILED_TO_RETRIEVE_MEMORY_TYPE,
+                     POC(CLIENT)
+                  )
                )
             );
 
@@ -2105,7 +2460,15 @@ void ImageManagementServiceHandler::doFirehoseAdd()
 {
    TOOLS_ASSERT_OR_THROW(
       m_pSaharaProtocol != nullptr,
-      Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Sahara protocol not available")
+      Device::Exception(
+         Device::Exception::DEVICE_PROTOCOL_INVALID,
+         Device::Exception::getErrorJson(
+            ERR_PROTOCOL_INVALID,
+            DESC_IMG_PROTOCOL_NOT_AVAILABLE(std::string("Sahara")),
+            SUGG_IMG_PROTOCOL_NOT_AVAILABLE,
+            POC(CE)
+         )
+      )
    );
 
    // Create a parallel Firehose connection to use Firehose protocol without
@@ -2162,7 +2525,15 @@ void ImageManagementServiceHandler::doFirehoseAdd()
             create(m_pSaharaProtocol->getCommonIo(), m_pSaharaProtocol->getDevice()->getHandle());
          TOOLS_ASSERT_OR_THROW(
             m_pFirehoseProtocol != nullptr,
-            Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Firehose protocol not available")
+            Device::Exception(
+               Device::Exception::DEVICE_PROTOCOL_INVALID,
+               Device::Exception::getErrorJson(
+                  ERR_PROTOCOL_INVALID,
+                  DESC_IMG_PROTOCOL_NOT_AVAILABLE(std::string("Firehose")),
+                  SUGG_IMG_PROTOCOL_NOT_AVAILABLE,
+                  POC(CE)
+               )
+            )
          );
          FLOG_INFO(
             QC::getName() + ": New Firehose protocol created " + std::to_string(m_pFirehoseProtocol->getHandle())
@@ -2198,7 +2569,15 @@ void ImageManagementServiceHandler::doFirehoseAdd()
 
    TOOLS_ASSERT_OR_THROW(
       m_pFirehoseConnection != nullptr,
-      Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Firehose connection not available")
+      Device::Exception(
+         Device::Exception::DEVICE_PROTOCOL_INVALID,
+         Device::Exception::getErrorJson(
+            ERR_PROTOCOL_INVALID,
+            DESC_IMG_CONNECTION_NOT_AVAILABLE(std::string("Firehose")),
+            SUGG_IMG_CONNECTION_NOT_AVAILABLE,
+            POC(CE)
+         )
+      )
    );
 }
 
@@ -2211,11 +2590,27 @@ void ImageManagementServiceHandler::doFirehoseConnect()
 {
    TOOLS_ASSERT_OR_THROW(
       m_pFirehoseProtocol != nullptr,
-      Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Firehose protocol not available")
+      Device::Exception(
+         Device::Exception::DEVICE_PROTOCOL_INVALID,
+         Device::Exception::getErrorJson(
+            ERR_PROTOCOL_INVALID,
+            DESC_IMG_PROTOCOL_NOT_AVAILABLE(std::string("Firehose")),
+            SUGG_IMG_PROTOCOL_NOT_AVAILABLE,
+            POC(CE)
+         )
+      )
    );
    TOOLS_ASSERT_OR_THROW(
       m_pFirehoseConnection != nullptr,
-      Device::Exception(Device::Exception::DEVICE_PROTOCOL_INVALID, "Firehose connection not available")
+      Device::Exception(
+         Device::Exception::DEVICE_PROTOCOL_INVALID,
+         Device::Exception::getErrorJson(
+            ERR_PROTOCOL_INVALID,
+            DESC_IMG_CONNECTION_NOT_AVAILABLE(std::string("Firehose")),
+            SUGG_IMG_CONNECTION_NOT_AVAILABLE,
+            POC(CE)
+         )
+      )
    );
 
    m_pFirehoseConnection->connect();
@@ -2304,5 +2699,25 @@ bool ImageManagementServiceHandler::isEdlModeAvailable()
 {
    return (QC::DeviceImageMode::DEVICE_IMAGE_MODE_NONE == m_deviceImageMode && m_pFirehoseProtocol != nullptr) ||
           (QC::DeviceImageMode::DEVICE_IMAGE_MODE_SAHARA_DOWNLOAD == m_deviceImageMode && m_pSaharaProtocol != nullptr);
+}
+
+// ----------------------------------------------------------------------------
+// deviceImageModeToString
+//
+/// Convert device image mode enum to human-readable string
+// ----------------------------------------------------------------------------
+std::string ImageManagementServiceHandler::deviceImageModeToString(QC::DeviceImageMode::type mode)
+{
+   switch(mode)
+   {
+      case QC::DeviceImageMode::DEVICE_IMAGE_MODE_NONE:
+         return "NONE";
+      case QC::DeviceImageMode::DEVICE_IMAGE_MODE_SAHARA_DOWNLOAD:
+         return "SAHARA_DOWNLOAD";
+      case QC::DeviceImageMode::DEVICE_IMAGE_MODE_SAHARA_CRASH:
+         return "SAHARA_CRASH";
+      default:
+         return std::to_string(static_cast<int32_t>(mode));
+   }
 }
 } // namespace Service

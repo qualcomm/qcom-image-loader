@@ -26,6 +26,7 @@ enum EventId
    FIREHOSE_GET_STORAGE_INFO,
    FIREHOSE_CREATE_DIGESTS,
    FIREHOSE_VIP_DOWNLOAD,
+   FLATTEN_META_PROGRESSION = 253,
    FIREHOSE_PROGRESSION = 254,
    FIREHOSE_INFORMATION = 255
 };
@@ -93,6 +94,14 @@ private:
     * @return Exit code
     */
    static int resetDevice(const CliOptions& options);
+
+   /**
+    * @brief Flatten meta-build
+    *
+    * @param options CLI options
+    * @return Exit code
+    */
+   static int flattenMeta(const CliOptions& options);
 
    /**
     * @brief Find target device by identifier

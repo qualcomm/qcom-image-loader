@@ -12,7 +12,7 @@ namespace QC {
 #elif defined TOOLS_TARGET_LINUX
 
 #endif
-class SoftwareDownload
+class QIL_API SoftwareDownload
 {
 public:
    SoftwareDownload(DeviceInfo deviceInfo);

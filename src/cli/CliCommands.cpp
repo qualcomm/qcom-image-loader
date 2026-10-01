@@ -95,6 +95,9 @@ int CliCommands::execute(const CliOptions& options)
          case CliOptions::CommandType::RESET_DEVICE:
             return resetDevice(options);
 
+         case CliOptions::CommandType::FLATTEN_META:
+            return flattenMeta(options);
+
          case QC::CLI::CliOptions::CommandType::DISPLAY_VERSION:
             return displayVersion();
 
@@ -1482,6 +1485,72 @@ int CliCommands::resetDevice(const CliOptions& options)
 
       CFLOG_ERROR(oss.str(), /*printMsgOnly=*/false);
       QC_TRY_CLEANUP(softwareDownload);
+      return 1;
+   }
+}
+
+int CliCommands::flattenMeta(const CliOptions& options)
+{
+   try
+   {
+      std::cout << "=== Qualcomm Image Loader - Flatten Meta-Build ===" << std::endl;
+      std::cout.flush();
+
+      // Set up callback to print messages to console
+      QC::DeviceDiscovery::setMessageCallback(
+         [](QC::MessageLevel::type level, const std::string& location, const std::string& title, const std::string& description) {
+            std::cout << description << std::endl;
+            std::cout.flush();
+         });
+
+      // Set up service event callback for progress updates
+      QC::DeviceDiscovery::setServiceEventCallback(
+         &ProgressWrapper::serviceEventCallback);
+
+      QC::FlattenMetaBuildOptions flattenOptions(
+         options.flattenMetaMemoryType,
+         options.flattenMetaFlavor);
+      if(!options.flattenMetaSkuConfig.empty())
+      {
+         flattenOptions.__set_skuConfig(options.flattenMetaSkuConfig);
+      }
+      if(!options.flattenMetaOutputPath.empty())
+      {
+         flattenOptions.__set_outputPath(options.flattenMetaOutputPath);
+      }
+
+      // Print selected options
+      std::cout << "Memory Type: " << (flattenOptions.memoryType.empty() ? "NA" : flattenOptions.memoryType) << std::endl;
+      std::cout << "Product Flavor: " << (flattenOptions.productFlavor.empty() ? "NA" : flattenOptions.productFlavor) << std::endl;
+      std::cout << "SKU Config: " << (flattenOptions.__isset.skuConfig ? flattenOptions.skuConfig : "NA") << std::endl;
+      std::cout << "Output Path: " << (flattenOptions.__isset.outputPath ? flattenOptions.outputPath : "default") << std::endl;
+
+      ProgressWrapper progressWrapper("Flatten Meta-Build");
+      QC::ErrorType result = progressWrapper.execute([&]() {
+         return QC::SoftwareDownloadUtility::flattenMeta(
+             options.flattenMetaBuildPath,
+             flattenOptions);
+      });
+
+      if(result.errorCode != QC::ErrorCode::DEVICE_NO_ERROR)
+      {
+         CFLOG_ERROR(result.errorString, false);
+         return 1;
+      }
+
+      CFLOG_INFO("Flatten operation completed successfully", false);
+      return 0;
+   }
+   catch(const std::exception& e)
+   {
+      std::ostringstream oss;
+      oss << "Error executing flatten-meta: " << e.what();
+      CFLOG_ERROR(oss.str(), false);
+      return 1;
+   }
+   catch(...)
+   {
+      CFLOG_ERROR("Error executing flatten-meta: Unknown error", false);
       return 1;
    }
 }

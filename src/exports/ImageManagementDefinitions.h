@@ -9,6 +9,15 @@
 #include <vector>
 
 namespace QC {
+
+// The exported option classes below hold std::string / std::vector / std::map
+// members. Exporting a class whose members are themselves non-exported STL
+// types trips C4251 on MSVC; the DLL and its consumers must be built with the
+// same toolset and CRT flavour, which is already required here.
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable : 4251)
+#endif
 #pragma pack(push, 1)
 
 struct DeviceImageMode
@@ -213,6 +222,21 @@ typedef struct _DataChunkOptions__isset
    bool imagePath : 1;
 } _DataChunkOptions__isset;
 
+typedef struct _FlattenMetaBuildOptions__isset
+{
+   _FlattenMetaBuildOptions__isset()
+   : memoryType(false)
+   , productFlavor(false)
+   , skuConfig(false)
+   , outputPath(false)
+   {
+   }
+   bool memoryType : 1;
+   bool productFlavor : 1;
+   bool skuConfig : 1;
+   bool outputPath : 1;
+} _FlattenMetaBuildOptions__isset;
+
 #pragma pack(pop)
 
 // Structs and classes with C++ objects (std::string, std::vector, std::map)
@@ -242,7 +266,26 @@ struct PartitionInfo
    int64_t attributes;
 };
 
-class PreservationOption
+class QIL_API FlattenMetaBuildOptions
+{
+public:
+   FlattenMetaBuildOptions(const std::string& memoryType, const std::string& productFlavor);
+   ~FlattenMetaBuildOptions();
+
+   _FlattenMetaBuildOptions__isset __isset;
+
+   std::string memoryType;
+   std::string productFlavor;
+   /*optional*/ std::string skuConfig;
+   /*optional*/ std::string outputPath;
+
+   void __set_memoryType(const std::string& val);
+   void __set_productFlavor(const std::string& val);
+   void __set_skuConfig(const std::string& val);
+   void __set_outputPath(const std::string& val);
+};
+
+class QIL_API PreservationOption
 {
 public:
    PreservationOption(PreservationMode::type preservationMode);
@@ -260,7 +303,7 @@ private:
    PreservationOption();
 };
 
-class DownloadBuildOptions
+class QIL_API DownloadBuildOptions
 {
 public:
    DownloadBuildOptions(MemoryType::type memoryType);
@@ -340,7 +383,7 @@ public:
    void __set_skipFlashIfDataMatched(const int32_t val);
 };
 
-class FlashInfo
+class QIL_API FlashInfo
 {
 public:
    FlashInfo();
@@ -371,7 +414,7 @@ public:
    void __set_specVersion(const std::string& val);
 };
 
-class DataChunkOptions
+class QIL_API DataChunkOptions
 {
 public:
    DataChunkOptions(int32_t partitionIndex, std::string startSector);
@@ -387,5 +430,9 @@ public:
    void __set_sectorCount(const std::string& val);
    void __set_imagePath(const std::string& val);
 };
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 }; // namespace QC

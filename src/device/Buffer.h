@@ -1,6 +1,7 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD 3-Clause Clear License
 #pragma once
+#include "device/ErrorMessage.h"
 #include "device/Exception.h"
 #include "device/Fwd.h"
 
@@ -328,14 +329,30 @@ inline _OutT buffer_cast(
 {
    if(nullptr == pBuffer)
    {
-      throw Device::Exception(Device::Exception::DEVICE_INVALID_PACKET, "pBuffer is NULL");
+      throw Device::Exception(
+         Device::Exception::DEVICE_INVALID_PACKET,
+         Device::Exception::getErrorJson(
+            ERR_NULL_BUFFER,
+            DESC_NULL_BUFFER,
+            SUGG_NULL_BUFFER,
+            POC(CE)
+         )
+      );
    }
 
    _OutT out = reinterpret_cast<_OutT>(reinterpret_cast<void*>(pBuffer));
 
    if(sizeof(*out) > length)
    {
-      throw Device::Exception(Device::Exception::DEVICE_INVALID_PACKET, "Insufficient bytes for cast to type");
+      throw Device::Exception(
+         Device::Exception::DEVICE_INVALID_PACKET,
+         Device::Exception::getErrorJson(
+            ERR_INSUFFICIENT_BYTES,
+            DESC_INSUFFICIENT_BYTES,
+            SUGG_INSUFFICIENT_BYTES,
+            POC(CE)
+         )
+      );
    }
 
    return out;
@@ -355,14 +372,30 @@ inline _OutT buffer_cast(
 {
    if(nullptr == pBuffer)
    {
-      throw Device::Exception(Device::Exception::DEVICE_INVALID_PACKET, "pBuffer is NULL");
+      throw Device::Exception(
+         Device::Exception::DEVICE_INVALID_PACKET,
+         Device::Exception::getErrorJson(
+            ERR_NULL_BUFFER,
+            DESC_NULL_BUFFER,
+            SUGG_NULL_BUFFER,
+            POC(CE)
+         )
+      );
    }
 
    _OutT out = reinterpret_cast<_OutT>(reinterpret_cast<const void*>(pBuffer));
 
    if(sizeof(*out) > length)
    {
-      throw Device::Exception(Device::Exception::DEVICE_INVALID_PACKET, "Insufficient bytes for cast to type");
+      throw Device::Exception(
+         Device::Exception::DEVICE_INVALID_PACKET,
+         Device::Exception::getErrorJson(
+            ERR_INSUFFICIENT_BYTES,
+            DESC_INSUFFICIENT_BYTES,
+            SUGG_INSUFFICIENT_BYTES,
+            POC(CE)
+         )
+      );
    }
 
    return out;
@@ -381,7 +414,15 @@ inline _OutT buffer_cast(const Device::SharedByteBufferPtr& pBuffer ///< SharedB
 {
    if(pBuffer == nullptr)
    {
-      throw Device::Exception(Device::Exception::DEVICE_INVALID_PACKET, "SharedByteBuffer is NULL");
+      throw Device::Exception(
+         Device::Exception::DEVICE_INVALID_PACKET,
+         Device::Exception::getErrorJson(
+            ERR_NULL_SHARED_BUFFER,
+            DESC_NULL_SHARED_BUFFER,
+            SUGG_NULL_SHARED_BUFFER,
+            POC(CE)
+         )
+      );
    }
 
    return buffer_cast<_OutT>(const_cast<uint8_t*>(pBuffer->begin()), pBuffer->size());

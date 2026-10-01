@@ -38,6 +38,7 @@ public:
       GET_FLASH_INFO,
       READ_IMAGES,
       RESET_DEVICE,
+      FLATTEN_META,
       DISPLAY_VERSION,
       HELP
    };
@@ -66,6 +67,13 @@ public:
    KL::LogOption logOptions = KL::LogOption::None;
    bool portTrace = false; // --verbose
    bool jsonOutput = false; // --json
+
+   // Flatten-meta options
+   std::string flattenMetaBuildPath;  // --meta-build
+   std::string flattenMetaMemoryType; // --memory-type
+   std::string flattenMetaFlavor;     // --flavor
+   std::string flattenMetaSkuConfig;  // --sku
+   std::string flattenMetaOutputPath; // --flatten-output
 
    CliOptions()
    : downloadBuildOptions(QC::MemoryType::MEMORY_TYPE_UFS)
@@ -249,6 +257,20 @@ public:
                throw std::invalid_argument("Missing required parameter: --out");
             }
 
+            break;
+         case CliOptions::CommandType::FLATTEN_META:
+            if(flattenMetaBuildPath.empty())
+            {
+               throw std::invalid_argument("Missing required parameter: --meta-build");
+            }
+            if(flattenMetaMemoryType.empty())
+            {
+               throw std::invalid_argument("Missing required parameter: --memory-type");
+            }
+            if(flattenMetaFlavor.empty())
+            {
+               throw std::invalid_argument("Missing required parameter: --flavor");
+            }
             break;
          case QC::CLI::CliOptions::CommandType::DISPLAY_VERSION:
             break;

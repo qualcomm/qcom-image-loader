@@ -2,9 +2,12 @@
 // SPDX-License-Identifier: BSD 3-Clause Clear License
 #pragma once
 // #include "platform/Assertions.h"
+#include "device/ErrorMessage.h"
+#include "device/Exception.h"
 #include "util/StringHelper.h"
 
 #include <algorithm>
+#include <cerrno>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -15,6 +18,7 @@
 #include <stdexcept>
 #include <string>
 #include <system_error>
+#include <cstring>
 #include <vector>
 #ifdef TOOLS_TARGET_WINDOWS
 #include <process.h>
@@ -46,12 +50,30 @@ inline std::filesystem::path createTempFileName(const std::filesystem::path& dir
 #ifdef TOOLS_TARGET_WINDOWS
    wchar_t buf[MAX_PATH] = {};
    if(0 == ::GetTempFileNameW(directory.wstring().c_str(), L"tmp", 0, buf))
-      throw std::runtime_error("GetTempFileNameW failed");
+   {
+      const auto errorCode = ::GetLastError();
+      TOOLS_THROW(ToolException(ToolException::getErrorJson(
+         ERR_TEMP_FILE_CREATION_FAILED,
+         DESC_TEMP_FILE_CREATION_FAILED(directory.string(), "GetTempFileNameW error " + std::to_string(errorCode)),
+         SUGG_TEMP_FILE_CREATION_FAILED,
+         POC(CE)
+      )));
+   }
    return std::filesystem::path(buf);
 #else
    std::string tmpl = (directory / "tmpXXXXXX").string();
    int fd = ::mkstemp(tmpl.data());
-   if(fd == -1) throw std::runtime_error("mkstemp failed");
+   if(fd == -1)
+   {
+      const auto errorCode = errno;
+      TOOLS_THROW(ToolException(ToolException::getErrorJson(
+         ERR_TEMP_FILE_CREATION_FAILED,
+         DESC_TEMP_FILE_CREATION_FAILED(directory.string(), "mkstemp error " + std::to_string(errorCode) + ": " +
+            std::strerror(errorCode)),
+         SUGG_TEMP_FILE_CREATION_FAILED,
+         POC(CE)
+      )));
+   }
    ::close(fd);
    return std::filesystem::path(tmpl);
 #endif
@@ -85,9 +107,15 @@ inline void createPath(const std::filesystem::path& directory, AccessPrivileges 
       std::filesystem::create_directories(directory, errorCode);
       if(errorCode)
       {
-         TOOLS_THROW(ToolException(
-            std::string("Create directory ") + directory.string() + std::string(" failed:") + errorCode.message()
-         ));
+         TOOLS_THROW(
+            ToolException(ToolException::getErrorJson(
+                  ERR_CREATE_DIRECTORY_FAILED,
+                  DESC_CREATE_DIRECTORY_FAILED(directory.string(), errorCode.message()),
+                  SUGG_CREATE_DIRECTORY_FAILED,
+                  POC(CE)
+               )
+            )
+         );
       }
    }
 
@@ -115,17 +143,26 @@ inline void createPath(const std::filesystem::path& directory, AccessPrivileges 
             &(securityAttributes.lpSecurityDescriptor),
             NULL
          ),
-         ToolException("Failed to Create Discretionary Access Control List")
+         ToolException(ToolException::getErrorJson(
+               ERR_CREATE_SECURITY_DESCRIPTOR_FAILED,
+               DESC_CREATE_SECURITY_DESCRIPTOR_FAILED,
+               SUGG_CREATE_SECURITY_DESCRIPTOR_FAILED,
+               POC(CE)
+            )
+            )
       );
 
       if(!::CreateDirectoryW(Util::toWString(directory.string()).c_str(), &securityAttributes))
       {
-         TOOLS_THROW(ToolException(
-            std::string("Failed to Create Discretionary "
-                        "Access "
-                        "Control List, Error Code: ") +
-            std::to_string(GetLastError())
-         ));
+         TOOLS_THROW(
+            ToolException(ToolException::getErrorJson(
+                  ERR_CREATE_DIRECTORY_WINDOWS_FAILED,
+                  DESC_CREATE_DIRECTORY_WINDOWS_FAILED(std::to_string(GetLastError())),
+                  SUGG_CREATE_DIRECTORY_WINDOWS_FAILED,
+                  POC(CE)
+               )
+            )
+         );
       }
 #elif defined TOOLS_TARGET_LINUX || defined TOOLS_TARGET_OSX
       // Clear user file-creation mode mask (umask) is used to determine the
@@ -134,10 +171,12 @@ inline void createPath(const std::filesystem::path& directory, AccessPrivileges 
       TOOLS_IGNORE_EXCEPTIONS(umask(0));
       TOOLS_ASSERT_OR_THROW(
          0 == mkdir(directory.string().c_str(), 0777),
-         ToolException(
-            std::string("Could not create "
-                        "directory ") +
-            Util::quote(directory.string())
+         ToolException(ToolException::getErrorJson(
+               ERR_CREATE_DIRECTORY_LINUX_FAILED,
+               DESC_CREATE_DIRECTORY_LINUX_FAILED(Util::quote(directory.string())),
+               SUGG_CREATE_DIRECTORY_LINUX_FAILED,
+               POC(CE)
+            )
          )
       );
 #else

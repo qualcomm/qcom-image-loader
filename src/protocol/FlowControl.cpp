@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: BSD 3-Clause Clear License
 #include "protocol/FlowControl.h"
 
+#include "device/ErrorMessage.h"
 #include "device/Exception.h"
 
 
@@ -73,7 +74,16 @@ void FlowControl::updateFlowControlCount(uint32_t count)
 {
    FlowControlLevel newLevel;
 
-   TOOLS_ASSERT_OR_THROW(m_bWatermarkSet, ToolException("Flow control watermarks not set: "));
+   TOOLS_ASSERT_OR_THROW(
+      m_bWatermarkSet,
+      ToolException(ToolException::getErrorJson(
+            ERR_FLOW_CONTROL_WATERMARKS_NOT_SET,
+            DESC_FLOW_CONTROL_WATERMARKS_NOT_SET,
+            SUGG_FLOW_CONTROL_WATERMARKS_NOT_SET,
+            POC(CE)
+         )
+      )
+   );
 
    if(!m_bWatermarkSet)
    {

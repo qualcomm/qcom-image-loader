@@ -4,6 +4,7 @@
 
 #include "communication/CommonIO.h"
 #include "communication/Usb.h"
+#include "device/ErrorMessage.h"
 #include "device/Exception.h"
 #include "protocol/Base.h"
 #include "protocol/Firehose.h"
@@ -2440,7 +2441,12 @@ ImplPtr Manager::getDeviceByHandle(DeviceHandle handle)
          m_disconnectedDevices.end() != it,
          Device::Exception(
             Device::Exception::DEVICE_INVALID_DEVICE_HANDLE,
-            "Could not find device handle: " + std::to_string(handle)
+            Device::Exception::getErrorJson(
+               ERR_DEVICE_HANDLE_NOT_FOUND,
+               DESC_DEVICE_HANDLE_NOT_FOUND(handle, "connected or disconnected"),
+               SUGG_DEVICE_HANDLE_NOT_FOUND,
+               POC(CLIENT)
+            )
          )
       );
    }
@@ -2510,7 +2516,12 @@ Protocol::BasePtr Manager::getProtocolByHandle(Protocol::Handle handle)
 
    TOOLS_THROW(Device::Exception(
       Device::Exception::DEVICE_INVALID_PROTOCOL_HANDLE,
-      "Could not find protocol handle: " + std::to_string(handle)
+      Device::Exception::getErrorJson(
+         ERR_PROTOCOL_HANDLE_NOT_FOUND,
+         DESC_PROTOCOL_HANDLE_NOT_FOUND(handle),
+         SUGG_PROTOCOL_HANDLE_NOT_FOUND,
+         POC(CLIENT)
+      )
    ));
 }
 
@@ -2606,9 +2617,12 @@ ConnectionPtr Manager::openConnection(
             // Both want read access, but one doesn't want to share
             TOOLS_THROW(Device::Exception(
                Device::Exception::DEVICE_CONNECTION_LOCKED,
-               "Read access locked for protocol by another client: " + std::to_string(it->second.m_clientId) +
-                  " ,protocol: " + pProtocol->getDescription()
-
+               Device::Exception::getErrorJson(
+                  ERR_READ_ACCESS_LOCKED,
+                  DESC_READ_ACCESS_LOCKED(clientId, it->second.m_clientId, pProtocol->getDescription()),
+                  SUGG_READ_ACCESS_LOCKED,
+                  POC(CLIENT)
+               )
             ));
          }
 
@@ -2621,9 +2635,12 @@ ConnectionPtr Manager::openConnection(
             // Both want write access, but one doesn't want to share
             TOOLS_THROW(Device::Exception(
                Device::Exception::DEVICE_CONNECTION_LOCKED,
-               "Write access locked for protocol by another client: " + std::to_string(it->second.m_clientId) +
-                  " ,protocol: " + pProtocol->getDescription()
-
+               Device::Exception::getErrorJson(
+                  ERR_WRITE_ACCESS_LOCKED,
+                  DESC_WRITE_ACCESS_LOCKED(clientId, it->second.m_clientId, pProtocol->getDescription()),
+                  SUGG_WRITE_ACCESS_LOCKED,
+                  POC(CLIENT)
+               )
             ));
          }
       }
@@ -2786,7 +2803,12 @@ std::filesystem::path Manager::getAccessiblePath(
       !filePath.is_relative(),
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PARAMETERS,
-         "Relative file path; all paths must be absolute: " + std::string(filePath.string().c_str())
+         Device::Exception::getErrorJson(
+            ERR_RELATIVE_FILE_PATH,
+            DESC_RELATIVE_FILE_PATH(filePath.string()),
+            SUGG_RELATIVE_FILE_PATH,
+            POC(CLIENT)
+         )
       )
    );
 
@@ -2843,7 +2865,16 @@ std::filesystem::path Manager::getAccessiblePath(
             if(it == end)
             {
                FLOG_INFO(("Unable to iterate the directory: " + filePath.string()).c_str());
-               throw("Unable to iterate the directory");
+               const std::string detail = ec ? ec.message() : "directory is empty or inaccessible";
+               TOOLS_THROW(Device::Exception(
+                  Device::Exception::DEVICE_PERMISSIONS_ERROR,
+                  Device::Exception::getErrorJson(
+                     ERR_DIRECTORY_ITERATION_FAILED,
+                     DESC_DIRECTORY_ITERATION_FAILED(filePath.string(), detail),
+                     SUGG_DIRECTORY_ITERATION_FAILED,
+                     POC(CE)
+                  )
+               ));
             }
 
             // It's recognized as a directory and can be iterated
@@ -2901,6 +2932,7 @@ void Manager::saveFile(
    // This may need to be updated for the other platforms similar to Windows
    // depending on user privileges
    bool bSucceed = true;
+   std::string innerErrorMessage;
    try
    {
       Util::createPath(destinationPath.parent_path());
@@ -2941,6 +2973,7 @@ void Manager::saveFile(
             "Exception when copying/deleteFile. Exception= " + std::string(innerException.what()) + " " +
             innerException.where()
          );
+         innerErrorMessage = innerException.what();
          bSucceed = false;
       });
    });
@@ -2950,7 +2983,12 @@ void Manager::saveFile(
    {
       TOOLS_THROW(Device::Exception(
          Device::Exception::DEVICE_PERMISSIONS_ERROR,
-         "Unable to save file: " + std::string(destinationPath.string().c_str())
+         Device::Exception::getErrorJson(
+            ERR_FILE_SAVE_FAILED,
+            DESC_FILE_SAVE_FAILED(destinationPath.string(), innerErrorMessage),
+            SUGG_FILE_SAVE_FAILED,
+            POC(CE)
+         )
       ));
    }
 }
@@ -3030,7 +3068,15 @@ void Manager::mhiForceEdl(int32_t instance, const std::string& programmerPath)
 {
    TOOLS_UNUSED_PARAMETER(instance);
    TOOLS_UNUSED_PARAMETER(programmerPath);
-   TOOLS_THROW(ToolException("MHI EDL switch feature not supported"));
+   TOOLS_THROW(
+      ToolException(ToolException::getErrorJson(
+         ERR_OPERATION_NOT_SUPPORTED,
+            DESC_MHI_EDL_NOT_SUPPORTED,
+            SUGG_MHI_EDL_NOT_SUPPORTED,
+            POC(CE)
+         )
+      )
+   );
 }
 
 // ----------------------------------------------------------------------------
