@@ -1,5 +1,24 @@
 # QIL Release Notes
 
+## v1.4.1
+
+### New Features
+
+- **Meta-build flattening** (`--flatten-meta`): New offline command that flattens a meta-build into a flat-build output directory containing partition images, `rawprogram.xml`/`patch.xml` configuration files, the Firehose device programmer, and metadata. The output can be fed directly to `--flash-build`. Requires `--meta-build`, `--memory-type`, and `--flavor`; optional `--sku`, `--flatten-output`. Local and UNC network paths are both supported
+- **Meta-build flattening SDK API**: Exposed the operation to library consumers as `SoftwareDownloadUtility::flattenMeta()` with a new `FlattenMetaBuildOptions` class (`memoryType`, `productFlavor`, optional `skuConfig` and `outputPath`) that tracks which optional fields were explicitly set
+- **Structured RCA error output**: Error reporting across the SDK and CLI now emits a consistent 4-field root-cause-analysis JSON shape (`issue`, `description`, `resolution`, `poc`) instead of ad-hoc message strings. Coverage was extended across the Sahara, Firehose, and QMI protocol layers, `Manager`, `Connection`, `ImageTransfer`, `Buffer`, `FunctionTracker`, and the image-management and utility service handlers. Descriptions are enriched with real device context (identifier, partition, protocol description), and all values are JSON-escaped
+
+### Build & Packaging
+
+- **SoftwareDownloadLib now ships as a shared library**: The SDK is built as `SoftwareDownloadLib.dll` (Windows) / `libSoftwareDownloadLib.so` (Linux) instead of a static archive, with an explicit export surface. Symbol visibility defaults to hidden and the exported SDK classes (`SoftwareDownload`, `SoftwareDownloadUtility`, `DeviceDiscovery`, `DownloadBuildOptions`, `FlattenMetaBuildOptions`, `PreservationOption`, `FlashInfo`, `DataChunkOptions`) are annotated with a new `QIL_API` macro
+  - Shared is the default: consumers need no preprocessor definitions to import. Define `QIL_STATIC` when building or consuming QIL as a static library
+  - The library now resolves its own dependency on `QcDevice` rather than relying on whichever target linked last, and links the Windows system libraries it calls directly
+  - On Windows the DLL is copied next to `qil.exe` as a post-build step; on Linux the `qil` executable carries an `$ORIGIN/../lib` RPATH
+
+### Documentation
+
+- Documented `--flatten-meta` in the User Guide (prerequisites, syntax, parameters, examples, output layout, and common errors) and in the CLI command list
+
 ## v1.3.1
 
 ### New Features

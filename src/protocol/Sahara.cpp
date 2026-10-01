@@ -4,6 +4,7 @@
 
 #include "communication/CommonIO.h"
 #include "device/Buffer.h"
+#include "device/ErrorMessage.h"
 #include "device/Exception.h"
 #include "device/Fwd.h"
 #include "device/Impl.h"
@@ -435,15 +436,31 @@ Device::DeviceMode Sahara::toDeviceMode(Mode mode)
 void Sahara::connect(const int32_t clientId)
 {
    (void)clientId; // Suppress unused parameter warning
-   TOOLS_ASSERT_OR_THROW(STATE_DISCONNECTED != getState(), ToolException("Sahara Protocol Unavailable"));
+   TOOLS_ASSERT_OR_THROW(
+      STATE_DISCONNECTED != getState(),
+      ToolException(ToolException::getErrorJson(
+            ERR_SAHARA_PROTOCOL_UNAVAILABLE,
+            DESC_SAHARA_PROTOCOL_UNAVAILABLE(getDescription()),
+            SUGG_SAHARA_PROTOCOL_UNAVAILABLE,
+            POC(CE)
+         )
+      )
+   );
 
    std::lock_guard<std::recursive_mutex> lock(m_connectMutex);
 
    // Sahara is very state dependent; only allow one client connection at a time
    TOOLS_ASSERT_OR_THROW(
       !m_bConnected,
-      Device::
-         Exception(Device::Exception::DEVICE_CONNECTION_LOCKED, "Sahara protocol already opened: " + getDescription())
+      Device::Exception(
+         Device::Exception::DEVICE_CONNECTION_LOCKED,
+         Device::Exception::getErrorJson(
+            ERR_PROTOCOL_ALREADY_OPENED,
+            DESC_PROTOCOL_ALREADY_OPENED(std::string("Sahara"), getDescription()),
+            SUGG_PROTOCOL_ALREADY_OPENED,
+            POC(CE)
+         )
+      )
    );
 
    if(!m_bConnected)

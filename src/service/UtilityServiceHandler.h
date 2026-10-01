@@ -32,6 +32,10 @@ public:
       const QC::DownloadBuildOptions& options,
       const std::string& outputPath
    );
+   QC::ErrorCode::type flattenMeta(
+      const std::string& buildPath,
+      const QC::FlattenMetaBuildOptions& options
+   );
 
    /// Helper to get Util::CheckedPointer from this object
    inline Service::ServiceHandlerBasePtr getServiceHandlerPtr()

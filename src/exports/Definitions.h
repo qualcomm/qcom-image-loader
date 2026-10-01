@@ -5,6 +5,28 @@
 #include <list>
 #include <string>
 
+// QIL_API controls the visibility of the exported SDK classes.
+//
+// QIL_STATIC         - define this when building or consuming QIL as a static
+//                      library; the macro then expands to nothing. Shared is the
+//                      default, so nothing needs to be defined for the usual
+//                      SoftwareDownloadLib.dll / libSoftwareDownloadLib.so case.
+// QIL_DLL_EXPORTS    - defined only while building the shared library itself, so
+//                      the library exports and consumers import.
+#ifndef QIL_STATIC
+#  ifdef _WIN32
+#    ifdef QIL_DLL_EXPORTS
+#      define QIL_API __declspec(dllexport)
+#    else
+#      define QIL_API __declspec(dllimport)
+#    endif
+#  else
+#    define QIL_API __attribute__((visibility("default")))
+#  endif
+#else
+#  define QIL_API
+#endif
+
 namespace QC {
 #pragma pack(push, 1)
 

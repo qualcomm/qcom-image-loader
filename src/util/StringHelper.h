@@ -6,8 +6,10 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <climits>
 #include <cstring>
+#include <iomanip>
 #include <locale>
 #include <sstream>
 #include <string>
@@ -28,6 +30,25 @@
 
 namespace Util {
 
+// Helper function to check if a string is empty or contains only whitespace
+inline bool isNullOrWhiteSpace(const std::string& str)
+{
+   if(str.empty())
+   {
+      return true;
+   }
+
+   for(char c : str)
+   {
+      if(!std::isspace(static_cast<unsigned char>(c)))
+      {
+         return false;
+      }
+   }
+
+   return true;
+}
+
 // Helper function to check if a string contains only digits
 inline bool isNumber(const std::string& str)
 {
@@ -42,6 +63,42 @@ inline std::string& toUpper(std::string& str)
       return static_cast<char>(std::toupper(c));
    });
    return str;
+}
+
+// Helper function to convert string to uppercase (copy)
+inline std::string toUpperCopy(const std::string& str)
+{
+   std::string result = str;
+   std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) {
+      return static_cast<char>(std::toupper(c));
+   });
+   return result;
+}
+
+// Helper function to convert string to title case (capitalize first letter of each word)
+inline std::string toTitleCase(const std::string& str)
+{
+   std::string result = str;
+   bool capitalizeNext = true;
+
+   for(size_t i = 0; i < result.length(); ++i)
+   {
+      if(std::isspace(result[i]))
+      {
+         capitalizeNext = true;
+      }
+      else if(capitalizeNext)
+      {
+         result[i] = static_cast<char>(std::toupper(result[i]));
+         capitalizeNext = false;
+      }
+      else
+      {
+         result[i] = static_cast<char>(std::tolower(result[i]));
+      }
+   }
+
+   return result;
 }
 
 // Helper function to convert string to lowercase (copy)
@@ -180,6 +237,23 @@ inline std::string fromWString(const std::wstring& wstr)
    // For non-Windows platforms, use a simple conversion (assuming ASCII/UTF-8)
    return std::string(wstr.begin(), wstr.end());
 #endif
+}
+
+// Helper function to format duration in milliseconds as human-readable string
+inline std::string formatDuration(const std::chrono::milliseconds& duration)
+{
+   double seconds = duration.count() / 1000.0;
+
+   std::ostringstream oss;
+   oss << std::fixed << std::setprecision(1) << seconds << " seconds";
+
+   return oss.str();
+}
+
+// Helper function to convert number to string
+inline std::string numberToString(long long number)
+{
+   return std::to_string(number);
 }
 
 } // namespace Util

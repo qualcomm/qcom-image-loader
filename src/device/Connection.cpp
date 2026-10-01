@@ -4,6 +4,7 @@
 
 #include "device/Buffer.h"
 #include "device/DataPacket.h"
+#include "device/ErrorMessage.h"
 #include "device/Exception.h"
 #include "device/Impl.h"
 #include "device/Manager.h"
@@ -215,7 +216,12 @@ DataPacketPtr Connection::sendSyncWithKey(
       pBuffer != nullptr,
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PACKET,
-         "Attempting to send NULL packet: " + getProtocol()->getDescription()
+         Device::Exception::getErrorJson(
+            ERR_NULL_PACKET_SEND,
+            DESC_NULL_PACKET_SEND(getProtocol()->getDescription()),
+            SUGG_NULL_PACKET_SEND,
+            POC(CLIENT)
+         )
       )
    );
 
@@ -223,7 +229,12 @@ DataPacketPtr Connection::sendSyncWithKey(
       hasWriteAccess(),
       Device::Exception(
          Device::Exception::DEVICE_PERMISSIONS_ERROR,
-         "Cannot sendSync; no write access on protocol " + getProtocol()->getDescription()
+         Device::Exception::getErrorJson(
+            ERR_NO_WRITE_ACCESS_SEND,
+            DESC_NO_WRITE_ACCESS_SEND(std::string("sendSync"), getProtocol()->getDescription()),
+            SUGG_NO_WRITE_ACCESS_SEND,
+            POC(CLIENT)
+         )
       )
    );
 
@@ -273,7 +284,12 @@ Protocol::Base::TransactionId Connection::sendAsyncWithKey(
       pBuffer != nullptr,
       Device::Exception(
          Device::Exception::DEVICE_INVALID_PACKET,
-         "Attempting to send NULL packet: " + getProtocol()->getDescription()
+         Device::Exception::getErrorJson(
+            ERR_NULL_PACKET_SEND,
+            DESC_NULL_PACKET_SEND(getProtocol()->getDescription()),
+            SUGG_NULL_PACKET_SEND,
+            POC(CLIENT)
+         )
       )
    );
 
@@ -281,7 +297,12 @@ Protocol::Base::TransactionId Connection::sendAsyncWithKey(
       hasWriteAccess(),
       Device::Exception(
          Device::Exception::DEVICE_PERMISSIONS_ERROR,
-         "Cannot sendAsync; no write access on protocol " + getProtocol()->getDescription()
+         Device::Exception::getErrorJson(
+            ERR_NO_WRITE_ACCESS_SEND,
+            DESC_NO_WRITE_ACCESS_SEND(std::string("sendAsync"), getProtocol()->getDescription()),
+            SUGG_NO_WRITE_ACCESS_SEND,
+            POC(CLIENT)
+         )
       )
    );
 
@@ -344,10 +365,12 @@ DataPacketPtr Connection::getAsyncResponse(
          m_asyncRequests.end() != it,
          Device::Exception(
             Device::Exception::DEVICE_INVALID_PARAMETERS,
-            "getAsyncResponse Error: Transaction id  = " + std::to_string(transactionId) +
-               " doesn't match any corresponding async request "
-               "txid. " +
-               getProtocol()->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_TRANSACTION_ID_MISMATCH,
+               DESC_TRANSACTION_ID_MISMATCH(transactionId, getProtocol()->getDescription()),
+               SUGG_TRANSACTION_ID_MISMATCH,
+               POC(CLIENT)
+            )
          )
       );
 
@@ -357,9 +380,12 @@ DataPacketPtr Connection::getAsyncResponse(
       {
          TOOLS_THROW(Device::Exception(
             Device::Exception::DEVICE_RESPONSE_ERROR,
-            "getAsyncResponse Error: No async response "
-            "received for Transaction id  = " +
-               std::to_string(transactionId) + ", " + getProtocol()->getDescription()
+            Device::Exception::getErrorJson(
+               ERR_NO_ASYNC_RESPONSE,
+               DESC_NO_ASYNC_RESPONSE(transactionId, getProtocol()->getDescription()),
+               SUGG_NO_ASYNC_RESPONSE,
+               POC(CLIENT)
+            )
          ));
       }
    }
@@ -409,7 +435,12 @@ bool Connection::cancelTx(Protocol::Base::TransactionId transactionId)
       hasWriteAccess(),
       Device::Exception(
          Device::Exception::DEVICE_PERMISSIONS_ERROR,
-         "Cannot cancelTx; no write access on protocol " + getProtocol()->getDescription()
+         Device::Exception::getErrorJson(
+            ERR_NO_WRITE_ACCESS_CANCEL,
+            DESC_NO_WRITE_ACCESS_CANCEL(getProtocol()->getDescription()),
+            SUGG_NO_WRITE_ACCESS_CANCEL,
+            POC(CLIENT)
+         )
       )
    );
 

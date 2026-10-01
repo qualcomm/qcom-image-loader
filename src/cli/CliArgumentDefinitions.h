@@ -37,6 +37,7 @@ enum class ArgumentCategory
    UFS_PROVISIONING,
    DIGEST_CREATION,
    FLASH_OPERATIONS,
+   FLATTEN_META,
    LOGGING
 };
 

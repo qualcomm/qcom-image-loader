@@ -8,9 +8,16 @@ else()
     set(PLATFORM_NAME ${CMAKE_SYSTEM_PROCESSOR})
 endif()
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/Build/${CMAKE_SYSTEM_NAME}/${PLATFORM_NAME}/${CMAKE_BUILD_TYPE}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/Build/${CMAKE_SYSTEM_NAME}/${PLATFORM_NAME}/${CMAKE_BUILD_TYPE}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/Build/${CMAKE_SYSTEM_NAME}/${PLATFORM_NAME}/${CMAKE_BUILD_TYPE}/bin)
+set(QIL_OUTPUT_ROOT ${CMAKE_SOURCE_DIR}/build/${CMAKE_SYSTEM_NAME}/${PLATFORM_NAME}/${CMAKE_BUILD_TYPE})
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${QIL_OUTPUT_ROOT}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${QIL_OUTPUT_ROOT}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QIL_OUTPUT_ROOT}/bin)
+
+# The shared build of the SDK is kept out of lib/ so the two flavours of
+# SoftwareDownloadLib never collide - on Windows both a static archive and a
+# DLL import library are named SoftwareDownloadLib.lib.
+set(QIL_DLL_OUTPUT_DIRECTORY ${QIL_OUTPUT_ROOT}/dll)
 
 # ----------------------------------------------------------------------
 # Global language settings – C++17 required
@@ -166,7 +173,7 @@ file(GLOB_RECURSE SOFTWAREDOWNLOAD_SOURCES "src/*.cpp" "src/*.h")
 # Filter out CLI and QDS sources – we only want the SDK code
 set(TEMP_SOURCES)
 foreach(src ${SOFTWAREDOWNLOAD_SOURCES})
-    if (NOT src MATCHES "cli|qds")
+    if (NOT src MATCHES "/cli/|/qds/")
         list(APPEND TEMP_SOURCES "${src}")
     endif()
 endforeach()
@@ -180,73 +187,141 @@ file(GLOB_RECURSE CLI_SOURCES "src/cli/*.cpp")
 add_subdirectory(${EXTERNAL_QDS_DIR} ${EXTERNAL_QDS_DIR})
 
 # ----------------------------------------------------------------------
-# SDK static library
+# SDK library - built twice from the same sources:
+#   SoftwareDownloadLib       static archive  -> .../lib  (linked into qil)
+#   SoftwareDownloadLibShared shared library -> .../dll  (for SDK consumers)
 # ----------------------------------------------------------------------
-add_library(SoftwareDownloadLib STATIC ${SOFTWAREDOWNLOAD_SOURCES})
 
-target_include_directories(SoftwareDownloadLib PUBLIC
-    ${QFS_CORE_INCLUDES}
-    ${QDS_INCLUDES}
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/external/kLogger/include"
-)
-
-set_target_properties(SoftwareDownloadLib PROPERTIES
-    POSITION_INDEPENDENT_CODE ON
-    LINKER_LANGUAGE CXX
-    OUTPUT_NAME "SoftwareDownloadLib"
-    CXX_STANDARD 17
-    CXX_STANDARD_REQUIRED ON
-)
-
-# Apply full include directories to SoftwareDownload library
-target_include_directories(SoftwareDownloadLib PRIVATE ${SOFTWAREDOWNLOAD_LIB_INCLUDES})
-
-# Platform-specific preprocessor definitions
-if(WIN32)
-	# Match Visual Studio project preprocessor definitions
-	target_compile_definitions(SoftwareDownloadLib PRIVATE
-		_HAS_STD_BYTE=0
-		WIN32_LEAN_AND_MEAN
-		NOMINMAX
-		NOGDI
-		LIBXML_STATIC
-		$<$<CONFIG:Debug>:_DEBUG>
-		$<$<CONFIG:Release>:NDEBUG>
-		_CONSOLE
+# Everything the two flavours have in common. Only the export macro, the
+# visibility preset and the output directory differ between them.
+function(qil_configure_sdk_target target)
+	# Add function and util sources
+	target_sources(${target} PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/src/util/ProcessUtils.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/function/MetaCli.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/util/FileSystem.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/function/FlattenMetaBuild.cpp
+		# src/function/FlattenMetaBuild.cpp includes cli/Spinner.h and uses it, so the
+		# implementation has to be part of this library even though cli/ is otherwise
+		# excluded from the SDK glob.
+		${CMAKE_CURRENT_SOURCE_DIR}/src/cli/Spinner.cpp
 	)
-endif()
 
-# Platform-specific library configuration
-if(UNIX)
-	# AddressSanitizer flags for Debug builds
-	if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-		target_compile_options(SoftwareDownloadLib PRIVATE -fPIC -fpermissive -fsanitize=address -fno-omit-frame-pointer -g)
-		target_link_options(SoftwareDownloadLib PRIVATE -fsanitize=address)
-	else()
-		target_compile_options(SoftwareDownloadLib PRIVATE -fPIC -fpermissive)
+	target_include_directories(${target} PUBLIC
+		${QFS_CORE_INCLUDES}
+		${QDS_INCLUDES}
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/external/kLogger/include"
+	)
+
+	set_target_properties(${target} PROPERTIES
+		POSITION_INDEPENDENT_CODE ON
+		LINKER_LANGUAGE CXX
+		OUTPUT_NAME "SoftwareDownloadLib"
+		CXX_STANDARD 17
+		CXX_STANDARD_REQUIRED ON
+	)
+
+	# Apply full include directories
+	target_include_directories(${target} PRIVATE ${SOFTWAREDOWNLOAD_LIB_INCLUDES})
+
+	# Platform-specific preprocessor definitions
+	if(WIN32)
+		# Match Visual Studio project preprocessor definitions
+		target_compile_definitions(${target} PRIVATE
+			_HAS_STD_BYTE=0
+			WIN32_LEAN_AND_MEAN
+			NOMINMAX
+			NOGDI
+			LIBXML_STATIC
+			$<$<CONFIG:Debug>:_DEBUG>
+			$<$<CONFIG:Release>:NDEBUG>
+			_CONSOLE
+		)
 	endif()
-	target_compile_definitions(SoftwareDownloadLib PRIVATE TOOLS_TARGET_LINUX)
-	target_link_libraries(SoftwareDownloadLib PUBLIC
-		${LIBUSB_LIBRARIES}
-		${UDEV_LIBRARY}
-		${UUID_LIBRARY}
-		${LIBXML2_LIBRARIES}
-		pthread
-		uuid
-		udev		
-		kLogger
-	)
-	target_include_directories(SoftwareDownloadLib PRIVATE ${LIBUSB_INCLUDE_DIRS})
-elseif(WIN32)
-	target_link_libraries(SoftwareDownloadLib PUBLIC
-		${LIBXML2_LIBRARIES}
-		ws2_32
-		"${LIBXML2_LIB_DIR}/libz-static.lib"
-		"${LIBXML2_LIB_DIR}/liblzma-static.lib"
-		kLogger
-	)
-    # target_link_options(SoftwareDownloadLib PRIVATE "/LTCG")
-endif()
+
+	# Platform-specific library configuration
+	if(UNIX)
+		# AddressSanitizer flags for Debug builds
+		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+			target_compile_options(${target} PRIVATE -fPIC -fpermissive -fsanitize=address -fno-omit-frame-pointer -g)
+			target_link_options(${target} PRIVATE -fsanitize=address)
+		else()
+			target_compile_options(${target} PRIVATE -fPIC -fpermissive)
+		endif()
+		target_compile_definitions(${target} PRIVATE TOOLS_TARGET_LINUX)
+		target_link_libraries(${target} PUBLIC
+			${LIBUSB_LIBRARIES}
+			${UDEV_LIBRARY}
+			${UUID_LIBRARY}
+			${LIBXML2_LIBRARIES}
+			pthread
+			uuid
+			udev
+			kLogger
+		)
+		# QcDevice provides the device-access layer this library calls directly. As a
+		# static library its externals were resolved by whoever linked last; a shared
+		# library has to resolve them itself.
+		target_link_libraries(${target} PRIVATE QcDevice)
+		target_include_directories(${target} PRIVATE ${LIBUSB_INCLUDE_DIRS})
+	elseif(WIN32)
+		target_link_libraries(${target} PUBLIC
+			${LIBXML2_LIBRARIES}
+			ws2_32
+			kernel32  # Required for Windows API calls (GetFileAttributesA, GetConsoleScreenBufferInfo, CreateProcessW, etc.)
+			"${LIBXML2_LIB_DIR}/libz-static.lib"
+			"${LIBXML2_LIB_DIR}/liblzma-static.lib"
+			kLogger
+		)
+		# QcDevice provides the device-access layer this library calls directly. As a
+		# static library its externals were resolved by whoever linked last; a shared
+		# library has to resolve them itself.
+		target_link_libraries(${target} PRIVATE QcDevice)
+		target_link_libraries(${target} PRIVATE
+			Wtsapi32 Userenv Rpcrt4 Setupapi Shlwapi
+		)
+		# target_link_options(${target} PRIVATE "/LTCG")
+	endif()
+endfunction()
+
+# --- Static flavour: what the qil executable links against -------------
+add_library(SoftwareDownloadLib STATIC ${SOFTWAREDOWNLOAD_SOURCES})
+qil_configure_sdk_target(SoftwareDownloadLib)
+
+# QIL_STATIC is PUBLIC: it makes QIL_API expand to nothing, and anything that
+# links this archive (qil, and external consumers of the static library) has to
+# see the same expansion or the linker looks for imports that do not exist.
+target_compile_definitions(SoftwareDownloadLib PUBLIC QIL_STATIC)
+
+# Default visibility on the static flavour. With QIL_API empty, hidden
+# visibility would strip the SDK symbols out of any shared object a consumer
+# links this archive into.
+set_target_properties(SoftwareDownloadLib PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}"
+)
+
+# --- Shared flavour: for SDK consumers, emitted into dll/ --------------
+add_library(SoftwareDownloadLibShared SHARED ${SOFTWAREDOWNLOAD_SOURCES})
+qil_configure_sdk_target(SoftwareDownloadLibShared)
+
+# Shared is the default for QIL_API, so consumers need nothing defined to get
+# __declspec(dllimport) / default visibility. QIL_DLL_EXPORTS is PRIVATE so
+# only this library exports rather than importing from itself.
+target_compile_definitions(SoftwareDownloadLibShared
+    PRIVATE QIL_DLL_EXPORTS
+)
+
+set_target_properties(SoftwareDownloadLibShared PROPERTIES
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN ON
+    # The DLL/so, and on Windows its import library, go to dll/ rather than
+    # lib/ - the import library would otherwise overwrite the static archive.
+    # Multi-config generators append the config below this, matching how lib/
+    # and bin/ already behave, so Debug and Release do not collide.
+    RUNTIME_OUTPUT_DIRECTORY "${QIL_DLL_OUTPUT_DIRECTORY}"
+    LIBRARY_OUTPUT_DIRECTORY "${QIL_DLL_OUTPUT_DIRECTORY}"
+    ARCHIVE_OUTPUT_DIRECTORY "${QIL_DLL_OUTPUT_DIRECTORY}"
+)
 
 # ==============================================================================
 # CLI EXECUTABLE TARGET
@@ -265,6 +340,8 @@ set_target_properties(qil PROPERTIES
 
 target_include_directories(qil PRIVATE ${CLI_INCLUDES})
 
+# qil links the static flavour of the SDK, so there is no runtime library to
+# place next to the executable and no RPATH to set.
 add_dependencies(qil SoftwareDownloadLib)
 
 # Platform-specific preprocessor definitions for CLI
@@ -286,11 +363,17 @@ endif()
 # ==============================================================================
 
 if(WIN32)
+    # The CRT import library must match the /MD (Release) vs /MDd (Debug) flags
+    # set above. Hardcoding release 'msvcrt' breaks Debug links, because the
+    # debug allocators (_malloc_dbg, _calloc_dbg, _free_dbg, _CrtDbgReport)
+    # are only exported by msvcrtd.
     target_link_libraries(qil PUBLIC
         SoftwareDownloadLib
         QcDevice
         ${LIBXML2_LIBRARIES}
-        Wtsapi32 Userenv Rpcrt4 Setupapi Shlwapi msvcrt ws2_32
+        Wtsapi32 Userenv Rpcrt4 Setupapi Shlwapi
+        $<IF:$<CONFIG:Debug>,msvcrtd,msvcrt>
+        ws2_32
         kLogger)
     # Apply WHOLEARCHIVE flag using target_link_options
     target_link_options(qil PRIVATE

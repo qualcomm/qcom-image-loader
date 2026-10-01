@@ -278,6 +278,7 @@ void CliArgumentDefinitions::initialize()
       "Specify type of flash memory on the target device.",
       [](QC::CLI::CliOptions& options, const std::string& value) {
          options.downloadBuildOptions.__set_memoryType(CliParserUtil::parseMemoryType(value));
+         options.flattenMetaMemoryType = value;
       }
    };
 
@@ -856,6 +857,68 @@ void CliArgumentDefinitions::initialize()
    // require build to be processed first. Misordering these dependencies can
    // lead to incorrect behavior or parsing errors. Sort commands alphabetically
    // in word
+
+   // FLATTEN_META OPTIONS (must be defined before commandDefinitions)
+   argumentDefinitions["meta-build"] = {
+      "meta-build",
+      "Path to the meta-build contents.xml file",
+      ArgumentType::PATH,
+      ArgumentCategory::FLATTEN_META,
+      "",
+      {},
+      true,
+      "qil --flatten-meta --meta-build=/path/to/contents.xml --memory-type=UFS --flavor=asic",
+      "Required for flatten-meta operation",
+      [](QC::CLI::CliOptions& options, const std::string& value) {
+         options.flattenMetaBuildPath = value;
+      }
+   };
+
+   argumentDefinitions["flavor"] = {
+      "flavor",
+      "Build flavor for flattening",
+      ArgumentType::STRING,
+      ArgumentCategory::FLATTEN_META,
+      "",
+      {},
+      true,
+      "qil --flatten-meta --meta-build=/path/to/contents.xml --memory-type=UFS --flavor=asic",
+      "e.g., asic, fpga",
+      [](QC::CLI::CliOptions& options, const std::string& value) {
+         options.flattenMetaFlavor = value;
+      }
+   };
+
+   argumentDefinitions["sku"] = {
+      "sku",
+      "SKU configuration for flattening",
+      ArgumentType::STRING,
+      ArgumentCategory::FLATTEN_META,
+      "",
+      {},
+      false,
+      "qil --flatten-meta --meta-build=\"C:\\builds\\meta-build\\contents.xml\" --memory-type=UFS --flavor=asic --sku=\"sku_variant_1\"",
+      "Optional SKU configuration",
+      [](QC::CLI::CliOptions& options, const std::string& value) {
+         options.flattenMetaSkuConfig = value;
+      }
+   };
+
+   argumentDefinitions["flatten-output"] = {
+      "flatten-output",
+      "Output directory for flattened build",
+      ArgumentType::PATH,
+      ArgumentCategory::FLATTEN_META,
+      "",
+      {},
+      false,
+      "qil --flatten-meta --meta-build=/path/to/contents.xml --memory-type=UFS --flavor=asic --flatten-output=/path/to/output",
+      "If not specified, uses current working directory",
+      [](QC::CLI::CliOptions& options, const std::string& value) {
+         options.flattenMetaOutputPath = value;
+      }
+   };
+
    commandDefinitions = {
       {"create-flash-build-vip-digest",
        "Create flash build VIP digest. Offline process, no device needed",
@@ -1106,6 +1169,16 @@ void CliArgumentDefinitions::initialize()
        "--device-programmer=/path/to/programmer "
        "--ufs-provision-xml=/path/to/xml",
        CliOptions::CommandType::UFS_PROVISION,
+       nullptr},
+      {"flatten-meta",
+       "Flatten a meta-build into a single image",
+       {argumentDefinitions["meta-build"],
+        argumentDefinitions["memory-type"],
+        argumentDefinitions["flavor"]},
+       {argumentDefinitions["sku"],
+        argumentDefinitions["flatten-output"]},
+       "qil --flatten-meta --meta-build=/path/to/contents.xml --memory-type=UFS --flavor=asic",
+       CliOptions::CommandType::FLATTEN_META,
        nullptr},
       {"version",
        "Display qil Application version",

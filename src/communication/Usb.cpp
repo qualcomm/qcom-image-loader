@@ -3,6 +3,7 @@
 #include "communication/Usb.h"
 
 #include "device/Buffer.h"
+#include "device/ErrorMessage.h"
 #include "device/Exception.h"
 #include "device/Manager.h"
 #include "qdpublic.h"
@@ -314,7 +315,15 @@ void Usb::open()
 
    TOOLS_ASSERT(INVALID_HANDLE == m_handle);
    ::Device::Manager::getInstance()->reportCriticalEvent(::Device::EVENT_COMMUNICATION_USB_OPEN_FAILURE, m_identifier);
-   TOOLS_THROW(ToolException("Could not open connection: " + m_identifier));
+   TOOLS_THROW(
+      ToolException(ToolException::getErrorJson(
+            ERR_USB_CONNECTION_OPEN_FAILURE,
+            DESC_USB_CONNECTION_OPEN_FAILURE(m_identifier),
+            SUGG_USB_CONNECTION_OPEN_FAILURE,
+            POC(TARGET)
+         )
+      )
+   );
 #endif
 #endif
 }
