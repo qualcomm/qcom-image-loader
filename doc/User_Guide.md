@@ -160,6 +160,8 @@ The following table lists all available arguments, their expected values, and de
 <tr><td><code>--read-images</code></td><td style="white-space: nowrap;"><code>--build</code><br><code>--memory-type</code><br><code>--read-image-path</code><br><code>--reset</code></td><td style="white-space: nowrap;"><code>--device</code><br><code>--slot</code><br><code>--erase</code><br><code>--device-programmer</code><br><code>--raw-program</code><br><code>--skip-sahara</code><br><code>--firehose-init-time</code><br><code>--firehose-rx-timeout</code><br><code>--port-trace</code><br><code>--zlp-aware-host</code><br><code>--verbose</code></td><td>Read partition images from device.</td></tr>
 <tr><td colspan="4"><strong>Query Devices</strong></td></tr>
 <tr><td><code>--devices</code></td><td style="white-space: nowrap;"></td><td style="white-space: nowrap;"><code>--json</code><br><code>--out</code><br><code>--verbose</code></td><td>List all available device identifiers.</td></tr>
+<tr><td colspan="4"><strong>Meta Build Operations</strong></td></tr>
+<tr><td><code>--flatten-meta</code></td><td style="white-space: nowrap;"><code>--meta-build</code><br><code>--memory-type</code><br><code>--flavor</code></td><td style="white-space: nowrap;"><code>--sku</code><br><code>--verbose</code></td><td>Flatten a meta-build into a structured output directory containing partition images and configuration files. Offline process, no device needed.</td></tr>
 <tr><td colspan="4"><strong>Device Control &amp; Utilities</strong></td></tr>
 <tr><td><code>--reset-device</code></td><td style="white-space: nowrap;"><td style="white-space: nowrap;"><code>--device</code></br><code>--port-trace</code><br><code>--verbose</code></td><td>Reset device from firehose mode. Normally used when the previous command was executed with <code>--reset=false</code>.</td></tr>
 <tr><td><code>--help</code>, <code>-h</code></td><td style="white-space: nowrap;"></td><td style="white-space: nowrap;"></td><td>Display help information.</td></tr>
@@ -206,11 +208,84 @@ The following table lists all available arguments, their expected values, and de
 <tr><td style="white-space: nowrap;"><code>--verbose</code></td><td></td><td>Enable verbose logging output. Shows detailed operation logs and debug information.</td></tr>
 <tr><td style="white-space: nowrap;"><code>--xml-path</code></td><td><code>&lt;XML_PATH&gt;</code></td><td>Configure command XML file path used by --send-xml. Can be used to send peek command.</td></tr>
 <tr><td style="white-space: nowrap;"><code>--zlp-aware-host</code></td><td><code>&lt;true|false&gt;</code></td><td>Enable or disable ZLP (Zero Length Packet) aware host for USB transfers. <strong>Important:</strong> If you are using WSL (Windows Subsystem for Linux) as the host, please set this to <code>false</code> (i.e., <code>--zlp-aware-host=false</code>) to ensure proper USB communication.</td></tr>
+<tr><td style="white-space: nowrap;"><code>--meta-build</code></td><td><code>&lt;META_BUILD_PATH&gt;</code></td><td>Absolute path to meta-build contents XML file (e.g., <code>\\server\share\build\contents.xml</code>). Required for --flatten-meta operation.</td></tr>
+<tr><td style="white-space: nowrap;"><code>--flavor</code></td><td><code>&lt;FLAVOR&gt;</code></td><td>Build flavor for meta-build flattening (e.g., <code>asic</code>). Required for --flatten-meta operation.</td></tr>
+<tr><td style="white-space: nowrap;"><code>--sku</code></td><td><code>&lt;SKU_CONFIG&gt;</code></td><td>Optional SKU configuration for meta-build flattening. If not specified, uses default SKU configuration.</td></tr>
 </table>
 
 ## Logs
 
 Debug logs capture detailed information about QIL operations and can assist in troubleshooting. They can be found in the following location:
+
+## Flatten Meta Build Operation
+
+The `--flatten-meta` command extracts partition images and configuration files from a meta-build into a structured output directory. This is an offline operation that does not require a device.
+
+### Prerequisites
+
+- Meta-build contents XML file (typically `contents.xml` in the meta-build root)
+- Valid memory type (UFS, EMMC, NAND, or SPINOR)
+- Valid product flavor (e.g., asic)
+- Optional: SKU configuration if the meta-build supports multiple SKU variants
+
+### Command Syntax
+
+```
+./qil --flatten-meta --meta-build="<PATH_TO_CONTENTS_XML>" --memory-type=<TYPE> --flavor=<FLAVOR> [--sku=<SKU>]
+```
+
+### Parameters
+
+- `--meta-build`: Absolute path to the meta-build contents XML file. Supports UNC network paths (e.g., `\\server\share\build\contents.xml`)
+- `--memory-type`: Target memory type (UFS, EMMC, NAND, or SPINOR)
+- `--flavor`: Build flavor (e.g., asic)
+- `--sku-config`: Optional SKU configuration. If not specified, uses the default SKU configuration from the meta-build
+- `--verbose`: Optional flag to enable detailed logging output
+
+### Examples
+
+**Flatten a meta-build from a local path:**
+
+```bash
+./qil --flatten-meta --meta-build="C:\builds\meta-build\contents.xml" --memory-type=UFS --flavor=asic
+```
+
+**Flatten a meta-build from a network UNC path:**
+
+```bash
+./qil --flatten-meta --meta-build="\\server\share\build\contents.xml" --memory-type=UFS --flavor=asic
+```
+
+**Flatten with a specific SKU configuration:**
+
+```bash
+./qil --flatten-meta --meta-build="C:\builds\meta-build\contents.xml" --memory-type=UFS --flavor=asic --sku="sku_variant_1"
+```
+
+### Output
+
+The flatten-meta operation creates a structured output directory containing:
+
+- **Partition images**: Binary files for each partition (boot, system, vendor, etc.)
+- **Configuration files**: XML files for raw programming and patching (rawprogram.xml, patch.xml)
+- **Device programmer**: Firehose device programmer binary
+- **Metadata**: Additional configuration and metadata files
+
+The output directory structure mirrors the flat-build format and can be used directly with the `--flash-build` command.
+
+### Error Handling
+
+Common errors and solutions:
+
+1. **"Failed to open XML file"**: Verify the meta-build path is correct and accessible. For network paths, ensure the UNC path is properly formatted with escaped backslashes.
+
+2. **"meta_cli not found"**: The meta_cli tool is not present in the meta-build. Ensure the meta-build is complete and contains the `common/build/app` directory.
+
+3. **"Invalid memory type or flavor"**: Verify the memory type and flavor are supported by the meta-build. Use `meta_cli get_storage_types` and `meta_cli get_product_flavors` to list available options.
+
+4. **"No files are getting copied"**: Check that the meta-build contains partition images for the specified memory type and flavor combination.
+
+### Logs
 ### Linux ###
 `/var/tmp/QFS/QIL/Logs/`
 
