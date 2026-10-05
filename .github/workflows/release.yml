@@ -226,11 +226,11 @@ jobs:
         run: |
           DIR_NAME="qil_${VERSION}_linux_${ARCH}"
           ARCHIVE="${DIR_NAME}.tar.gz"
-          BIN_DIR="Build/Linux/$(uname -m)/Release/bin"
+          BIN_DIR="build/Linux/$(uname -m)/Release/bin"
 
           if [ ! -f "${BIN_DIR}/qil" ]; then
             echo "ERROR: Expected binary not found at ${BIN_DIR}/qil"
-            find Build -type f || true
+            find build -type f || true
             exit 1
           fi
 
