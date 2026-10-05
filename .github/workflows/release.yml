@@ -190,9 +190,9 @@ jobs:
       matrix:
         include:
           - arch: x64
-            runner: ubuntu-latest
+            runner: ubuntu-22.04
           - arch: arm64
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-22.04-arm
     outputs:
       artifact_x64: qil_${{ inputs.version }}_linux_x64.tar.gz
       artifact_arm64: qil_${{ inputs.version }}_linux_arm64.tar.gz
