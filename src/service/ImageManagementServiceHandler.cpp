@@ -57,6 +57,11 @@ TOOLS_STATIC_ASSERT(
    "MEMORY_TYPE_SPINOR mismatch"
 );
 TOOLS_STATIC_ASSERT(
+   static_cast<int32_t>(Function::ImageTransfer::MEMORY_TYPE_SATA
+   ) == static_cast<int32_t>(QC::MemoryType::MEMORY_TYPE_SATA),
+   "MEMORY_TYPE_SATA mismatch"
+);
+TOOLS_STATIC_ASSERT(
    static_cast<int32_t>(Function::ImageTransfer::MEMORY_TYPE_UNKNOWN
    ) == static_cast<int32_t>(QC::MemoryType::MEMORY_TYPE_UNKNOWN),
    "MEMORY_TYPE_UNKNOWN mismatch"

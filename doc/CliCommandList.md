@@ -63,7 +63,7 @@ A device can be set into EDL mode via the following methods:<br>
 | `--image-path` | `<BINARY_IMAGE_FILE_PATH>` | Specify binary image path for --send-image. |
 | `--json` || Output devices list in json format. Will output to console if no --out path is provided. |
 | `--lun` | `<LUN_NUMBER>` | Configure partition index for --send-image. |
-| `--memory-type` | `<UFS\|EMMC\|NAND\|SPINOR>` | Specify type of flash memory on the target device. |
+| `--memory-type` | `<UFS\|EMMC\|NAND\|SPINOR\|SATA>` | Specify type of flash memory on the target device. |
 | `--out` | `<DIR_PATH_FOR_READ>` | Output path to save generated digest file or device list in a json file. Must be used inside create vip digest or build validation digest process or list devices process. |
 | `--partition-index` | `<COMMA_SPERATED_PARTITION_INDEXES_LIST>` | Comma-separated list of partition indexes to erase during download, erase partition only or get flash info.<br>•**Flash Images**: Only erase specified partition, but this does not impact the download partition which is configured by rawprogram<br>•**Get flash info**: Specify the partition index to get information on<br>•**Erase flash only**: Specify the flash partition to be erased. |
 | `--patch-program` | `<SEMICOLON_SPERATED_PATCH_XML_FILE_NAME_LIST>` | Semicolon-separated list of patch XML files. Specify dedicated XML files to override auto-detection of patch files, only used in download build. |
@@ -283,7 +283,7 @@ A device can be set into EDL mode via the following methods:<br>
 |--------|----------|-------------|
 | `--flatten` | (no argument) | Trigger flattening mode. |
 | `--build` | `"<META_BUILD>/contents.xml"` | Path to the meta‑build contents XML. |
-| `--memory-type` | `UFS\|EMMC\|NAND\|SPINOR` | Target memory type. |
+| `--memory-type` | `UFS\|EMMC\|NAND\|SPINOR\|SATA` | Target memory type. |
 | `--flavor` | `asic` | Build flavor (e.g., **asic**). |
 | `--out` | `<OUT_PATH>` | Output directory for the flat build. |
 

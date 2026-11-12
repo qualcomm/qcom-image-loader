@@ -51,6 +51,7 @@ struct utils_mutex_holder
 {
    pthread_mutex_t* mutex;
 };
+#pragma pack(pop)   /* restore alignment saved by push above */
 #endif
 
 VOID FORCEINLINE

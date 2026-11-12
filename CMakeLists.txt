@@ -178,13 +178,56 @@ foreach(src ${SOFTWAREDOWNLOAD_SOURCES})
     endif()
 endforeach()
 set(SOFTWAREDOWNLOAD_SOURCES ${TEMP_SOURCES})
+# Add the C ABI wrapper explicitly in qil_configure_sdk_target for both SDKs.
+list(REMOVE_ITEM SOFTWAREDOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/SoftwareDownloadC.cpp")
 
 file(GLOB_RECURSE CLI_SOURCES "src/cli/*.cpp")
 
 # ----------------------------------------------------------------------
-# External sub‑projects (QDS)
+# QDS static library
 # ----------------------------------------------------------------------
-add_subdirectory(${EXTERNAL_QDS_DIR} ${EXTERNAL_QDS_DIR})
+add_library(QcDevice STATIC
+    "${EXTERNAL_QDS_DIR}/common/qdver.cpp"
+    "${EXTERNAL_QDS_DIR}/common/utils.cpp"
+    "${EXTERNAL_QDS_DIR}/libusb/source/libusb-dynamic-loader.cpp"
+    "${EXTERNAL_QDS_DIR}/libusb/source/qcom-libusb.cpp"
+    "${EXTERNAL_QDS_DIR}/EUD/QdsEud.cpp"
+    "${EXTERNAL_QDS_DIR}/EUD/QdsEud.h"
+)
+set_target_properties(QcDevice PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_include_directories(QcDevice PRIVATE
+    ${QDS_INCLUDES}
+    "${EXTERNAL_QDS_DIR}"
+)
+target_compile_definitions(QcDevice PRIVATE QCDEVLIB_STATIC_LINK)
+
+if(UNIX)
+    target_sources(QcDevice PRIVATE
+        "${EXTERNAL_QDS_DIR}/qds_lnx/libLNX/liblpc.cpp"
+        "${EXTERNAL_QDS_DIR}/qds_lnx/libLNX/qcdev.cpp"
+        "${EXTERNAL_QDS_DIR}/qds_lnx/libLNX/qdaio.cpp"
+        "${EXTERNAL_QDS_DIR}/qds_lnx/libLNX/QdIoQmi.cpp"
+    )
+    target_include_directories(QcDevice PRIVATE ${LIBUSB_INCLUDE_DIRS})
+    target_link_libraries(QcDevice PRIVATE
+        ${LIBUSB_LIBRARIES} ${UDEV_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS}
+    )
+    target_compile_options(QcDevice PRIVATE -fpermissive -Wno-narrowing -Wno-write-strings)
+    target_compile_definitions(QcDevice PRIVATE TOOLS_TARGET_LINUX)
+elseif(WIN32)
+    target_sources(QcDevice PRIVATE
+        "${EXTERNAL_QDS_DIR}/qds_win/QdIoQmi.cpp"
+        "${EXTERNAL_QDS_DIR}/qds_win/scandev.cpp"
+    )
+    target_include_directories(QcDevice PRIVATE
+        "${EXTERNAL_QDS_DIR}/libusb/lib-1.0.27/include"
+    )
+    target_compile_definitions(QcDevice PRIVATE
+        TOOLS_TARGET_WINDOWS _UNICODE UNICODE WIN32 NOMINMAX
+        $<$<CONFIG:Debug>:_DEBUG>
+        $<$<CONFIG:Release>:NDEBUG>
+    )
+endif()
 
 # ----------------------------------------------------------------------
 # SDK library - built twice from the same sources:
@@ -195,8 +238,9 @@ add_subdirectory(${EXTERNAL_QDS_DIR} ${EXTERNAL_QDS_DIR})
 # Everything the two flavours have in common. Only the export macro, the
 # visibility preset and the output directory differ between them.
 function(qil_configure_sdk_target target)
-	# Add function and util sources
+	# Add the public C ABI wrapper, function and util sources.
 	target_sources(${target} PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/src/SoftwareDownloadC.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/util/ProcessUtils.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/function/MetaCli.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/util/FileSystem.cpp

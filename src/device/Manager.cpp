@@ -2303,8 +2303,9 @@ void Manager::setApplicationInfo(
     //This will only allow Qualcomm Device VID_05C6 - PID 9008
     mySetting.Version = 1;
     mySetting.Settings = DEV_FEATURE_SCAN_USB_WITH_VID;
-    mySetting.DeviceClass = 0x0F;
-    mySetting.VID = (PTSTR)TEXT("VID_05C6&PID_9008");
+    mySetting.DeviceClass = DEV_CLASS_SAHARA;
+    mySetting.DeviceProtocol = DEV_PROTOCOL_MASK_SAHARA | DEV_PROTOCOL_MASK_EDL | DEV_PROTOCOL_MASK_FLASHLESS_BOOT | DEV_PROTOCOL_MASK_EFS | DEV_PROTOCOL_MASK_FIREHOSE;
+    mySetting.VID = (PTSTR)TEXT("VID_05C6");
 
     // Set logging callback BEFORE calling SetFeature to avoid cout
     // initialization issues

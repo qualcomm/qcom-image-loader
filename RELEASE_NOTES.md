@@ -1,5 +1,31 @@
 # QIL Release Notes
 
+## v1.5.1
+
+### New Features
+
+- **C SDK API**: Added 15 C functions in `qil_software_download.h` for ABI version queries, EDL device discovery, software-download service lifecycle, build flashing, meta-build flattening, download options, and error retrieval. Opaque handles and C-compatible structures allow integration from C and other languages through native bindings
+- **SATA memory support**: Added `--memory-type=SATA`, including SDK memory-type definitions, Firehose memory selection, and boot-configuration detection
+- **Updated QDS integration**: Integrated newer device-discovery and USB transport code, including EUD support, updated Sahara protocol masks, and libusb lifecycle handling
+
+### Bug Fixes
+
+- **C API exports**: Unified C and C++ export definitions in `qil_export.h`, fixing Windows DLL import/export conflicts and preserving public C symbol visibility on Linux. Existing `SOFTWAREDOWNLOADLIB_STATIC` and `SOFTWAREDOWNLOADLIB_EXPORTS` definitions remain supported
+- **Meta-build flattening compatibility**: Older builds without optional programmer-configuration JSON now fall back to device-programmer lookup. Flattened memory-type directories consistently use uppercase names, avoiding path mismatches on case-sensitive filesystems
+- **Firehose ZLP handling**: Applied `--zlp-aware-host` consistently to erase, sector erase, reset, and storage-information operations
+- **Device listing**: Excluded devices with invalid handles, no available protocols, or failed protocol lookup; JSON output no longer adds separators before a device has been successfully serialized
+- **Linux device-discovery buffer handling**: Corrected string bounds and termination when constructing device descriptions, paths, and IP addresses, and guarded location-prefix handling against out-of-bounds access
+
+### Build & Packaging
+
+- **Static CLI and shared SDK**: The default CMake build produces the CLI, `SoftwareDownloadLib` static archive, and `SoftwareDownloadLibShared` shared library. The CLI links the static SDK; SDK consumers can use `SoftwareDownloadLib.dll` on Windows or `libSoftwareDownloadLib.so` on Linux
+- **C exports included in both SDK targets**: Explicitly included `SoftwareDownloadC.cpp` in the static and shared builds. The shared SDK exports the C functions alongside the C++ API; Windows DLLs and import libraries are written under `dll/`, separately from the static archive under `lib/`
+- **Linux libxml2 dependency**: Linux builds use the system libxml2 package; the bundled Linux static archives were removed. Building requires `libxml2-dev`
+
+### Documentation
+
+- Updated build instructions with SDK output locations, the DLL-only CMake target, and C API linking requirements; documented SATA as a supported memory type
+
 ## v1.4.1
 
 ### New Features

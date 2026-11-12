@@ -40,6 +40,7 @@ struct MemoryType
       MEMORY_TYPE_NAND,
       MEMORY_TYPE_NVME,
       MEMORY_TYPE_SPINOR,
+      MEMORY_TYPE_SATA,
       MEMORY_TYPE_UNKNOWN
    };
 };

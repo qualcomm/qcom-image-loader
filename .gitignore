@@ -10,6 +10,7 @@
 **/.vs/
 **/.vscode/
 **/.claude/
+**/.codex/
 CLAUDE.md
 !src/external/libxml2-win-build/build/
 !src/external/libxml2-win-build/build/**

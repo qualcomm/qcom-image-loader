@@ -52,10 +52,14 @@ QC::MemoryType::type CliParserUtil::parseMemoryType(const std::string& value)
    {
       return QC::MemoryType::MEMORY_TYPE_SPINOR;
    }
+   else if(upper == "SATA")
+   {
+      return QC::MemoryType::MEMORY_TYPE_SATA;
+   }
    QC_THROW_CMDLINE_ERROR(
       QC::Common::Exception::INVALID_PARAMETERS,
       "memory-type",
-      "Invalid MEMORYTYPE: " + value + " (expected UFS, EMMC, NAND, or SPINOR)"
+      "Invalid MEMORYTYPE: " + value + " (expected UFS, EMMC, NAND, SPINOR, or SATA)"
    );
 }
 

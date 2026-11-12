@@ -1607,6 +1607,10 @@ std::string ImageTransfer::firehoseGetMemoryName()
          memoryName = "spinor";
          break;
 
+      case MemoryType::MEMORY_TYPE_SATA:
+         memoryName = "sata";
+         break;
+
       default:
          TOOLS_THROW(Device::Exception(
             Device::Exception::DEVICE_INVALID_PARAMETERS,
@@ -2000,6 +2004,8 @@ void ImageTransfer::firehoseErase(void)
    firehoseCommand.push_back(std::string("--showpercentagecomplete"));
    firehoseCommand.push_back(std::string("--memoryname=" + firehoseGetMemoryName()));
    firehoseCommand.push_back(std::string("--noprompt"));
+
+   appendZlpAwareHostOption(firehoseCommand);
 
    notify(std::make_shared<ImageTransferEvent>(ImageTransferEvent::FIREHOSE_ERASE, "Partitions Erased"));
 
@@ -2979,6 +2985,10 @@ std::list<ImageTransfer::MemoryType> ImageTransfer::retriveBootConfig(std::strin
    {
       memTypes.push_back(ImageTransfer::MemoryType::MEMORY_TYPE_SPINOR);
    }
+   if(std::regex_search(bootConfig, results, std::regex("(SATA)", std::regex::icase)))
+   {
+      memTypes.push_back(ImageTransfer::MemoryType::MEMORY_TYPE_SATA);
+   }
    return memTypes;
 }
 
@@ -3191,6 +3201,8 @@ void ImageTransfer::firehoseReset()
    firehoseCommand.push_back(std::string("--port=\\\\.\\COM"));
    firehoseCommand.push_back(std::string("--reset"));
    firehoseCommand.push_back(std::string("--noprompt"));
+
+   appendZlpAwareHostOption(firehoseCommand);
 
    notify(std::make_shared<ImageTransferEvent>(ImageTransferEvent::FIREHOSE_RESETTING, "Firehose resetting"));
 
@@ -3979,6 +3991,8 @@ void ImageTransfer::firehoseErasePartitionSectors(const std::vector<DataChunkOpt
    firehoseCommand.push_back(std::string("--memoryname=" + firehoseGetMemoryName()));
    firehoseCommand.push_back(std::string("--noprompt"));
 
+   appendZlpAwareHostOption(firehoseCommand);
+
    pFirehose->processCommand(firehoseCommand, m_outputDir);
 }
 
@@ -4010,6 +4024,9 @@ void ImageTransfer::firehoseGetStorageInfo(
    {
       firehoseCommand.push_back(std::string("--reset"));
    }
+
+   appendZlpAwareHostOption(firehoseCommand);
+
    notify(std::make_shared<
           ImageTransferEvent>(ImageTransferEvent::FIREHOSE_GET_STORAGE_INFO, "Firehose get Storage Information"));
    pFirehose->processCommand(firehoseCommand, m_outputDir);
