@@ -12,6 +12,7 @@
 #include "SoftwareDownloadUtility.h"
 #include "Spinner.h"
 
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <iomanip>
@@ -198,6 +199,7 @@ static std::vector<std::string> buildDeviceFields(const QC::DeviceInfo& dev)
 
 static std::string deviceToJson(const QC::DeviceInfo& device)
 {
+   const auto protocolList = QC::DeviceDiscovery::getProtocolList(device.deviceHandle);
    std::string obj = "  {\n";
    for(const auto& line: buildDeviceFields(device))
    {
@@ -208,26 +210,18 @@ static std::string deviceToJson(const QC::DeviceInfo& device)
       obj += "    \"" + escapeJsonString(key) + "\": \"" + escapeJsonString(val) + "\",\n";
    }
    obj += "    \"Protocols\": [\n";
-   try
+   bool firstProto = true;
+   for(const auto& p: protocolList)
    {
-      if(device.deviceHandle != 0)
-      {
-         std::list<QC::ProtocolInfo> protocolList = QC::DeviceDiscovery::getProtocolList(device.deviceHandle);
-         bool firstProto = true;
-         for(const auto& p: protocolList)
-         {
-            if(!firstProto) obj += ",\n";
-            firstProto = false;
-            const std::string protoType =
-               p.protocolType == QC::ProtocolType::PROT_SAHARA   ? "SAHARA" :
-               p.protocolType == QC::ProtocolType::PROT_FIREHOSE ? "FIREHOSE" : "UNKNOWN";
-            obj += "      {\"Protocol Type\": \"" + escapeJsonString(protoType) +
-                   "\", \"Description\": \"" + escapeJsonString(p.description) + "\"}";
-         }
-         if(!protocolList.empty()) obj += "\n";
-      }
+      if(!firstProto) obj += ",\n";
+      firstProto = false;
+      const std::string protoType =
+         p.protocolType == QC::ProtocolType::PROT_SAHARA   ? "SAHARA" :
+         p.protocolType == QC::ProtocolType::PROT_FIREHOSE ? "FIREHOSE" : "UNKNOWN";
+      obj += "      {\"Protocol Type\": \"" + escapeJsonString(protoType) +
+             "\", \"Description\": \"" + escapeJsonString(p.description) + "\"}";
    }
-   catch(...) {}
+   if(!protocolList.empty()) obj += "\n";
    obj += "    ]\n";
    obj += "  }";
    return obj;
@@ -252,7 +246,6 @@ int CliCommands::listDevices(const CliOptions& options)
       try
       {
          devices = QC::DeviceDiscovery::getDeviceList();
-         CFLOG_INFO("Device enumeration completed. Found " + std::to_string(devices.size()) + " device(s).", true);
       }
       catch(const std::exception& e)
       {
@@ -264,6 +257,31 @@ int CliCommands::listDevices(const CliOptions& options)
          CFLOG_ERROR("Unknown error getting device list", true);
          CFLOG_ERROR("Continuing with empty device list", true);
       }
+
+      // Remove devices with no protocol available, as in QMDC.
+      devices.remove_if([](const QC::DeviceInfo& device) {
+         if(device.deviceHandle == 0)
+         {
+            return true;
+         }
+         try
+         {
+            const auto protocolList = QC::DeviceDiscovery::getProtocolList(device.deviceHandle);
+            return protocolList.empty();
+         }
+         catch(const std::exception& e)
+         {
+            FLOG_ERROR("Skipping device " + std::to_string(device.deviceHandle) + ": " + e.what());
+            return true;
+         }
+         catch(...)
+         {
+            FLOG_ERROR("Skipping device " + std::to_string(device.deviceHandle) + ": protocol lookup failed");
+            return true;
+         }
+      });
+
+      CFLOG_INFO("Device enumeration completed. Found " + std::to_string(devices.size()) + " device(s).", true);
 
       if(devices.empty() && !options.jsonOutput)
       {
@@ -286,15 +304,16 @@ int CliCommands::listDevices(const CliOptions& options)
       if(!options.jsonOutput)
          CFLOG_INFO("Available Devices:\n", true);
 
-      for(auto& device: devices)
+      for(const auto& device: devices)
       {
          try
          {
             if(options.jsonOutput)
             {
+               const auto deviceJson = deviceToJson(device);
                if(!firstDevice) jsonArray += ",\n";
                firstDevice = false;
-               jsonArray += deviceToJson(device);
+               jsonArray += deviceJson;
             }
             else
             {
@@ -317,8 +336,7 @@ int CliCommands::listDevices(const CliOptions& options)
                {
                   if(device.deviceHandle != 0)
                   {
-                     std::list<QC::ProtocolInfo> protocolList =
-                        QC::DeviceDiscovery::getProtocolList(device.deviceHandle);
+                     const auto protocolList = QC::DeviceDiscovery::getProtocolList(device.deviceHandle);
                      if(!protocolList.empty())
                      {
                         CFLOG_INFO("Protocols          :", true);
@@ -453,6 +471,9 @@ void CliCommands::printDownloadOptions(const QC::DownloadBuildOptions downloadOp
          break;
       case QC::MemoryType::MEMORY_TYPE_SPINOR:
          memoryTypeString << "SPINOR";
+         break;
+      case QC::MemoryType::MEMORY_TYPE_SATA:
+         memoryTypeString << "SATA";
          break;
       default:
          memoryTypeString << "Unknown";

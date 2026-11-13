@@ -379,8 +379,9 @@ ProgrammerConfig MetaCli::getProgrammerConfig(
    }
    catch(const Util::JsonException& ex)
    {
-      std::string msg = "getProgrammerConfig JSON parse error: " + std::string(ex.what()) + ". meta_cli output: " + r.output;
-      throw std::runtime_error(msg);
+      // Programmer config is optional (older targets); caller falls back to getDeviceProgrammer
+      FLOG_WARNING("getProgrammerConfig JSON parse error (ignored): " + std::string(ex.what()) + ". meta_cli output: " + r.output);
+      result = ProgrammerConfig();
    }
    return result;
 }

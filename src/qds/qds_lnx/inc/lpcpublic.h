@@ -55,15 +55,21 @@ typedef struct _DEVICE_CONTEXT
    ULONG totalBytesIn;
    ULONG current_rx_bytes;
 
-   PVOID loopbk_data;
-   PVOID receiveBuf;
-   PVOID transferBuf;
-   FILE *data_in_file;
-   FILE *data_out_file;
+   PVOID loopbk_data;   
+   PVOID receiveBuf;    
+   PVOID transferBuf;   
+   FILE *data_in_file;  
+   FILE *data_out_file; 
    USHORT counter_out;
    USHORT counter_in;
    USHORT verification_failure;
    ULONG inject_failure;
+
+   /** Constructor: zero-initialises all members (replaces malloc+memset pattern) */
+   _DEVICE_CONTEXT();
+       
+   /* loopbk_data, receiveBuf, transferBuf, data_in_file, data_out_file are
+    * externally owned – not freeing it in this constructor       */
 
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
