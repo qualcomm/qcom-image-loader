@@ -1,5 +1,18 @@
 # QIL Release Notes
 
+## v99.99.99
+
+### Verification
+
+- AUTO_NOTES_START_99.99.99
+- AUTO_NOTES_END_99.99.99
+
+## v99.99.98
+
+### Boundary marker
+
+- MUST_NOT_APPEAR_99.99.98
+
 ## v1.5.1
 
 ### New Features
