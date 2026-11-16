@@ -148,7 +148,11 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: |
           git add src/Version.h
-          git commit -m "Update QIL version to ${VERSION}"
+          if git diff --cached --quiet; then
+            echo "src/Version.h already matches version ${VERSION}; skipping version bump commit."
+          else
+            git commit -m "Update QIL version to ${VERSION}"
+          fi
 
       - name: Push release branch
         env:
