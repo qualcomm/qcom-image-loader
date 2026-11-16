@@ -18,7 +18,7 @@ on:
         type: string
         default: 'main'
       release_notes:
-        description: 'Release notes (Markdown). Defaults to auto-generated notes.'
+        description: 'Release notes (Markdown). Defaults to the matching section in RELEASE_NOTES.md.'
         required: false
         type: string
         default: ''
@@ -359,7 +359,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ inputs.version }}
           TAG: ${{ needs.prepare.outputs.tag }}
-          BRANCH: ${{ needs.prepare.outputs.branch }}
           RELEASE_NOTES: ${{ inputs.release_notes }}
           IS_DRAFT: ${{ inputs.draft }}
           LINUX_X64_ARTIFACT: ${{ needs.build-linux.outputs.artifact_x64 }}
@@ -370,9 +369,15 @@ jobs:
           NOTES="$RELEASE_NOTES"
 
           if [ -z "$NOTES" ]; then
-            NOTES="## QIL release v${VERSION}
-
-          Built from branch \`${BRANCH}\`."
+            NOTES="$(awk -v version="v${VERSION}" '
+              $0 == "## " version { found=1; print; next }
+              found && /^## v[0-9]+\.[0-9]+\.[0-9]+[[:space:]]*$/ { exit }
+              found { print }
+              END { if (!found) exit 1 }
+            ' RELEASE_NOTES.md)" || {
+              echo "ERROR: RELEASE_NOTES.md has no section for v${VERSION}."
+              exit 1
+            }
           fi
 
           DRAFT_FLAG=""
